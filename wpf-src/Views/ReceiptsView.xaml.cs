@@ -15,15 +15,18 @@ public partial class ReceiptsView : UserControl, IModuleView
     /// <summary>Một dòng kiện gỗ đang khai báo trong phiếu nhập.</summary>
     private sealed class DraftLot
     {
-        public string Id = "LOT-NEW-1";
-        public string WoodType = AppState.CategoryNames.FirstOrDefault() ?? "Gỗ Sồi";
-        public string Thickness = "26";
-        public string Grade = "FAS";
-        public string Width = "150";
-        public string Length = "2400";
-        public string Footage = "0";
-        public string Quantity = "150";
-        public string ManualPriceUsd = "0";
+        // Dòng kiện mới: mọi field để TRỐNG (loại gỗ = placeholder chưa chọn).
+        public string Id = "";
+        public string WoodType = "";
+        public string WoodSubType;   // phân loại con (null = chưa chọn/không phân loại)
+        public string Thickness = "";
+        public string Origin = "";   // Xuất xứ (thay cho Grade cũ)
+        public string Width = "";
+        public string Length = "";
+        public string LengthNote;    // độ dài dạng inch cho gỗ footage, vd 96"108"120"
+        public string Footage = "";
+        public string Quantity = "";
+        public string ManualPriceUsd = "";
 
         // Kết quả tính toán gần nhất
         public double Cbm;
@@ -34,6 +37,10 @@ public partial class ReceiptsView : UserControl, IModuleView
     }
 
     private readonly List<DraftLot> _draftLots = new();
+
+    private string _mode = "add";              // add | view | edit
+    private string _editingReceiptId;          // id phiếu đang xem/sửa
+    private bool ReadOnly => _mode == "view";
 
     public ReceiptsView()
     {
@@ -79,6 +86,8 @@ public partial class ReceiptsView : UserControl, IModuleView
     private static double D(string s) =>
         double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
+    private static string Blank2Null(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
     /// <summary>Parse độ dày theo loại gỗ — nhóm Footage chấp nhận thêm ký hiệu inch/quarter (1", 4/4").</summary>
     private static double ParseThickness(DraftLot lot) =>
         AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage
@@ -88,20 +97,21 @@ public partial class ReceiptsView : UserControl, IModuleView
     private string SelectedSupplierId => (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
 
     /// <summary>Tra đơn giá USD từ báo giá của NCC — khớp dòng giá cụ thể nhất theo loại gỗ + kích thước + grade.</summary>
-    private static decimal LookupQuotationPrice(string supplierId, string woodType, double thickness, double width, double length, string grade)
+    private static decimal LookupQuotationPrice(string supplierId, string woodType, string woodSubType,
+        double thickness, double width, double length, string origin)
     {
         if (string.IsNullOrEmpty(supplierId)) return 0;
         var quotation = AppState.Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
         if (quotation == null) return 0;
         var item = QuotationPriceMatcher.FindBestMatch(quotation.Items, woodType,
-            thickness: thickness, width: width, length: length, grade: grade);
+            thickness: thickness, width: width, length: length, origin: origin, woodSubType: woodSubType);
         return item?.PriceUsd ?? 0;
     }
 
     private void Recalculate(DraftLot lot)
     {
         var thickness = ParseThickness(lot);
-        var quotPrice = LookupQuotationPrice(SelectedSupplierId, lot.WoodType, thickness, D(lot.Width), D(lot.Length), lot.Grade);
+        var quotPrice = LookupQuotationPrice(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin);
         lot.PriceFromQuotation = quotPrice > 0;
         lot.EffectivePriceUsd = quotPrice > 0 ? quotPrice : (decimal)D(lot.ManualPriceUsd);
         lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
@@ -116,6 +126,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     private void RebuildLotRows()
     {
         LotRowsPanel.Items.Clear();
+        _rowUpdaters.Clear();
         foreach (var lot in _draftLots)
             LotRowsPanel.Items.Add(BuildLotRow(lot));
         UpdateTotals();
@@ -126,9 +137,10 @@ public partial class ReceiptsView : UserControl, IModuleView
         Recalculate(lot);
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        foreach (var w in new[] { 105.0, 115, 65, 75, 180, 75, 90, 115, -1, 50 })
+        // MãKiện, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, GiáUSD, GiáVND(*), Xóa
+        foreach (var w in new[] { 100.0, 120, 120, 95, 70, 70, 95, 80, 70, 90, 100, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
-                ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 }
+                ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 110 }
                 : new ColumnDefinition { Width = new GridLength(w) });
 
         // Kết quả (tạo trước để các handler cập nhật được)
@@ -152,7 +164,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Text = lot.PriceFromQuotation ? Fmt.Num((double)lot.EffectivePriceUsd) : lot.ManualPriceUsd,
             TextAlignment = TextAlignment.Right,
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
-            IsReadOnly = lot.PriceFromQuotation,
+            IsReadOnly = ReadOnly || lot.PriceFromQuotation,
             Foreground = lot.PriceFromQuotation
                 ? (Brush)FindResource("Emerald600")
                 : (Brush)FindResource("Rose500"),
@@ -174,7 +186,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             }
             else
             {
-                priceBox.IsReadOnly = false;
+                priceBox.IsReadOnly = ReadOnly;
                 priceBox.Foreground = (Brush)FindResource("Rose500");
                 priceBox.FontWeight = FontWeights.Normal;
             }
@@ -187,61 +199,114 @@ public partial class ReceiptsView : UserControl, IModuleView
             if (!lot.PriceFromQuotation) { lot.ManualPriceUsd = priceBox.Text; Update(); }
         };
 
-        // Mã kiện
+        // 0. Mã kiện
         var idBox = Cell(lot.Id, s => { lot.Id = s; }, mono: true, bold: true);
         idBox.Margin = new Thickness(12, 0, 6, 0);
         Grid.SetColumn(idBox, 0); grid.Children.Add(idBox);
 
-        // Loại gỗ
+        // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³)
+        var widthBox = Cell(lot.Width, s => { lot.Width = s; Update(); }, mono: true, center: true);
+        widthBox.Margin = new Thickness(6, 0, 6, 0);
+        var lengthBox = Cell(lot.Length, s => { lot.Length = s; Update(); }, mono: true, center: true);
+        lengthBox.Margin = new Thickness(6, 0, 6, 0);
+        var lengthNoteBox = Cell(lot.LengthNote ?? "", s => { lot.LengthNote = s; }, mono: true, center: true);
+        lengthNoteBox.Margin = new Thickness(6, 0, 6, 0);
+        lengthNoteBox.ToolTip = "Độ dài dạng inch, vd 96\"108\"120\" (chỉ mô tả, không tính m³)";
+        var footageBox = Cell(lot.Footage, s => { lot.Footage = s; Update(); }, mono: true, center: true);
+        footageBox.Margin = new Thickness(6, 0, 6, 0);
+
+        // Quy cách → ẩn Footage (hiện Rộng); Footage → ẩn Rộng (hiện Footage). Cột Dài: quy cách=mm, footage=inch.
+        void ApplyRuleVisibility()
+        {
+            var footage = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
+            widthBox.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
+            footageBox.Visibility = footage ? Visibility.Visible : Visibility.Collapsed;
+            lengthBox.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
+            lengthNoteBox.Visibility = footage ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // 1. Loại gỗ (cha) + 2. Phân loại con (hai cột riêng, cha trái con phải)
         var typeCombo = new ComboBox
         {
             Style = (Style)FindResource("Select"),
-            Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center
+            Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = !ReadOnly
         };
-        StackPanel dimPanel = null;
+        var subCombo = new ComboBox
+        {
+            Style = (Style)FindResource("Select"),
+            Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = !ReadOnly
+        };
+
+        void RebuildSub()
+        {
+            subCombo.Items.Clear();
+            subCombo.Items.Add(new ComboBoxItem { Content = "— Không phân loại —", Tag = "" });
+            foreach (var s in AppState.SubNamesOf(lot.WoodType))
+                subCombo.Items.Add(new ComboBoxItem { Content = s, Tag = s, IsSelected = s == lot.WoodSubType });
+            if (subCombo.SelectedIndex < 0) subCombo.SelectedIndex = 0;
+        }
+        subCombo.SelectionChanged += (_, _) =>
+        {
+            var v = (subCombo.SelectedItem as ComboBoxItem)?.Tag as string;
+            lot.WoodSubType = string.IsNullOrEmpty(v) ? null : v;
+            Update();   // đổi phân loại con có thể đổi giá báo giá khớp được
+        };
+
+        typeCombo.Items.Add(new ComboBoxItem { Content = "— Chọn loại gỗ —", Tag = "", IsSelected = string.IsNullOrEmpty(lot.WoodType) });
         foreach (var t in AppState.CategoryNames)
             typeCombo.Items.Add(new ComboBoxItem { Content = t, Tag = t, IsSelected = t == lot.WoodType });
+        if (typeCombo.SelectedIndex < 0) typeCombo.SelectedIndex = 0;
         typeCombo.SelectionChanged += (_, _) =>
         {
-            lot.WoodType = (typeCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? lot.WoodType;
-            if (dimPanel != null) BuildDimPanel(dimPanel, lot, Update);
+            lot.WoodType = (typeCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+            lot.WoodSubType = null;      // đổi loại cha → reset phân loại con
+            RebuildSub();
+            ApplyRuleVisibility();
             Update();
         };
-        Grid.SetColumn(typeCombo, 1); grid.Children.Add(typeCombo);
+        RebuildSub();
+        ApplyRuleVisibility();
 
-        // Dày
+        Grid.SetColumn(typeCombo, 1); grid.Children.Add(typeCombo);
+        Grid.SetColumn(subCombo, 2); grid.Children.Add(subCombo);
+
+        // 3. Xuất xứ
+        var originBox = Cell(lot.Origin, s => { lot.Origin = s; Update(); }, mono: true, center: true);
+        originBox.Margin = new Thickness(6, 0, 6, 0);
+        Grid.SetColumn(originBox, 3); grid.Children.Add(originBox);
+
+        // 4. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...)
         var thickBox = Cell(lot.Thickness, s => { lot.Thickness = s; Update(); }, mono: true, center: true);
         thickBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(thickBox, 2); grid.Children.Add(thickBox);
+        thickBox.ToolTip = "Số mm; gỗ nhóm Footage có thể nhập dạng inch: 1\", 4/4\", 5/4\"";
+        Grid.SetColumn(thickBox, 4); grid.Children.Add(thickBox);
 
-        // Grade
-        var gradeBox = Cell(lot.Grade, s => { lot.Grade = s; Update(); }, mono: true, center: true);
-        gradeBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(gradeBox, 3); grid.Children.Add(gradeBox);
+        // 5. Rộng (ẩn nếu gỗ footage)
+        Grid.SetColumn(widthBox, 5); grid.Children.Add(widthBox);
+        // 6. Dài (quy cách = mm; footage = ký hiệu inch — hai ô chồng nhau, toggle theo rule)
+        Grid.SetColumn(lengthBox, 6); grid.Children.Add(lengthBox);
+        Grid.SetColumn(lengthNoteBox, 6); grid.Children.Add(lengthNoteBox);
+        // 7. Footage (ẩn nếu gỗ quy cách)
+        Grid.SetColumn(footageBox, 7); grid.Children.Add(footageBox);
 
-        // Rộng x dài / footage
-        dimPanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center
-        };
-        BuildDimPanel(dimPanel, lot, Update);
-        Grid.SetColumn(dimPanel, 4); grid.Children.Add(dimPanel);
-
-        // Số lượng
+        // 8. Số lượng
         var qtyBox = Cell(lot.Quantity, s => { lot.Quantity = s; Update(); }, mono: true, center: true);
         qtyBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(qtyBox, 5); grid.Children.Add(qtyBox);
+        Grid.SetColumn(qtyBox, 8); grid.Children.Add(qtyBox);
 
-        Grid.SetColumn(cbmText, 6); grid.Children.Add(cbmText);
-        Grid.SetColumn(priceBox, 7); grid.Children.Add(priceBox);
-        Grid.SetColumn(costText, 8); grid.Children.Add(costText);
+        // 9. Thể tích  10. Giá USD  11. Giá vốn VND
+        Grid.SetColumn(cbmText, 9); grid.Children.Add(cbmText);
+        Grid.SetColumn(priceBox, 10); grid.Children.Add(priceBox);
+        Grid.SetColumn(costText, 11); grid.Children.Add(costText);
 
         // Xóa
         var del = new Button
         {
             Style = (Style)FindResource("BtnIconDanger"),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            Visibility = ReadOnly ? Visibility.Collapsed : Visibility.Visible,
             Content = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12 }
         };
         del.Click += (_, _) =>
@@ -249,7 +314,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             _draftLots.Remove(lot);
             RebuildLotRows();
         };
-        Grid.SetColumn(del, 9); grid.Children.Add(del);
+        Grid.SetColumn(del, 12); grid.Children.Add(del);
 
         return new Border
         {
@@ -262,44 +327,16 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     private readonly List<Action> _rowUpdaters = new();
 
-    private void BuildDimPanel(StackPanel panel, DraftLot lot, Action update)
-    {
-        panel.Children.Clear();
-        if (AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage)
-        {
-            var footBox = Cell(lot.Footage, s => { lot.Footage = s; update(); }, mono: true);
-            footBox.Width = 90;
-            panel.Children.Add(footBox);
-            panel.Children.Add(new TextBlock
-            {
-                Text = "BFT", FontSize = 10, Foreground = (Brush)FindResource("Slate400"),
-                Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center
-            });
-        }
-        else
-        {
-            var widthBox = Cell(lot.Width, s => { lot.Width = s; update(); }, mono: true, center: true);
-            widthBox.Width = 56;
-            var lengthBox = Cell(lot.Length, s => { lot.Length = s; update(); }, mono: true, center: true);
-            lengthBox.Width = 66;
-            panel.Children.Add(widthBox);
-            panel.Children.Add(new TextBlock
-            {
-                Text = "x", Foreground = (Brush)FindResource("Slate500"),
-                Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center
-            });
-            panel.Children.Add(lengthBox);
-        }
-    }
-
     private TextBox Cell(string initial, Action<string> onChange, bool mono = false, bool center = false, bool bold = false)
     {
         var box = new TextBox
         {
             Style = (Style)FindResource(mono ? "CellInputMono" : "CellInput"),
             Text = initial,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            IsReadOnly = ReadOnly
         };
+        if (ReadOnly) box.Background = (Brush)FindResource("Slate50");
         if (center) box.TextAlignment = TextAlignment.Center;
         if (bold) box.FontWeight = FontWeights.SemiBold;
         box.TextChanged += (_, _) => onChange(box.Text);
@@ -328,23 +365,186 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     private void BtnAddLotRow_Click(object sender, RoutedEventArgs e)
     {
-        _draftLots.Add(new DraftLot
-        {
-            Id = $"LOT-NEW-{_draftLots.Count + 1}",
-            Quantity = "100"
-        });
+        _draftLots.Add(new DraftLot());   // dòng mới: mọi field trống
         RebuildLotRows();
     }
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
-        => AddFormPanel.Visibility = AddFormPanel.Visibility == Visibility.Visible
-            ? Visibility.Collapsed : Visibility.Visible;
+    {
+        // Đang mở sẵn ở chế độ thêm mới → bấm lần nữa thì đóng
+        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add")
+        {
+            AddFormPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+        // Còn lại (đang ẩn, hoặc đang xem/sửa) → chuyển thẳng sang lập phiếu mới
+        EnterAddMode();
+        AddFormPanel.Visibility = Visibility.Visible;
+    }
 
     private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
-        => AddFormPanel.Visibility = Visibility.Collapsed;
+    {
+        // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
+        if (_mode == "edit")
+        {
+            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            var r = AppState.Receipts.FirstOrDefault(x => x.Id == _editingReceiptId);
+            if (r != null) { EnterViewMode(r); return; }
+        }
+        // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
+        else if (_mode == "add")
+        {
+            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+        }
+        AddFormPanel.Visibility = Visibility.Collapsed;
+        EnterAddMode();
+    }
+
+    /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
+    private static bool ConfirmDiscard(string message) =>
+        MessageBox.Show(message, "Xác nhận hủy",
+            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    // ---------------- Chế độ add / view / edit ----------------
+
+    /// <summary>Bật/tắt chỉ-đọc cho các ô ở phần header chứng từ.</summary>
+    private void SetHeaderReadOnly(bool ro)
+    {
+        foreach (var box in new[] { FDate, FInvoice, FPackingList, FExchangeRate })
+        {
+            box.IsReadOnly = ro;
+            box.Background = ro ? (Brush)FindResource("Slate50") : Brushes.White;
+        }
+        FSupplier.IsEnabled = !ro;
+        FTaxPercent.IsEnabled = !ro;
+    }
+
+    private void EnterAddMode()
+    {
+        _mode = "add";
+        _editingReceiptId = null;
+        SetHeaderReadOnly(false);
+        BtnAddLotRow.Visibility = Visibility.Visible;
+        FormTitle.Text = "Lập Phiếu Nhập Kho Mới";
+        FormSaveBtn.Content = "Hoàn tất & Khóa phiếu nhập";
+        FormCancelBtn.Content = "Hủy bỏ";
+        FInvoice.Text = "";
+        FPackingList.Text = "";
+        FExchangeRate.Text = "25400";
+        FTaxPercent.SelectedIndex = 3;
+        FDate.Text = Fmt.Date(DateTime.Today);
+        if (FSupplier.Items.Count > 0) FSupplier.SelectedIndex = 0;
+        ResetDraft();
+    }
+
+    /// <summary>Xem chi tiết: nạp dữ liệu phiếu vào form ở chế độ chỉ-đọc, nút thành "Chỉnh sửa".</summary>
+    private void EnterViewMode(WarehouseReceipt r)
+    {
+        _mode = "view";
+        _editingReceiptId = r.Id;
+        LoadReceiptIntoForm(r);
+        SetHeaderReadOnly(true);
+        BtnAddLotRow.Visibility = Visibility.Collapsed;
+        FormTitle.Text = $"Chi Tiết Phiếu Nhập — {r.Id}";
+        FormSaveBtn.Content = "Chỉnh sửa";
+        FormCancelBtn.Content = "Hủy bỏ";
+        AddFormPanel.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Chuyển sang sửa (từ xem hoặc trực tiếp): mở khóa, nút thành "Cập nhật".</summary>
+    private void EnterEditMode(WarehouseReceipt r = null)
+    {
+        _mode = "edit";
+        if (r != null) { _editingReceiptId = r.Id; LoadReceiptIntoForm(r); }
+        SetHeaderReadOnly(false);
+        RebuildLotRows();                    // dựng lại các dòng ở chế độ có thể sửa
+        BtnAddLotRow.Visibility = Visibility.Visible;
+        FormTitle.Text = $"Sửa Phiếu Nhập — {_editingReceiptId}";
+        FormSaveBtn.Content = "Cập nhật";
+        FormCancelBtn.Content = "Hủy sửa";
+        AddFormPanel.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Nạp header + danh sách kiện của một phiếu vào form.</summary>
+    private void LoadReceiptIntoForm(WarehouseReceipt r)
+    {
+        foreach (ComboBoxItem it in FSupplier.Items)
+            if ((it.Tag as string) == r.SupplierId) { FSupplier.SelectedItem = it; break; }
+        FDate.Text = Fmt.Date(r.Date);
+        FInvoice.Text = r.Invoice;
+        FPackingList.Text = r.PackingList;
+
+        var first = r.Lots.FirstOrDefault();
+        if (first != null)
+        {
+            FExchangeRate.Text = Fmt.Num((double)first.ExchangeRate);
+            var taxTag = Fmt.Num((double)first.TaxPercent);
+            foreach (ComboBoxItem it in FTaxPercent.Items)
+                if ((it.Tag as string) == taxTag) { FTaxPercent.SelectedItem = it; break; }
+        }
+
+        _draftLots.Clear();
+        foreach (var l in r.Lots) _draftLots.Add(ToDraft(l));
+        if (_draftLots.Count == 0) _draftLots.Add(new DraftLot());
+        RebuildLotRows();
+    }
+
+    private static DraftLot ToDraft(WoodLot l)
+    {
+        var isFootage = AppState.GetVolumeRule(l.WoodType) == VolumeRule.ByFootage;
+        return new DraftLot
+        {
+            Id = l.Id,
+            WoodType = l.WoodType,
+            WoodSubType = l.WoodSubType,
+            // Gỗ footage: hiện lại ký hiệu inch gốc nếu có, không thì rơi về mm.
+            Thickness = isFootage && !string.IsNullOrWhiteSpace(l.ThicknessNote)
+                ? l.ThicknessNote : Fmt.Num(l.ThicknessMm),
+            Origin = l.Origin ?? "",
+            Width = Fmt.Num(l.WidthMm),
+            Length = Fmt.Num(l.LengthMm),
+            LengthNote = l.LengthNote,
+            Footage = Fmt.Num(l.Footage),
+            Quantity = l.OriginalQuantity.ToString(),
+            ManualPriceUsd = Fmt.Num((double)l.PriceUsd)
+        };
+    }
+
+    // ---------------- Xử lý nút thao tác trên bảng ----------------
+
+    private void ViewRow_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is RecRow r) EnterViewMode(r.Receipt);
+    }
+
+    private void EditRow_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is RecRow r) EnterEditMode(r.Receipt);
+    }
+
+    private void DeleteRow_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
+        if (MessageBox.Show(
+                $"Xóa phiếu nhập {r.Id} cùng {r.Receipt.Lots.Count} kiện gỗ kèm theo?\nHành động này không thể hoàn tác.",
+                "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        try
+        {
+            AppState.DeleteReceipt(r.Id);
+            if (_editingReceiptId == r.Id) { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 
     private void BtnSaveReceipt_Click(object sender, RoutedEventArgs e)
     {
+        // Đang xem chi tiết → bấm "Chỉnh sửa" thì chuyển sang chế độ sửa
+        if (_mode == "view") { EnterEditMode(); return; }
+
         var supplierId = SelectedSupplierId;
         var invoice = (FInvoice.Text ?? "").Trim();
         var packingList = (FPackingList.Text ?? "").Trim();
@@ -384,6 +584,24 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         foreach (var d in _draftLots)
         {
+            if (string.IsNullOrWhiteSpace(d.Id))
+            {
+                MessageBox.Show("Vui lòng nhập Mã kiện cho tất cả các dòng kiện gỗ.", "TimberFlow ERP",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(d.WoodType))
+            {
+                MessageBox.Show($"Kiện {d.Id}: vui lòng chọn loại gỗ.", "TimberFlow ERP",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (AppState.CategoryHasSubs(d.WoodType) && string.IsNullOrWhiteSpace(d.WoodSubType))
+            {
+                MessageBox.Show($"Kiện {d.Id}: {d.WoodType} có phân loại con — vui lòng chọn phân loại con.",
+                    "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             if (ParseThickness(d) <= 0)
             {
                 MessageBox.Show($"Kiện {d.Id}: Độ dày phải lớn hơn 0.", "TimberFlow ERP",
@@ -413,7 +631,9 @@ public partial class ReceiptsView : UserControl, IModuleView
             }
         }
 
-        var receiptId = $"REC-{Random.Shared.Next(10000, 99999)}";
+        var receiptId = _mode == "edit"
+            ? _editingReceiptId
+            : $"REC-{Random.Shared.Next(10000, 99999)}";
         var receipt = new WarehouseReceipt
         {
             Id = receiptId,
@@ -429,6 +649,12 @@ public partial class ReceiptsView : UserControl, IModuleView
             Recalculate(d);
             var quantity = (int)D(d.Quantity);
             var thicknessMm = ParseThickness(d);
+            var isFootage = AppState.GetVolumeRule(d.WoodType) == VolumeRule.ByFootage;
+            // Gỗ footage: giữ nguyên ký hiệu inch người dùng nhập (độ dày + độ dài) để hiển thị lại.
+            var thicknessNote = isFootage ? Blank2Null(d.Thickness) : null;
+            var lengthNote = isFootage ? Blank2Null(d.LengthNote) : null;
+            var thicknessLabel = thicknessNote ?? $"{Fmt.Num(thicknessMm)}mm";
+            var subPart = string.IsNullOrWhiteSpace(d.WoodSubType) ? "" : $" ({d.WoodSubType})";
             receipt.Lots.Add(new WoodLot
             {
                 Id = d.Id.Trim().ToUpperInvariant(),
@@ -438,10 +664,14 @@ public partial class ReceiptsView : UserControl, IModuleView
                 Invoice = invoice,
                 PackingList = packingList,
                 WoodType = d.WoodType,
-                WoodName = $"{d.WoodType} {d.Grade} {Fmt.Num(thicknessMm)}mm",
+                WoodSubType = d.WoodSubType,
+                WoodName = string.Join(" ", new[] { d.WoodType + subPart, Blank2Null(d.Origin), thicknessLabel }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))),
                 ThicknessMm = thicknessMm,
+                ThicknessNote = thicknessNote,
                 WidthMm = D(d.Width),
                 LengthMm = D(d.Length),
+                LengthNote = lengthNote,
                 OriginalQuantity = quantity,
                 Quantity = quantity,
                 Footage = D(d.Footage),
@@ -452,19 +682,16 @@ public partial class ReceiptsView : UserControl, IModuleView
                 TaxPercent = (decimal)SelectedTaxPercent,
                 CostPriceVnd = d.CostPriceVnd,
                 TotalValueVnd = d.TotalValueVnd,
-                Grade = string.IsNullOrWhiteSpace(d.Grade) ? "FAS" : d.Grade.Trim()
+                Origin = Blank2Null(d.Origin)
             });
         }
 
         try
         {
-            AppState.AddReceipt(receipt);
+            if (_mode == "edit") AppState.UpdateReceipt(receipt);
+            else AppState.AddReceipt(receipt);
             AddFormPanel.Visibility = Visibility.Collapsed;
-            FInvoice.Text = "";
-            FPackingList.Text = "";
-            FExchangeRate.Text = "25400";
-            FTaxPercent.SelectedIndex = 3;
-            ResetDraft();
+            EnterAddMode();
         }
         catch (Exception ex)
         {

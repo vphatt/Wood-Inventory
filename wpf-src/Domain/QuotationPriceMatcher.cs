@@ -11,7 +11,7 @@ public static class QuotationPriceMatcher
     public static QuotationItem FindBestMatch(
         IEnumerable<QuotationItem> items, string woodType,
         double? thickness = null, double? width = null, double? length = null,
-        string grade = null, string origin = null)
+        string grade = null, string origin = null, string woodSubType = null)
     {
         QuotationItem best = null;
         var bestSpecificity = -1;
@@ -20,6 +20,10 @@ public static class QuotationPriceMatcher
         {
             if (!string.Equals(it.WoodType?.Trim(), woodType?.Trim(), StringComparison.OrdinalIgnoreCase))
                 continue;
+
+            // Phân loại con: dòng giá để trống = áp cho mọi con (fallback cấp cha);
+            // đã set thì phải khớp đúng con → dòng khớp con luôn cụ thể hơn (Specificity +1).
+            if (!TextMatches(it.WoodSubType, woodSubType)) continue;
 
             if (!RangeMatches(it.ThicknessMin, it.ThicknessMax, thickness)) continue;
             if (!RangeMatches(it.WidthMin, it.WidthMax, width)) continue;
@@ -56,6 +60,7 @@ public static class QuotationPriceMatcher
     private static int Specificity(QuotationItem it)
     {
         var n = 0;
+        if (!string.IsNullOrWhiteSpace(it.WoodSubType)) n++;
         if (it.ThicknessMin != null || it.ThicknessMax != null) n++;
         if (it.WidthMin != null || it.WidthMax != null) n++;
         if (it.LengthMin != null || it.LengthMax != null) n++;

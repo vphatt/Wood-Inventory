@@ -29,6 +29,17 @@ public class WoodCategory
         : "Theo quy cách (Dày x Rộng x Dài)";
 }
 
+/// <summary>
+/// Phân loại con (cấp 2) của một loại gỗ cha. Ví dụ: "Gỗ Thông" → "Thông trắng"/"Thông vàng",
+/// "Gỗ Dương" → "1 com"/"2 com". Nguyên tắc tính m³ kế thừa từ loại cha (không lưu ở đây).
+/// </summary>
+public class WoodSubCategory
+{
+    public string Id { get; set; }
+    public string CategoryId { get; set; }        // FK tới WoodCategory (loại cha)
+    public string Name { get; set; }              // Tên phân loại con, vd. "Thông trắng"
+}
+
 /// <summary>Nhà cung cấp gỗ.</summary>
 public class Supplier
 {
@@ -51,6 +62,7 @@ public class QuotationItem
     public string Id { get; set; }
     public string QuotationId { get; set; }
     public string WoodType { get; set; }
+    public string WoodSubType { get; set; }    // phân loại con (cấp 2); null = áp cho mọi phân loại con của loại cha
     public string Grade { get; set; }          // null = mọi grade
     public double? ThicknessMin { get; set; }
     public double? ThicknessMax { get; set; }
@@ -87,12 +99,14 @@ public class WoodLot
     public string ReceiptId { get; set; }          // Phiếu nhập gốc
     public string Invoice { get; set; }
     public string PackingList { get; set; }
-    public string WoodType { get; set; }           // "Gỗ Dương", "Gỗ Sồi", ...
+    public string WoodType { get; set; }           // "Gỗ Dương", "Gỗ Sồi", ... (loại cha)
+    public string WoodSubType { get; set; }        // phân loại con (cấp 2), vd "1 com" / "Thông trắng"; null = chưa phân loại
     public string WoodName { get; set; }
     public double ThicknessMm { get; set; }
     public double WidthMm { get; set; }
     public double LengthMm { get; set; }
     public string LengthNote { get; set; }         // Mô tả chiều dài dạng inch cho gỗ nhóm Footage, vd 132"144" — chỉ hiển thị, không dùng tính toán
+    public string ThicknessNote { get; set; }      // Ký hiệu độ dày dạng inch cho gỗ nhóm Footage, vd 4/4" / 5/4" — chỉ hiển thị, không dùng tính toán
     public int OriginalQuantity { get; set; }
     public int Quantity { get; set; }              // Số thanh còn tồn
     public double Footage { get; set; }            // BFT — chỉ dùng cho Gỗ Dương
@@ -104,6 +118,7 @@ public class WoodLot
     public decimal CostPriceVnd { get; set; }      // Giá vốn VND/m³ (đã gồm thuế)
     public decimal TotalValueVnd { get; set; }     // Giá trị tồn hiện tại
     public string Grade { get; set; }
+    public string Origin { get; set; }             // Xuất xứ kiện gỗ (vd "Mỹ", "Nga") — dùng khai báo + khớp báo giá
 
     /// <summary>Khấu trừ tồn kho khi xuất kho.</summary>
     public void IssueInventory(int issueQty, double issueCbm)

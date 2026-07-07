@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="Segoe UI" FontSize="12">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
+    <Grid>
+        <ScrollViewer x:Name="ListRoot" VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + nút -->
@@ -67,7 +68,7 @@
                     </Border>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
                         <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu loại gỗ"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>
@@ -136,6 +137,22 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn Header="PHÂN LOẠI CON" Width="200" MinWidth="150" SortMemberPath="SubCount">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource BtnLink}" HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center" ToolTip="Quản lý phân loại con"
+                                                    Click="OpenSubs_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,6,0"/>
+                                                    <TextBlock Text="{Binding SubCountText}"/>
+                                                    <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="6,1,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="THAO TÁC" Width="130" MinWidth="110"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -163,5 +180,7 @@
             </Border>
 
         </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+        <ContentControl x:Name="DetailHost" Visibility="Collapsed"/>
+    </Grid>
 </UserControl>

@@ -64,6 +64,9 @@
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="LOẠI GỖ *" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"/>
+                            <TextBlock Text="PHÂN LOẠI CON" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/>
+                            <ComboBox x:Name="FWoodSubType" Style="{StaticResource Select}"/>
+                            <TextBlock x:Name="WSubType" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="CHẤT LƯỢNG (GRADE)" Style="{StaticResource FieldLabel}"/>
@@ -136,7 +139,7 @@
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
                         <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu mục giá"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>
@@ -174,7 +177,7 @@
                     <Grid>
                         <DataGrid x:Name="ItemGrid" Style="{StaticResource DataTable}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="LOẠI GỖ" Binding="{Binding WoodType}" Width="2*" MinWidth="150">
+                                <DataGridTextColumn Header="LOẠI GỖ" Binding="{Binding WoodTypeDisplay}" Width="2*" MinWidth="150" SortMemberPath="WoodType">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>

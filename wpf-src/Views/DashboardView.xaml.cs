@@ -78,7 +78,7 @@ public partial class DashboardView : UserControl, IModuleView
         LowStockList.ItemsSource = lowStockLots.Select(l => new LowStockRow
         {
             Id = l.Id,
-            Meta = $"{l.WoodType} - {l.Grade} - {Fmt.Num(l.ThicknessMm)}mm",
+            Meta = $"{l.WoodType}{(string.IsNullOrWhiteSpace(l.WoodSubType) ? "" : " · " + l.WoodSubType)} - {l.Grade} - {Fmt.Num(l.ThicknessMm)}mm",
             QtyText = $"{l.Quantity} thanh",
             CbmText = $"{Fmt.M3Short(l.RemainingCbm)} m³ còn lại"
         }).ToList();

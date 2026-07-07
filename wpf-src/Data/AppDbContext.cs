@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<WoodCategory> WoodCategories { get; set; }
+    public DbSet<WoodSubCategory> WoodSubCategories { get; set; }
     public DbSet<WoodLot> WoodLots { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
     public DbSet<WoodQuotation> WoodQuotations { get; set; }
@@ -46,6 +47,17 @@ public class AppDbContext : DbContext
             entity.Property(e => e.VolumeRule).HasConversion<int>();
             entity.Ignore(e => e.VolumeRuleLabel);
             entity.HasIndex(e => e.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<WoodSubCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(50);
+            entity.Property(e => e.CategoryId).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => new { e.CategoryId, e.Name }).IsUnique();
+            entity.HasOne<WoodCategory>().WithMany()
+                  .HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<WoodLot>(entity =>

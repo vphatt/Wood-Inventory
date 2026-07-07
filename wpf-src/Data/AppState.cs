@@ -12,6 +12,7 @@ public static class AppState
 {
     public static List<Supplier> Suppliers { get; private set; } = new();
     public static List<WoodCategory> Categories { get; private set; } = new();
+    public static List<WoodSubCategory> SubCategories { get; private set; } = new();
     public static List<WoodQuotation> Quotations { get; private set; } = new();
     public static List<WoodLot> Lots { get; private set; } = new();
     public static List<WarehouseReceipt> Receipts { get; private set; } = new();
@@ -34,6 +35,7 @@ public static class AppState
     {
         using var db = new AppDbContext();
         Categories = db.WoodCategories.AsNoTracking().OrderBy(c => c.Name).ToList();
+        SubCategories = db.WoodSubCategories.AsNoTracking().OrderBy(s => s.Name).ToList();
         Suppliers = db.Suppliers.AsNoTracking().OrderBy(s => s.Id).ToList();
         Quotations = db.WoodQuotations.AsNoTracking().Include(q => q.Items)
                        .OrderByDescending(q => q.EffectiveDate).ToList();
@@ -55,6 +57,25 @@ public static class AppState
 
     /// <summary>Tên các loại gỗ (dùng cho dropdown thay cho danh sách hardcode).</summary>
     public static IEnumerable<string> CategoryNames => Categories.Select(c => c.Name);
+
+    /// <summary>Tìm loại gỗ cha theo tên (không phân biệt hoa thường).</summary>
+    public static WoodCategory FindCategoryByName(string name) =>
+        Categories.FirstOrDefault(c =>
+            string.Equals(c.Name, name?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Các phân loại con của một loại gỗ cha (theo Id).</summary>
+    public static IEnumerable<WoodSubCategory> SubCategoriesOf(string categoryId) =>
+        SubCategories.Where(s => s.CategoryId == categoryId).OrderBy(s => s.Name);
+
+    /// <summary>Tên các phân loại con của một loại gỗ cha (theo tên loại cha) — cho dropdown nối tầng.</summary>
+    public static IEnumerable<string> SubNamesOf(string categoryName)
+    {
+        var cat = FindCategoryByName(categoryName);
+        return cat == null ? Enumerable.Empty<string>() : SubCategoriesOf(cat.Id).Select(s => s.Name);
+    }
+
+    /// <summary>Loại gỗ cha (theo tên) có ít nhất một phân loại con hay không.</summary>
+    public static bool CategoryHasSubs(string categoryName) => SubNamesOf(categoryName).Any();
 
     /// <summary>
     /// Nguyên tắc tính m³ của một loại gỗ theo tên. Nếu chưa có trong danh mục thì
@@ -201,6 +222,75 @@ public static class AppState
         Commit();
     }
 
+    // ---------------- Nghiệp vụ: Phân loại con (cấp 2) ----------------
+
+    /// <summary>Thêm phân loại con vào một loại gỗ cha. Chặn trùng tên trong cùng loại cha.</summary>
+    public static void AddSubCategory(string categoryId, string name)
+    {
+        using var db = new AppDbContext();
+        name = name?.Trim() ?? "";
+        if (name.Length == 0)
+            throw new InvalidOperationException("Tên phân loại không được để trống.");
+        if (db.WoodSubCategories.Any(s => s.CategoryId == categoryId && s.Name.ToLower() == name.ToLower()))
+            throw new InvalidOperationException($"Phân loại \"{name}\" đã tồn tại trong loại gỗ này.");
+
+        db.WoodSubCategories.Add(new WoodSubCategory
+        {
+            Id = $"SUB-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
+            CategoryId = categoryId,
+            Name = name
+        });
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>
+    /// Sửa tên phân loại con. Nếu đổi tên → cascade cập nhật WoodSubType của mọi kiện gỗ và dòng
+    /// báo giá đang dùng tên cũ (trong phạm vi loại cha). Chặn trùng tên với phân loại khác cùng cha.
+    /// </summary>
+    public static void UpdateSubCategory(string id, string newName)
+    {
+        using var db = new AppDbContext();
+        var sub = db.WoodSubCategories.Find(id);
+        if (sub == null) return;
+
+        newName = newName?.Trim() ?? "";
+        if (newName.Length == 0)
+            throw new InvalidOperationException("Tên phân loại không được để trống.");
+        if (db.WoodSubCategories.Any(s => s.Id != id && s.CategoryId == sub.CategoryId
+                                          && s.Name.ToLower() == newName.ToLower()))
+            throw new InvalidOperationException($"Phân loại \"{newName}\" đã tồn tại trong loại gỗ này.");
+
+        var oldName = sub.Name;
+        if (!string.Equals(oldName, newName, StringComparison.Ordinal))
+        {
+            var parentName = db.WoodCategories.Find(sub.CategoryId)?.Name;
+            foreach (var lot in db.WoodLots.Where(l => l.WoodType == parentName && l.WoodSubType == oldName))
+                lot.WoodSubType = newName;
+            foreach (var qi in db.QuotationItems.Where(i => i.WoodType == parentName && i.WoodSubType == oldName))
+                qi.WoodSubType = newName;
+        }
+
+        sub.Name = newName;
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa phân loại con. Chặn nếu đang có kiện gỗ dùng phân loại này.</summary>
+    public static void DeleteSubCategory(string id)
+    {
+        using var db = new AppDbContext();
+        var sub = db.WoodSubCategories.Find(id);
+        if (sub == null) return;
+        var parentName = db.WoodCategories.Find(sub.CategoryId)?.Name;
+        if (db.WoodLots.Any(l => l.WoodType == parentName && l.WoodSubType == sub.Name))
+            throw new InvalidOperationException(
+                $"Phân loại \"{sub.Name}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.");
+        db.WoodSubCategories.Remove(sub);
+        db.SaveChanges();
+        Commit();
+    }
+
     // ---------------- Nghiệp vụ ----------------
 
     public static void DeleteLot(string id)
@@ -265,6 +355,7 @@ public static class AppState
         var existing = db.QuotationItems.Find(item.Id);
         if (existing == null) return;
         existing.WoodType = item.WoodType;
+        existing.WoodSubType = item.WoodSubType;
         existing.Grade = item.Grade;
         existing.ThicknessMin = item.ThicknessMin;
         existing.ThicknessMax = item.ThicknessMax;
@@ -310,6 +401,67 @@ public static class AppState
         if (duplicated != null)
             throw new InvalidOperationException($"Mã kiện {duplicated} đã tồn tại trong hệ thống.");
         db.WarehouseReceipts.Add(receipt);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>
+    /// Cập nhật phiếu nhập: sửa header + thay toàn bộ danh sách kiện theo khai báo mới.
+    /// Chặn nếu phiếu có kiện đã phát sinh xuất kho (giữ nhất quán tồn kho), và chặn
+    /// mã kiện mới trùng với kiện của phiếu khác.
+    /// </summary>
+    public static void UpdateReceipt(WarehouseReceipt updated)
+    {
+        using var db = new AppDbContext();
+        var existing = db.WarehouseReceipts.Include(r => r.Lots).FirstOrDefault(r => r.Id == updated.Id)
+            ?? throw new InvalidOperationException("Không tìm thấy phiếu nhập cần cập nhật.");
+
+        var oldLotIds = existing.Lots.Select(l => l.Id).ToList();
+
+        var issued = existing.Lots.Where(l => l.Quantity != l.OriginalQuantity).Select(l => l.Id).ToList();
+        issued.AddRange(db.WarehouseIssueItems.Where(i => oldLotIds.Contains(i.WoodLotId)).Select(i => i.WoodLotId));
+        issued = issued.Distinct().ToList();
+        if (issued.Count > 0)
+            throw new InvalidOperationException(
+                $"Phiếu có kiện đã phát sinh xuất kho ({string.Join(", ", issued)}) nên không thể chỉnh sửa.");
+
+        foreach (var lot in updated.Lots)
+            if (!oldLotIds.Contains(lot.Id) && db.WoodLots.Any(l => l.Id == lot.Id))
+                throw new InvalidOperationException($"Mã kiện {lot.Id} đã tồn tại trong hệ thống.");
+
+        // Xóa toàn bộ kiện cũ + cập nhật header (lưu trước để tránh trùng khóa khi tái sử dụng mã kiện)
+        db.WoodLots.RemoveRange(existing.Lots);
+        existing.SupplierId = updated.SupplierId;
+        existing.Date = updated.Date;
+        existing.Invoice = updated.Invoice;
+        existing.PackingList = updated.PackingList;
+        existing.Status = updated.Status;
+        db.SaveChanges();
+
+        foreach (var lot in updated.Lots)
+        {
+            lot.ReceiptId = existing.Id;
+            db.WoodLots.Add(lot);
+        }
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa phiếu nhập (cascade xóa các kiện). Chặn nếu có kiện đã phát sinh xuất kho.</summary>
+    public static void DeleteReceipt(string id)
+    {
+        using var db = new AppDbContext();
+        var receipt = db.WarehouseReceipts.Include(r => r.Lots).FirstOrDefault(r => r.Id == id);
+        if (receipt == null) return;
+
+        var lotIds = receipt.Lots.Select(l => l.Id).ToList();
+        var issued = db.WarehouseIssueItems.Where(i => lotIds.Contains(i.WoodLotId))
+                       .Select(i => i.WoodLotId).Distinct().ToList();
+        if (issued.Count > 0)
+            throw new InvalidOperationException(
+                $"Phiếu có kiện đã xuất kho ({string.Join(", ", issued)}) nên không thể xóa.");
+
+        db.WarehouseReceipts.Remove(receipt);
         db.SaveChanges();
         Commit();
     }

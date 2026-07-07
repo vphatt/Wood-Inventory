@@ -1,0 +1,139 @@
+<UserControl x:Class="TimberFlowDesktop.Views.WoodSubCategoriesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="12">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
+        <StackPanel Margin="24">
+
+            <!-- Tiêu đề + quay lại + nút thêm -->
+            <Grid Margin="0,0,0,20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource BtnLink}" Click="BtnBack_Click" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,4,0"/>
+                                <TextBlock Text="Danh sách loại gỗ"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TitleName" Text="Phân loại" FontSize="17" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock x:Name="Subtitle" FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Click="BtnToggleAdd_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock Text="Thêm phân loại"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- ===== Form thêm/sửa/xem phân loại ===== -->
+            <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24" Visibility="Collapsed">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="FormTitle" Text="Thêm Phân Loại Mới" FontSize="13" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                            <TextBlock Text="TÊN PHÂN LOẠI" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FName" Style="{StaticResource Input}" TextChanged="FName_Changed"/>
+                            <TextBlock x:Name="WName" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu phân loại"
+                                Margin="8,0,0,0" Click="BtnSave_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Thanh tìm kiếm ===== -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <Grid Width="300">
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                             Background="White" TextChanged="Filter_Changed"/>
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                               Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
+                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    <TextBlock x:Name="SearchHint" Text="Tìm tên phân loại..." FontSize="12"
+                               Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
+                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- ===== Bảng phân loại con ===== -->
+            <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom" Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
+                            BorderThickness="0,1,0,0" Padding="24,10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Tổng số phân loại:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TotalCount" Text="0" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                       Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid>
+                        <DataGrid x:Name="SubGrid" Style="{StaticResource DataTable}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TÊN PHÂN LOẠI" Binding="{Binding Name}" Width="*" MinWidth="200">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTemplateColumn Header="THAO TÁC" Width="150" MinWidth="130"
+                                                        CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
+                                                    <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Style="{StaticResource BtnIcon}" ToolTip="Chỉnh sửa"
+                                                        Margin="8,0,0,0" Click="EditRow_Click">
+                                                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa phân loại"
+                                                        Margin="8,0,0,0" Click="DeleteRow_Click">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="EmptyRow" Text="Loại gỗ này chưa có phân loại con nào."
+                                   Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -205,7 +205,7 @@ public partial class IssuesView : UserControl, IModuleView
         foreach (var lot in availableLots)
             lotCombo.Items.Add(new ComboBoxItem
             {
-                Content = $"{lot.Id} ({lot.WoodType} - {lot.Quantity} thanh còn)",
+                Content = $"{lot.Id} ({lot.WoodType}{(string.IsNullOrWhiteSpace(lot.WoodSubType) ? "" : " · " + lot.WoodSubType)} - {lot.Quantity} thanh còn)",
                 Tag = lot.Id,
                 IsSelected = lot.Id == item.WoodLotId
             });

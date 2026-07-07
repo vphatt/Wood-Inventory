@@ -86,7 +86,7 @@
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
                         <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu nhà cung cấp"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>

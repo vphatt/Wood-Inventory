@@ -210,10 +210,15 @@ public partial class LotsView : UserControl, IModuleView
 
         DetailPanel.Visibility = Visibility.Visible;
         DetailTitle.Text = $"Truy xuất kiện: {lot.Id}";
-        DWoodType.Text = lot.WoodType;
+        DWoodType.Text = string.IsNullOrWhiteSpace(lot.WoodSubType)
+            ? lot.WoodType
+            : $"{lot.WoodType} · {lot.WoodSubType}";
         DGrade.Text = lot.Grade;
-        DSpec.Text = $"{Fmt.Num(lot.ThicknessMm)} x {Fmt.Num(lot.WidthMm)} x {Fmt.Num(lot.LengthMm)}";
         var isPoplarLot = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
+        // Gỗ footage: quy cách chỉ có độ dày (ưu tiên ký hiệu inch); loại khác: Dày x Rộng x Dài.
+        DSpec.Text = isPoplarLot
+            ? "Dày " + (string.IsNullOrWhiteSpace(lot.ThicknessNote) ? $"{Fmt.Num(lot.ThicknessMm)}mm" : lot.ThicknessNote)
+            : $"{Fmt.Num(lot.ThicknessMm)} x {Fmt.Num(lot.WidthMm)} x {Fmt.Num(lot.LengthMm)}";
         DFootageRow.Visibility = isPoplarLot ? Visibility.Visible : Visibility.Collapsed;
         DFootage.Text = $"{Fmt.Num(lot.Footage)} BFT";
         DLengthNoteRow.Visibility = string.IsNullOrWhiteSpace(lot.LengthNote) ? Visibility.Collapsed : Visibility.Visible;

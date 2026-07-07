@@ -16,6 +16,9 @@ public static class DbSeeder
         // nên tự tạo bảng danh mục loại gỗ + thêm cột NCC nếu thiếu (không dùng Migrations).
         EnsureWoodCategoriesTable(context);
         SeedWoodCategories(context);
+        EnsureWoodSubCategoriesTable(context);
+        EnsureWoodSubTypeColumns(context);
+        SeedWoodSubCategories(context);
         EnsureSupplierColumns(context);
         EnsureQuotationItemColumns(context);
         EnsureWoodLotColumns(context);
@@ -172,6 +175,75 @@ public static class DbSeeder
             """CREATE UNIQUE INDEX IF NOT EXISTS "IX_WoodCategories_Name" ON "WoodCategories" ("Name");""");
     }
 
+    /// <summary>Tạo bảng WoodSubCategories (phân loại con) cho DB cũ nếu chưa có.</summary>
+    private static void EnsureWoodSubCategoriesTable(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS "WoodSubCategories" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_WoodSubCategories" PRIMARY KEY,
+                "CategoryId" TEXT NOT NULL,
+                "Name" TEXT NOT NULL,
+                CONSTRAINT "FK_WoodSubCategories_WoodCategories_CategoryId"
+                    FOREIGN KEY ("CategoryId") REFERENCES "WoodCategories" ("Id") ON DELETE CASCADE
+            );
+            """);
+        context.Database.ExecuteSqlRaw(
+            """CREATE UNIQUE INDEX IF NOT EXISTS "IX_WoodSubCategories_CategoryId_Name" ON "WoodSubCategories" ("CategoryId", "Name");""");
+    }
+
+    /// <summary>Thêm cột WoodSubType (phân loại con) vào WoodLots + QuotationItems cũ nếu thiếu.</summary>
+    private static void EnsureWoodSubTypeColumns(AppDbContext context)
+    {
+        AddColumnIfMissing(context, "WoodLots", "WoodSubType", "TEXT");
+        AddColumnIfMissing(context, "QuotationItems", "WoodSubType", "TEXT");
+    }
+
+    /// <summary>Thêm 1 cột vào bảng nếu chưa có (SQLite không hỗ trợ ADD COLUMN IF NOT EXISTS).</summary>
+    private static void AddColumnIfMissing(AppDbContext context, string table, string column, string sqlType)
+    {
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var conn = context.Database.GetDbConnection();
+        var openedHere = conn.State != System.Data.ConnectionState.Open;
+        if (openedHere) conn.Open();
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"PRAGMA table_info('{table}');";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                existing.Add(reader.GetString(1)); // cột index 1 = tên cột
+        }
+        finally
+        {
+            if (openedHere) conn.Close();
+        }
+
+        if (existing.Count > 0 && !existing.Contains(column))
+            // table/column/sqlType là hằng số nội bộ (không phải input người dùng) nên an toàn.
+#pragma warning disable EF1002
+            context.Database.ExecuteSqlRaw($"""ALTER TABLE "{table}" ADD COLUMN "{column}" {sqlType};""");
+#pragma warning restore EF1002
+    }
+
+    /// <summary>Seed vài phân loại con mẫu (chỉ khi bảng rỗng).</summary>
+    private static void SeedWoodSubCategories(AppDbContext context)
+    {
+        if (context.WoodSubCategories.Any()) return;
+
+        context.WoodSubCategories.AddRange(
+            // Gỗ Thông
+            new WoodSubCategory { Id = "SUB-001", CategoryId = "CAT-004", Name = "Thông trắng" },
+            new WoodSubCategory { Id = "SUB-002", CategoryId = "CAT-004", Name = "Thông vàng" },
+            // Gỗ Dương
+            new WoodSubCategory { Id = "SUB-003", CategoryId = "CAT-002", Name = "1 com" },
+            new WoodSubCategory { Id = "SUB-004", CategoryId = "CAT-002", Name = "2 com" },
+            // Gỗ Sồi
+            new WoodSubCategory { Id = "SUB-005", CategoryId = "CAT-001", Name = "Sồi trắng" },
+            new WoodSubCategory { Id = "SUB-006", CategoryId = "CAT-001", Name = "Sồi đỏ" });
+        context.SaveChanges();
+    }
+
     /// <summary>Gộp báo giá về 1/NCC cho DB cũ (từng chia phiên bản): giữ bản active/mới nhất, xóa phần thừa.</summary>
     private static void MergeQuotationsPerSupplier(AppDbContext context)
     {
@@ -260,8 +332,14 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "Origin" TEXT;""");
 
         if (existing.Contains("Thickness"))
+        {
             context.Database.ExecuteSqlRaw(
                 """UPDATE "QuotationItems" SET "ThicknessMin" = "Thickness", "ThicknessMax" = "Thickness" WHERE "ThicknessMin" IS NULL AND "Thickness" IS NOT NULL;""");
+            // Cột "Thickness" cũ (single value, REAL NOT NULL) không còn dùng nhưng vẫn NOT NULL →
+            // mọi INSERT mục giá mới sẽ vỡ ràng buộc. Bỏ hẳn cột (SQLite 3.35+, bundle của EF hỗ trợ DROP COLUMN).
+            try { context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" DROP COLUMN "Thickness";"""); }
+            catch { /* DB quá cũ không hỗ trợ DROP COLUMN — bỏ qua, khôi phục thủ công nếu cần */ }
+        }
     }
 
     /// <summary>Thêm cột LengthNote vào bảng WoodLots cũ nếu thiếu (SQLite không có ADD COLUMN IF NOT EXISTS).</summary>
@@ -286,6 +364,10 @@ public static class DbSeeder
 
         if (existing.Count > 0 && !existing.Contains("LengthNote"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "LengthNote" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("ThicknessNote"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "ThicknessNote" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("Origin"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "Origin" TEXT;""");
     }
 
     /// <summary>Seed các loại gỗ mặc định (chỉ khi bảng rỗng). Gỗ Dương tính theo Footage, còn lại theo quy cách.</summary>

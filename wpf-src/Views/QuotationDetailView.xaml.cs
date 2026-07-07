@@ -17,6 +17,10 @@ public partial class QuotationDetailView : UserControl
     {
         public QuotationItem Item { get; }
         public string WoodType => Item.WoodType;
+        public string SubType => Item.WoodSubType;
+        public string WoodTypeDisplay => string.IsNullOrWhiteSpace(Item.WoodSubType)
+            ? Item.WoodType
+            : $"{Item.WoodType} · {Item.WoodSubType}";
         public string Grade => Item.Grade;
         public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "Bất kỳ" : Item.Grade;
         public string ThicknessText => Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
@@ -52,7 +56,20 @@ public partial class QuotationDetailView : UserControl
         FWoodType.Items.Clear();
         foreach (var name in AppState.CategoryNames)
             FWoodType.Items.Add(new ComboBoxItem { Content = name, Tag = name });
+        FWoodType.SelectionChanged += (_, _) =>
+            PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
+        FWoodSubType.SelectionChanged += (_, _) => WSubType.Visibility = Visibility.Collapsed;
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
+    }
+
+    /// <summary>Đổ danh sách phân loại con theo loại gỗ cha (nối tầng), chọn sẵn <paramref name="selectSub"/>.</summary>
+    private void PopulateSubCombo(string woodType, string selectSub = null)
+    {
+        FWoodSubType.Items.Clear();
+        FWoodSubType.Items.Add(new ComboBoxItem { Content = "— Không phân loại —", Tag = "" });
+        foreach (var s in AppState.SubNamesOf(woodType))
+            FWoodSubType.Items.Add(new ComboBoxItem { Content = s, Tag = s });
+        SelectByTag(FWoodSubType, selectSub ?? "");
     }
 
     public void RefreshView()
@@ -123,7 +140,8 @@ public partial class QuotationDetailView : UserControl
     private static void ShowWarn(TextBlock w, string msg) { w.Text = msg; w.Visibility = Visibility.Visible; }
 
     private void ClearWarnings() =>
-        WThickRange.Visibility = WWidthRange.Visibility = WLengthRange.Visibility = WPrice.Visibility = Visibility.Collapsed;
+        WThickRange.Visibility = WWidthRange.Visibility = WLengthRange.Visibility
+            = WPrice.Visibility = WSubType.Visibility = Visibility.Collapsed;
 
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
@@ -166,7 +184,7 @@ public partial class QuotationDetailView : UserControl
         var bg = ro ? (Brush)FindResource("Slate50") : Brushes.White;
         FGrade.Background = FOrigin.Background = FSpec.Background = FPrice.Background = bg;
         FThickMin.Background = FThickMax.Background = FWidthMin.Background = FWidthMax.Background = FLengthMin.Background = FLengthMax.Background = bg;
-        FWoodType.IsEnabled = !ro;
+        FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
     }
 
     private void EnterAddMode()
@@ -177,7 +195,9 @@ public partial class QuotationDetailView : UserControl
         SetReadOnly(false);
         FormTitle.Text = "Thêm Mục Giá Mới";
         FormSaveBtn.Content = "Lưu mục giá";
+        FormCancelBtn.Content = "Hủy bỏ";
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
+        PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
         FGrade.Text = FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
     }
@@ -187,6 +207,7 @@ public partial class QuotationDetailView : UserControl
     private void FillForm(QuotationItem it)
     {
         SelectByTag(FWoodType, it.WoodType);
+        PopulateSubCombo(it.WoodType, it.WoodSubType);
         FGrade.Text = it.Grade;
         FOrigin.Text = it.Origin;
         FThickMin.Text = NumOrBlank(it.ThicknessMin);
@@ -208,6 +229,7 @@ public partial class QuotationDetailView : UserControl
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({Fmt.Range(it.ThicknessMin, it.ThicknessMax)})";
         FormSaveBtn.Content = "Chỉnh sửa";
+        FormCancelBtn.Content = "Hủy bỏ";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -218,6 +240,7 @@ public partial class QuotationDetailView : UserControl
         SetReadOnly(false);
         FormTitle.Text = "Sửa Mục Giá";
         FormSaveBtn.Content = "Cập nhật";
+        FormCancelBtn.Content = "Hủy sửa";
         FGrade.Focus();
     }
 
@@ -234,9 +257,26 @@ public partial class QuotationDetailView : UserControl
 
     private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
     {
+        // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
+        if (_mode == "edit")
+        {
+            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            var it = AppState.FindQuotation(_supplier.Id)?.Items.FirstOrDefault(i => i.Id == _editingId);
+            if (it != null) { EnterViewMode(it); return; }
+        }
+        // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
+        else if (_mode == "add")
+        {
+            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+        }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
     }
+
+    /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
+    private static bool ConfirmDiscard(string message) =>
+        MessageBox.Show(message, "Xác nhận hủy",
+            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
@@ -250,10 +290,12 @@ public partial class QuotationDetailView : UserControl
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, "Đơn giá phải lớn hơn 0."); ok = false; }
         if (!ok) return;
 
+        // Báo giá: để trống phân loại con = áp cho MỌI con của loại cha (fallback cấp cha) — không bắt buộc.
         var item = new QuotationItem
         {
             Id = _editingId,
             WoodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "",
+            WoodSubType = NullIfBlank((FWoodSubType.SelectedItem as ComboBoxItem)?.Tag as string),
             Grade = NullIfBlank(FGrade.Text),
             ThicknessMin = thickMin,
             ThicknessMax = thickMax,
@@ -275,8 +317,16 @@ public partial class QuotationDetailView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Flatten(ex), "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    /// <summary>Gộp message của toàn bộ chuỗi InnerException để lộ nguyên nhân gốc (vd lỗi SQLite).</summary>
+    private static string Flatten(Exception ex)
+    {
+        var msgs = new List<string>();
+        for (var e = ex; e != null; e = e.InnerException) msgs.Add(e.Message);
+        return string.Join("\n→ ", msgs);
     }
 
     private void ViewRow_Click(object sender, RoutedEventArgs e)

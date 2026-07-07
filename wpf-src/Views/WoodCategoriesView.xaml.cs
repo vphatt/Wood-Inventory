@@ -17,6 +17,8 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         public string Name => Category.Name;
         public string RuleLabel => Category.VolumeRuleLabel;
         public bool IsFootage => Category.VolumeRule == VolumeRule.ByFootage;
+        public int SubCount => AppState.SubCategoriesOf(Category.Id).Count();
+        public string SubCountText => SubCount == 0 ? "Chưa phân loại" : $"{SubCount} phân loại";
         public CatRow(WoodCategory c) => Category = c;
     }
 
@@ -25,6 +27,10 @@ public partial class WoodCategoriesView : UserControl, IModuleView
     private string _mode = "add";   // add | view | edit
     private readonly List<CatRow> _rows = new();
     private ICollectionView _view;
+
+    private WoodSubCategoriesView _detailView;
+    private WoodCategory _detailCategory;
+    private MainWindow Main => Window.GetWindow(this) as MainWindow;
 
     public WoodCategoriesView()
     {
@@ -78,6 +84,14 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     public void RefreshView()
     {
+        if (_detailView != null && _detailCategory != null)
+        {
+            // Đang ở trang phân loại con → cập nhật nó + giữ breadcrumb khi quay lại tab
+            _detailView.RefreshView();
+            Main?.SetBreadcrumbDetail(_detailCategory.Name, BackToList);
+            return;
+        }
+
         _rows.Clear();
         foreach (var c in AppState.Categories) _rows.Add(new CatRow(c));
 
@@ -118,6 +132,38 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         EmptyRow.Visibility = n == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    // ---------------- Điều hướng list <-> phân loại con ----------------
+
+    private void OpenSubs_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is CatRow r) OpenDetail(r.Category);
+    }
+
+    private void OpenDetail(WoodCategory cat)
+    {
+        // Đóng form thêm/sửa loại cha (nếu đang mở) trước khi vào trang con
+        AddFormPanel.Visibility = Visibility.Collapsed;
+        EnterAddMode();
+
+        _detailCategory = cat;
+        _detailView = new WoodSubCategoriesView(cat, BackToList);
+        DetailHost.Content = _detailView;
+        ListRoot.Visibility = Visibility.Collapsed;
+        DetailHost.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail(cat.Name, BackToList);
+    }
+
+    private void BackToList()
+    {
+        _detailView = null;
+        _detailCategory = null;
+        DetailHost.Content = null;
+        DetailHost.Visibility = Visibility.Collapsed;
+        ListRoot.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail(null);
+        RefreshView();
+    }
+
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is CatRow row) EnterViewMode(row.Category);
@@ -146,6 +192,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         SetReadOnly(false);
         FormTitle.Text = "Khai Báo Loại Gỗ Mới";
         FormSaveBtn.Content = "Lưu loại gỗ";
+        FormCancelBtn.Content = "Hủy bỏ";
         FName.Text = "";
         SelectRule(VolumeRule.BySpecification);
     }
@@ -160,6 +207,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Loại Gỗ — {cat.Name}";
         FormSaveBtn.Content = "Chỉnh sửa";
+        FormCancelBtn.Content = "Hủy bỏ";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -171,6 +219,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         SetReadOnly(false);
         FormTitle.Text = $"Sửa Loại Gỗ — {FName.Text}";
         FormSaveBtn.Content = "Cập nhật";
+        FormCancelBtn.Content = "Hủy sửa";
         FName.Focus();
         FName.SelectAll();
     }
@@ -205,9 +254,26 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
     {
+        // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
+        if (_mode == "edit")
+        {
+            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            var cat = AppState.Categories.FirstOrDefault(c => c.Id == _editingId);
+            if (cat != null) { EnterViewMode(cat); return; }
+        }
+        // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
+        else if (_mode == "add")
+        {
+            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+        }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
     }
+
+    /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
+    private static bool ConfirmDiscard(string message) =>
+        MessageBox.Show(message, "Xác nhận hủy",
+            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {

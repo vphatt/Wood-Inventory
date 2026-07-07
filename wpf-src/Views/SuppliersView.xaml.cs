@@ -105,6 +105,7 @@ public partial class SuppliersView : UserControl, IModuleView
         SetReadOnly(false);
         FormTitle.Text = "Khai Báo Nhà Cung Cấp Mới";
         FormSaveBtn.Content = "Lưu nhà cung cấp";
+        FormCancelBtn.Content = "Hủy bỏ";
         FName.Text = FCode.Text = FTaxCode.Text = FAddress.Text = FPhone.Text = FBankAccount.Text = "";
     }
 
@@ -122,6 +123,7 @@ public partial class SuppliersView : UserControl, IModuleView
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Nhà Cung Cấp — {s.Name}";
         FormSaveBtn.Content = "Chỉnh sửa";
+        FormCancelBtn.Content = "Hủy bỏ";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -133,6 +135,7 @@ public partial class SuppliersView : UserControl, IModuleView
         SetReadOnly(false);
         FormTitle.Text = $"Sửa Nhà Cung Cấp — {FName.Text}";
         FormSaveBtn.Content = "Cập nhật";
+        FormCancelBtn.Content = "Hủy sửa";
         FName.Focus();
         FName.SelectAll();
     }
@@ -168,9 +171,26 @@ public partial class SuppliersView : UserControl, IModuleView
 
     private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
     {
+        // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
+        if (_mode == "edit")
+        {
+            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            var s = AppState.FindSupplier(_editingId);
+            if (s != null) { EnterViewMode(s); return; }
+        }
+        // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
+        else if (_mode == "add")
+        {
+            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+        }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
     }
+
+    /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
+    private static bool ConfirmDiscard(string message) =>
+        MessageBox.Show(message, "Xác nhận hủy",
+            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
