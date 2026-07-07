@@ -1,0 +1,350 @@
+using Microsoft.EntityFrameworkCore;
+using TimberFlowDesktop.Domain;
+
+namespace TimberFlowDesktop.Data;
+
+/// <summary>
+/// Kho dữ liệu dùng chung của ứng dụng: nạp toàn bộ từ SQLite vào bộ nhớ
+/// và cung cấp các nghiệp vụ ghi (thêm kiện, lập phiếu, báo giá...).
+/// Sau mỗi thao tác ghi, gọi <see cref="Reload"/> rồi phát sự kiện <see cref="Changed"/>.
+/// </summary>
+public static class AppState
+{
+    public static List<Supplier> Suppliers { get; private set; } = new();
+    public static List<WoodCategory> Categories { get; private set; } = new();
+    public static List<WoodQuotation> Quotations { get; private set; } = new();
+    public static List<WoodLot> Lots { get; private set; } = new();
+    public static List<WarehouseReceipt> Receipts { get; private set; } = new();
+    public static List<WarehouseIssue> Issues { get; private set; } = new();
+    public static List<Order> Orders { get; private set; } = new();
+
+    /// <summary>Bắn ra sau mỗi thay đổi dữ liệu để các màn hình tự làm mới.</summary>
+    public static event Action Changed;
+
+    public static int LowStockCount => Lots.Count(l => l.Quantity <= 30 && l.Quantity > 0);
+
+    public static void Initialize()
+    {
+        using var db = new AppDbContext();
+        DbSeeder.Seed(db);
+        Reload();
+    }
+
+    public static void Reload()
+    {
+        using var db = new AppDbContext();
+        Categories = db.WoodCategories.AsNoTracking().OrderBy(c => c.Name).ToList();
+        Suppliers = db.Suppliers.AsNoTracking().OrderBy(s => s.Id).ToList();
+        Quotations = db.WoodQuotations.AsNoTracking().Include(q => q.Items)
+                       .OrderByDescending(q => q.EffectiveDate).ToList();
+        Lots = db.WoodLots.AsNoTracking().OrderBy(l => l.ImportDate).ThenBy(l => l.Id).ToList();
+        Receipts = db.WarehouseReceipts.AsNoTracking().Include(r => r.Lots)
+                     .OrderByDescending(r => r.Date).ToList();
+        Issues = db.WarehouseIssues.AsNoTracking().Include(i => i.Items)
+                   .OrderByDescending(i => i.Date).ToList();
+        Orders = db.Orders.AsNoTracking().OrderBy(o => o.Date).ToList();
+    }
+
+    private static void Commit()
+    {
+        Reload();
+        Changed?.Invoke();
+    }
+
+    public static Supplier FindSupplier(string id) => Suppliers.FirstOrDefault(s => s.Id == id);
+
+    /// <summary>Tên các loại gỗ (dùng cho dropdown thay cho danh sách hardcode).</summary>
+    public static IEnumerable<string> CategoryNames => Categories.Select(c => c.Name);
+
+    /// <summary>
+    /// Nguyên tắc tính m³ của một loại gỗ theo tên. Nếu chưa có trong danh mục thì
+    /// suy đoán tạm theo tên (Gỗ Dương → Footage) để không vỡ dữ liệu cũ.
+    /// </summary>
+    public static VolumeRule GetVolumeRule(string woodTypeName)
+    {
+        var cat = Categories.FirstOrDefault(c =>
+            string.Equals(c.Name, woodTypeName?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (cat != null) return cat.VolumeRule;
+
+        var n = (woodTypeName ?? "").Trim().ToLowerInvariant();
+        return n.Contains("dương") || n.Contains("duong") || n.Contains("poplar")
+            ? VolumeRule.ByFootage
+            : VolumeRule.BySpecification;
+    }
+
+    // ---------------- Nghiệp vụ: Nhà cung cấp ----------------
+
+    private static void ValidateSupplier(Supplier s)
+    {
+        if (string.IsNullOrWhiteSpace(s.Name))
+            throw new InvalidOperationException("Vui lòng nhập Tên nhà cung cấp.");
+        if (string.IsNullOrWhiteSpace(s.Code))
+            throw new InvalidOperationException("Vui lòng nhập Tên gọi tắt.");
+        if (string.IsNullOrWhiteSpace(s.TaxCode))
+            throw new InvalidOperationException("Vui lòng nhập Mã số thuế.");
+    }
+
+    /// <summary>Thêm nhà cung cấp mới. Chặn trùng Tên gọi tắt (Code).</summary>
+    public static void AddSupplier(Supplier supplier)
+    {
+        ValidateSupplier(supplier);
+        using var db = new AppDbContext();
+        var code = supplier.Code.Trim();
+        if (db.Suppliers.Any(x => x.Code.ToLower() == code.ToLower()))
+            throw new InvalidOperationException($"Tên gọi tắt \"{code}\" đã tồn tại. Vui lòng dùng tên khác.");
+
+        supplier.Code = code;
+        supplier.Name = supplier.Name.Trim();
+        supplier.TaxCode = supplier.TaxCode.Trim();
+        db.Suppliers.Add(supplier);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Sửa nhà cung cấp. Chặn trùng Tên gọi tắt với NCC khác.</summary>
+    public static void UpdateSupplier(Supplier supplier)
+    {
+        ValidateSupplier(supplier);
+        using var db = new AppDbContext();
+        var existing = db.Suppliers.Find(supplier.Id);
+        if (existing == null) return;
+
+        var code = supplier.Code.Trim();
+        if (db.Suppliers.Any(x => x.Id != supplier.Id && x.Code.ToLower() == code.ToLower()))
+            throw new InvalidOperationException($"Tên gọi tắt \"{code}\" đã tồn tại. Vui lòng dùng tên khác.");
+
+        existing.Code = code;
+        existing.Name = supplier.Name.Trim();
+        existing.TaxCode = supplier.TaxCode.Trim();
+        existing.Address = supplier.Address?.Trim();
+        existing.Phone = supplier.Phone?.Trim();
+        existing.BankAccount = supplier.BankAccount?.Trim();
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa nhà cung cấp. Chặn nếu đang được dùng bởi kiện gỗ / báo giá / phiếu nhập.</summary>
+    public static void DeleteSupplier(string id)
+    {
+        using var db = new AppDbContext();
+        var s = db.Suppliers.Find(id);
+        if (s == null) return;
+
+        if (db.WoodLots.Any(l => l.SupplierId == id)
+            || db.WoodQuotations.Any(q => q.SupplierId == id)
+            || db.WarehouseReceipts.Any(r => r.SupplierId == id))
+            throw new InvalidOperationException(
+                $"Nhà cung cấp \"{s.Name}\" đang được dùng bởi kiện gỗ / báo giá / phiếu nhập nên không thể xóa.");
+
+        db.Suppliers.Remove(s);
+        db.SaveChanges();
+        Commit();
+    }
+
+    // ---------------- Nghiệp vụ: Phân loại gỗ ----------------
+
+    /// <summary>Thêm loại gỗ mới. Chặn trùng tên (không phân biệt hoa thường).</summary>
+    public static void AddCategory(WoodCategory category)
+    {
+        using var db = new AppDbContext();
+        var name = category.Name?.Trim() ?? "";
+        if (db.WoodCategories.Any(c => c.Name.ToLower() == name.ToLower()))
+            throw new InvalidOperationException($"Loại gỗ \"{name}\" đã tồn tại trong danh mục.");
+        category.Name = name;
+        db.WoodCategories.Add(category);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>
+    /// Sửa loại gỗ có sẵn. Nếu đổi tên → cascade cập nhật WoodType của mọi kiện gỗ và
+    /// dòng báo giá đang dùng tên cũ (giữ toàn vẹn dữ liệu). Chặn trùng tên với loại khác.
+    /// </summary>
+    public static void UpdateCategory(string id, string newName, VolumeRule newRule)
+    {
+        using var db = new AppDbContext();
+        var cat = db.WoodCategories.Find(id);
+        if (cat == null) return;
+
+        newName = newName?.Trim() ?? "";
+        if (newName.Length == 0)
+            throw new InvalidOperationException("Tên loại gỗ không được để trống.");
+        if (db.WoodCategories.Any(c => c.Id != id && c.Name.ToLower() == newName.ToLower()))
+            throw new InvalidOperationException($"Loại gỗ \"{newName}\" đã tồn tại trong danh mục.");
+
+        var oldName = cat.Name;
+        if (!string.Equals(oldName, newName, StringComparison.Ordinal))
+        {
+            foreach (var lot in db.WoodLots.Where(l => l.WoodType == oldName))
+                lot.WoodType = newName;
+            foreach (var qi in db.QuotationItems.Where(i => i.WoodType == oldName))
+                qi.WoodType = newName;
+        }
+
+        cat.Name = newName;
+        cat.VolumeRule = newRule;
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa loại gỗ. Chặn nếu đang có kiện gỗ dùng loại này (bảo vệ toàn vẹn).</summary>
+    public static void DeleteCategory(string id)
+    {
+        using var db = new AppDbContext();
+        var cat = db.WoodCategories.Find(id);
+        if (cat == null) return;
+        if (db.WoodLots.Any(l => l.WoodType == cat.Name))
+            throw new InvalidOperationException(
+                $"Loại gỗ \"{cat.Name}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.");
+        db.WoodCategories.Remove(cat);
+        db.SaveChanges();
+        Commit();
+    }
+
+    // ---------------- Nghiệp vụ ----------------
+
+    /// <summary>Khai báo kiện gỗ thủ công.</summary>
+    public static void AddLot(WoodLot lot)
+    {
+        using var db = new AppDbContext();
+        if (db.WoodLots.Any(l => l.Id == lot.Id))
+            throw new InvalidOperationException($"Mã kiện {lot.Id} đã tồn tại trong hệ thống.");
+
+        // Phiếu nhập thủ công dùng chung mã REC-MANUAL — tạo nếu chưa có
+        if (!string.IsNullOrEmpty(lot.ReceiptId) && !db.WarehouseReceipts.Any(r => r.Id == lot.ReceiptId))
+        {
+            db.WarehouseReceipts.Add(new WarehouseReceipt
+            {
+                Id = lot.ReceiptId,
+                SupplierId = lot.SupplierId,
+                Date = lot.ImportDate,
+                Invoice = lot.Invoice,
+                PackingList = lot.PackingList,
+                Status = "completed"
+            });
+        }
+        db.WoodLots.Add(lot);
+        db.SaveChanges();
+        Commit();
+    }
+
+    public static void DeleteLot(string id)
+    {
+        using var db = new AppDbContext();
+        var lot = db.WoodLots.Find(id);
+        if (lot == null) return;
+        if (db.WarehouseIssueItems.Any(i => i.WoodLotId == id))
+            throw new InvalidOperationException(
+                $"Kiện {id} đã có lịch sử xuất kho (truy xuất nguồn gốc) nên không thể xóa.");
+        db.WoodLots.Remove(lot);
+        db.SaveChanges();
+        Commit();
+    }
+
+    // ---------------- Nghiệp vụ: Báo giá (mỗi NCC 1 danh sách, không phiên bản) ----------------
+
+    /// <summary>Báo giá (duy nhất) của một NCC — null nếu chưa có mục nào.</summary>
+    public static WoodQuotation FindQuotation(string supplierId) =>
+        Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
+
+    /// <summary>Số mục giá của một NCC.</summary>
+    public static int QuotationItemCount(string supplierId) =>
+        FindQuotation(supplierId)?.Items.Count ?? 0;
+
+    /// <summary>Lấy báo giá của NCC trong DB, tạo mới (rỗng) nếu chưa có.</summary>
+    private static WoodQuotation GetOrCreate(AppDbContext db, string supplierId)
+    {
+        var q = db.WoodQuotations.Include(x => x.Items).FirstOrDefault(x => x.SupplierId == supplierId);
+        if (q == null)
+        {
+            q = new WoodQuotation
+            {
+                Id = $"QT-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
+                SupplierId = supplierId,
+                EffectiveDate = DateTime.Today,
+                Version = "",       // không dùng phiên bản nữa; "" đảm bảo unique (SupplierId,Version) = 1/NCC
+                IsActive = true
+            };
+            db.WoodQuotations.Add(q);
+        }
+        return q;
+    }
+
+    /// <summary>Thêm một mục giá vào báo giá của NCC (tạo báo giá nếu chưa có).</summary>
+    public static void AddQuotationItem(string supplierId, QuotationItem item)
+    {
+        using var db = new AppDbContext();
+        var q = GetOrCreate(db, supplierId);
+        item.Id = $"QI-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        item.QuotationId = q.Id;
+        q.Items.Add(item);
+        q.EffectiveDate = DateTime.Today;
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Sửa một mục giá.</summary>
+    public static void UpdateQuotationItem(QuotationItem item)
+    {
+        using var db = new AppDbContext();
+        var existing = db.QuotationItems.Find(item.Id);
+        if (existing == null) return;
+        existing.WoodType = item.WoodType;
+        existing.Thickness = item.Thickness;
+        existing.Grade = item.Grade;
+        existing.Specification = item.Specification;
+        existing.PriceUsd = item.PriceUsd;
+        var q = db.WoodQuotations.Find(existing.QuotationId);
+        if (q != null) q.EffectiveDate = DateTime.Today;
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa một mục giá.</summary>
+    public static void DeleteQuotationItem(string itemId)
+    {
+        using var db = new AppDbContext();
+        var item = db.QuotationItems.Find(itemId);
+        if (item == null) return;
+        db.QuotationItems.Remove(item);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa toàn bộ báo giá của một NCC (cascade các mục giá).</summary>
+    public static void DeleteQuotation(string supplierId)
+    {
+        using var db = new AppDbContext();
+        foreach (var q in db.WoodQuotations.Where(q => q.SupplierId == supplierId).ToList())
+            db.WoodQuotations.Remove(q);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Lập phiếu nhập kho kèm danh sách kiện gỗ mới.</summary>
+    public static void AddReceipt(WarehouseReceipt receipt)
+    {
+        using var db = new AppDbContext();
+        var duplicated = receipt.Lots.Select(l => l.Id).FirstOrDefault(id => db.WoodLots.Any(l => l.Id == id));
+        if (duplicated != null)
+            throw new InvalidOperationException($"Mã kiện {duplicated} đã tồn tại trong hệ thống.");
+        db.WarehouseReceipts.Add(receipt);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Lập phiếu xuất kho và khấu trừ tồn kho các kiện tương ứng.</summary>
+    public static void AddIssue(WarehouseIssue issue)
+    {
+        using var db = new AppDbContext();
+        foreach (var item in issue.Items)
+        {
+            var lot = db.WoodLots.Find(item.WoodLotId)
+                ?? throw new InvalidOperationException($"Không tìm thấy kiện {item.WoodLotId}.");
+            lot.IssueInventory(item.Quantity, item.Cbm);
+        }
+        db.WarehouseIssues.Add(issue);
+        db.SaveChanges();
+        Commit();
+    }
+}

@@ -1,0 +1,188 @@
+<UserControl x:Class="TimberFlowDesktop.Views.SuppliersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="12">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
+        <StackPanel Margin="24">
+
+            <!-- Tiêu đề + nút -->
+            <Grid Margin="0,0,0,20">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Quản Lý Nhà Cung Cấp" FontSize="17" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock Text="Danh mục nhà cung cấp gỗ nguyên liệu. Dùng cho báo giá, phiếu nhập và truy xuất nguồn gốc."
+                               FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Click="BtnToggleAdd_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock Text="Thêm nhà cung cấp"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- ===== Form thêm/sửa (ẩn/hiện, đẩy bảng xuống) ===== -->
+            <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="FormTitle" Text="Khai Báo Nhà Cung Cấp Mới" FontSize="13" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Hàng 1 -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="TÊN NHÀ CUNG CẤP *" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FName" Style="{StaticResource Input}" Tag="{Binding ElementName=WName}" TextChanged="Field_Changed"/>
+                            <TextBlock x:Name="WName" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="TÊN GỌI TẮT *" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FCode" Style="{StaticResource Input}" Tag="{Binding ElementName=WCode}" TextChanged="Field_Changed"/>
+                            <TextBlock x:Name="WCode" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+
+                        <!-- Hàng 2 -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="MÃ SỐ THUẾ *" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FTaxCode" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                     Tag="{Binding ElementName=WTaxCode}" TextChanged="Field_Changed"/>
+                            <TextBlock x:Name="WTaxCode" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
+                            <TextBlock Text="ĐỊA CHỈ" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FAddress" Style="{StaticResource Input}"/>
+                        </StackPanel>
+
+                        <!-- Hàng 3 -->
+                        <StackPanel Grid.Row="2" Grid.Column="0">
+                            <TextBlock Text="SỐ ĐIỆN THOẠI" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FPhone" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="2">
+                            <TextBlock Text="SỐ TÀI KHOẢN" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FBankAccount" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu nhà cung cấp"
+                                Margin="8,0,0,0" Click="BtnSave_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Thanh tìm kiếm ===== -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <Grid Width="360">
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                             Background="White" TextChanged="Filter_Changed"/>
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                               Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
+                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    <TextBlock x:Name="SearchHint" Text="Tìm tên, mã số thuế, địa chỉ..." FontSize="12"
+                               Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
+                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- ===== Bảng danh sách nhà cung cấp (DataGrid tương tác) ===== -->
+            <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom" Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
+                            BorderThickness="0,1,0,0" Padding="24,10">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Tổng số nhà cung cấp:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TotalCount" Text="0" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Grid>
+                        <DataGrid x:Name="Grid" Style="{StaticResource DataTable}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="TÊN NHÀ CUNG CẤP" SortMemberPath="Name" Width="2*" MinWidth="240">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource Slate800}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding CodeLabel}" FontSize="10"
+                                                           Foreground="{StaticResource Slate400}" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="MÃ SỐ THUẾ" Binding="{Binding TaxCode}" Width="180" MinWidth="140">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="2.4*" MinWidth="240">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTemplateColumn Header="THAO TÁC" Width="160" MinWidth="150"
+                                                        CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
+                                                    <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa nhà cung cấp"
+                                                        Margin="8,0,0,0" Click="DeleteRow_Click">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="EmptyRow" Text="Không có nhà cung cấp nào khớp tìm kiếm."
+                                   Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

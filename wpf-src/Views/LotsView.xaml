@@ -1,0 +1,478 @@
+<UserControl x:Class="TimberFlowDesktop.Views.LotsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="12">
+    <Grid Background="{StaticResource Slate50}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Thanh công cụ (Odoo style) -->
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource Slate200}"
+                BorderThickness="0,0,0,1" Padding="24,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <Grid Width="256">
+                        <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                                 Background="{StaticResource Slate50}" TextChanged="Filters_Changed"/>
+                        <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
+                                   VerticalAlignment="Center" IsHitTestVisible="False"/>
+                        <TextBlock x:Name="SearchHint" Text="Tìm mã kiện, invoice..." FontSize="12"
+                                   Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
+                                   VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    </Grid>
+                    <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" MinWidth="140"
+                              Margin="12,0,0,0" SelectionChanged="Filters_Changed"/>
+                    <ComboBox x:Name="FilterSupplier" Style="{StaticResource Select}" MinWidth="190" MaxWidth="280"
+                              Margin="12,0,0,0" SelectionChanged="Filters_Changed"/>
+                </StackPanel>
+                <Button x:Name="BtnToggleAdd" Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right"
+                        Click="BtnToggleAdd_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock Text="Khai báo kiện mới"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Vùng nội dung: bảng + panel chi tiết -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24">
+
+                    <!-- ===== Form khai báo kiện thủ công ===== -->
+                    <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                           Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Khai Báo Kiện Gỗ Nguyên Liệu Thủ Công" FontSize="13" FontWeight="Bold"
+                                           Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Hàng 1 -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                                    <TextBlock Text="MÃ KIỆN (LOT ID)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FLotId" Style="{StaticResource Input}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
+                                    <TextBlock Text="NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="FSupplier" Style="{StaticResource Select}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14">
+                                    <TextBlock Text="LOẠI GỖ" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"
+                                              SelectionChanged="FWoodType_Changed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="6" Margin="0,0,0,14">
+                                    <TextBlock Text="CHẤT LƯỢNG (GRADE)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FGrade" Style="{StaticResource Input}" Text="FAS"/>
+                                </StackPanel>
+
+                                <!-- Hàng 2 -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
+                                    <TextBlock Text="ĐỘ DÀY (MM)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FThickness" Style="{StaticResource Input}" Text="26"
+                                             TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PWidth" Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
+                                    <TextBlock Text="CHIỀU RỘNG (MM)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FWidth" Style="{StaticResource Input}" Text="150"
+                                             TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PLength" Grid.Row="1" Grid.Column="4" Margin="0,0,0,14">
+                                    <TextBlock Text="CHIỀU DÀI (MM)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FLength" Style="{StaticResource Input}" Text="2400"
+                                             TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PFootage" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3"
+                                            Margin="0,0,0,14" Visibility="Collapsed">
+                                    <TextBlock Text="FOOTAGE (BFT - BOARD FEET)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FFootage" Style="{StaticResource Input}" Text="0"
+                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="6" Margin="0,0,0,14">
+                                    <TextBlock Text="SỐ LƯỢNG (THANH/TẤM)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FQuantity" Style="{StaticResource Input}" Text="100"
+                                             TextChanged="Calc_Changed"/>
+                                </StackPanel>
+
+                                <!-- Hàng 3: tài chính -->
+                                <StackPanel Grid.Row="2" Grid.Column="0">
+                                    <TextBlock Text="ĐƠN GIÁ USD (PER CBM)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FPriceUsd" Style="{StaticResource Input}" Text="1150"
+                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="2">
+                                    <TextBlock Text="TỶ GIÁ VND/USD" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FExchangeRate" Style="{StaticResource Input}" Text="25400"
+                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="4">
+                                    <TextBlock Text="THUẾ NHẬP KHẨU (%)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FTaxPercent" Style="{StaticResource Input}" Text="10"
+                                             TextChanged="Calc_Changed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="6">
+                                    <TextBlock Text="HÓA ĐƠN (INVOICE)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="FInvoice" Style="{StaticResource Input}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Xem trước tính toán -->
+                            <Border Background="#80EFF6FF" BorderBrush="{StaticResource Blue100}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16,12" Margin="0,16,0,0">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Dữ liệu tính toán tự động:" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource Slate700}" Margin="8,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Foreground="{StaticResource Slate500}" VerticalAlignment="Center" Text="Thể tích: "/>
+                                        <TextBlock x:Name="CalcVolume" Text="0.0000 m³" FontWeight="Bold"
+                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Blue600}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Foreground="{StaticResource Slate500}" Margin="20,0,0,0" VerticalAlignment="Center" Text="Giá vốn (VND/m³): "/>
+                                        <TextBlock x:Name="CalcCost" Text="0 ₫" FontWeight="Bold"
+                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Blue600}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Foreground="{StaticResource Slate500}" Margin="20,0,0,0" VerticalAlignment="Center" Text="Tổng giá trị: "/>
+                                        <TextBlock x:Name="CalcTotal" Text="0 ₫" FontWeight="Bold"
+                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Emerald600}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                                <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                                <Button Style="{StaticResource BtnPrimary}" Content="Xác nhận nhập kho"
+                                        Margin="8,0,0,0" Click="BtnSubmitAdd_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ===== Bảng kiện gỗ (DataGrid tương tác) ===== -->
+                    <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
+                        <DockPanel>
+                            <!-- Footer tổng -->
+                            <Border DockPanel.Dock="Bottom" Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
+                                    BorderThickness="0,1,0,0" Padding="24,10">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Tổng số lượng:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TotalQty" Text="0 thanh" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                                   Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tổng thể tích:" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TotalVol" Text="0.0000 m³" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                                   Foreground="{StaticResource Blue600}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tổng giá trị tồn:" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TotalVal" Text="0 ₫" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                                   Foreground="{StaticResource Emerald600}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Grid>
+                                <DataGrid x:Name="LotGrid" Style="{StaticResource DataTable}"
+                                          SelectionChanged="LotGrid_SelectionChanged">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate900}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTemplateColumn Header="LOẠI GỖ / TÊN KIỆN" SortMemberPath="WoodName" Width="2*" MinWidth="190">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding WoodName}" FontWeight="Medium"
+                                                                   Foreground="{StaticResource Slate800}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding InvoiceLabel}" FontSize="10"
+                                                                   Foreground="{StaticResource Slate400}" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTextColumn Header="DÀY (MM)" Binding="{Binding ThicknessText}" Width="72" SortMemberPath="Thickness">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTemplateColumn Header="RỘNG X DÀI (MM)" Width="130" CanUserSort="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DimText}" FontFamily="{StaticResource FontMono}"
+                                                               Foreground="{StaticResource Slate600}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="S.LƯỢNG TỒN" Width="140" SortMemberPath="Quantity">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="pill" CornerRadius="999" Padding="8,2" Background="{StaticResource Slate100}"
+                                                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="pillText" Text="{Binding QtyText}" FontSize="10"
+                                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Slate700}"/>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLow}" Value="True">
+                                                            <Setter TargetName="pill" Property="Background" Value="{StaticResource Rose50}"/>
+                                                            <Setter TargetName="pillText" Property="Foreground" Value="{StaticResource Rose600}"/>
+                                                            <Setter TargetName="pillText" Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" SortMemberPath="RemainingCbm">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="GIÁ VỐN VND/M³" Binding="{Binding CostText}" Width="120" SortMemberPath="CostPriceVnd">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="GIÁ TRỊ TỒN" Binding="{Binding ValText}" Width="125" SortMemberPath="TotalValueVnd">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Emerald600}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTemplateColumn Header="THAO TÁC" Width="90" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
+                                                            <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa" Margin="6,0,0,0" Click="DeleteRow_Click">
+                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <TextBlock x:Name="EmptyRow" Text="Không tìm thấy kiện gỗ nào khớp bộ lọc."
+                                           Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Panel chi tiết / truy xuất ===== -->
+            <Border x:Name="DetailPanel" Grid.Column="1" Width="320" Background="White"
+                    BorderBrush="{StaticResource Slate200}" BorderThickness="1,0,0,0"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24">
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock x:Name="DetailTitle" Text="Truy xuất kiện:" FontSize="13" FontWeight="Bold"
+                                       Foreground="{StaticResource Slate800}"/>
+                            <Button Style="{StaticResource BtnLink}" Content="Đóng" HorizontalAlignment="Right"
+                                    Foreground="{StaticResource Slate400}" Click="BtnCloseDetail_Click"/>
+                        </Grid>
+                        <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
+
+                        <!-- Thông tin kỹ thuật -->
+                        <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
+                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Thông tin kỹ thuật" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Loại gỗ:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DWoodType" FontWeight="Medium" Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Chất lượng:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DGrade" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Quy cách (mm):" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DSpec" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid x:Name="DFootageRow" Visibility="Collapsed">
+                                    <TextBlock Text="Footage:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DFootage" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Công thức -->
+                        <Border Background="#59EFF6FF" BorderBrush="{StaticResource Blue100}"
+                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Công thức tính thể tích" FontWeight="SemiBold"
+                                               Foreground="{StaticResource Slate700}" Margin="6,0,0,0"/>
+                                </StackPanel>
+                                <Border Background="White" BorderBrush="{StaticResource Slate100}" BorderThickness="1"
+                                        CornerRadius="6" Padding="8">
+                                    <TextBlock x:Name="DFormula" FontSize="11" FontFamily="{StaticResource FontMono}"
+                                               FontStyle="Italic" Foreground="{StaticResource Slate500}"
+                                               TextWrapping="Wrap" LineHeight="17"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Tài chính & thuế -->
+                        <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
+                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Tài chính &amp; Thuế" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Giá mua USD:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DPriceUsd" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Tỷ giá VND/USD:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DExchangeRate" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="Thuế nhập khẩu:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DTax" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource Slate200}" Margin="0,0,0,8"/>
+                                <Grid>
+                                    <TextBlock Text="Giá vốn VND/m³:" FontWeight="SemiBold" Foreground="{StaticResource Slate700}"/>
+                                    <TextBlock x:Name="DCost" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Chứng từ -->
+                        <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
+                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Chứng từ nguồn gốc" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Hóa đơn (Invoice):" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DInvoice" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Packing List:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DPackingList" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid>
+                                    <TextBlock Text="Phiếu nhập gốc:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DReceiptId" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Blue500}" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Lịch sử xuất kho -->
+                        <TextBlock Text="LỊCH SỬ XUẤT KHO (TRACEABILITY)" FontSize="10.5" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate500}" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="DHistoryEmpty" Text="Kiện gỗ chưa từng bị xuất kho. Tồn kho nguyên vẹn."
+                                   FontSize="11" FontStyle="Italic" Foreground="{StaticResource Slate400}"
+                                   TextWrapping="Wrap"/>
+                        <ItemsControl x:Name="DHistoryList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource Slate200}" BorderThickness="1"
+                                            CornerRadius="8" Padding="10,8" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding IssueText}" FontWeight="Bold" Foreground="{StaticResource Slate700}"/>
+                                                <TextBlock Text="{Binding QtyText}" FontWeight="Bold" Foreground="{StaticResource Rose500}"
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding OrderText}" FontSize="11" Foreground="{StaticResource Slate500}"/>
+                                                <TextBlock Text="{Binding CbmText}" FontSize="11" Foreground="{StaticResource Slate500}"
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding DateText}" FontSize="10" Foreground="{StaticResource Slate400}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

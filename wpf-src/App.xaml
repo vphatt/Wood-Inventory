@@ -1,0 +1,510 @@
+<Application x:Class="TimberFlowDesktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- ======= Bảng màu (Tailwind slate/blue/emerald/rose) — khớp bản web ======= -->
+            <SolidColorBrush x:Key="Slate50"  Color="#F8FAFC"/>
+            <SolidColorBrush x:Key="Slate100" Color="#F1F5F9"/>
+            <SolidColorBrush x:Key="Slate150" Color="#E9EEF4"/>
+            <SolidColorBrush x:Key="Slate200" Color="#E2E8F0"/>
+            <SolidColorBrush x:Key="Slate300" Color="#CBD5E1"/>
+            <SolidColorBrush x:Key="Slate400" Color="#94A3B8"/>
+            <SolidColorBrush x:Key="Slate500" Color="#64748B"/>
+            <SolidColorBrush x:Key="Slate600" Color="#475569"/>
+            <SolidColorBrush x:Key="Slate700" Color="#334155"/>
+            <SolidColorBrush x:Key="Slate800" Color="#1E293B"/>
+            <SolidColorBrush x:Key="Slate900" Color="#0F172A"/>
+            <SolidColorBrush x:Key="Slate950" Color="#020617"/>
+
+            <SolidColorBrush x:Key="Blue50"  Color="#EFF6FF"/>
+            <SolidColorBrush x:Key="Blue100" Color="#DBEAFE"/>
+            <SolidColorBrush x:Key="Blue200" Color="#BFDBFE"/>
+            <SolidColorBrush x:Key="Blue300" Color="#93C5FD"/>
+            <SolidColorBrush x:Key="Blue400" Color="#60A5FA"/>
+            <SolidColorBrush x:Key="Blue500" Color="#3B82F6"/>
+            <SolidColorBrush x:Key="Blue600" Color="#2563EB"/>
+            <SolidColorBrush x:Key="Blue700" Color="#1D4ED8"/>
+            <SolidColorBrush x:Key="Blue800" Color="#1E40AF"/>
+            <SolidColorBrush x:Key="BlueSoft" Color="#F5F9FF"/>
+
+            <SolidColorBrush x:Key="Emerald50"  Color="#ECFDF5"/>
+            <SolidColorBrush x:Key="Emerald100" Color="#D1FAE5"/>
+            <SolidColorBrush x:Key="Emerald200" Color="#A7F3D0"/>
+            <SolidColorBrush x:Key="Emerald500" Color="#10B981"/>
+            <SolidColorBrush x:Key="Emerald600" Color="#059669"/>
+
+            <SolidColorBrush x:Key="Indigo50"  Color="#EEF2FF"/>
+            <SolidColorBrush x:Key="Indigo600" Color="#4F46E5"/>
+
+            <SolidColorBrush x:Key="Rose50"  Color="#FFF1F2"/>
+            <SolidColorBrush x:Key="Rose100" Color="#FFE4E6"/>
+            <SolidColorBrush x:Key="Rose200" Color="#FECDD3"/>
+            <SolidColorBrush x:Key="Rose300" Color="#FDA4AF"/>
+            <SolidColorBrush x:Key="Rose400" Color="#FB7185"/>
+            <SolidColorBrush x:Key="Rose500" Color="#F43F5E"/>
+            <SolidColorBrush x:Key="Rose600" Color="#E11D48"/>
+
+            <!-- Sidebar tối -->
+            <SolidColorBrush x:Key="SideBg"     Color="#0F172A"/>
+            <SolidColorBrush x:Key="SideBorder" Color="#1E293B"/>
+            <SolidColorBrush x:Key="SideHover"  Color="#1E293B"/>
+
+            <FontFamily x:Key="FontMono">Consolas</FontFamily>
+            <FontFamily x:Key="FontSans">Segoe UI</FontFamily>
+
+            <!-- ======= Kiểu chữ ======= -->
+            <Style x:Key="THead" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
+            </Style>
+            <Style x:Key="FieldLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
+                <Setter Property="Margin" Value="0,0,0,4"/>
+            </Style>
+
+            <!-- ======= Card (rounded-xl border slate-200) ======= -->
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+            </Style>
+
+            <!-- ======= Nút chính (bg-blue-600, hover blue-700) ======= -->
+            <Style x:Key="BtnPrimary" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource Blue600}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Padding" Value="16,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Blue700}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======= Nút viền (border slate-200, hover slate-50) ======= -->
+            <Style x:Key="BtnGhost" TargetType="Button">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="16,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8">
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate50}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======= Nút link chữ xanh ======= -->
+            <Style x:Key="BtnLink" TargetType="Button">
+                <Setter Property="Foreground" Value="{StaticResource Blue500}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="{StaticResource Blue600}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ======= Nút icon nhỏ (thao tác trong bảng) ======= -->
+            <Style x:Key="BtnIcon" TargetType="Button">
+                <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Padding" Value="4"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="BtnIconDanger" TargetType="Button" BasedOn="{StaticResource BtnIcon}">
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="{StaticResource Rose600}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ======= Ô nhập liệu bo góc ======= -->
+            <Style x:Key="Input" TargetType="TextBox">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Blue500}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <!-- Ô nhập trong bảng (nhỏ gọn hơn) -->
+            <Style x:Key="CellInput" TargetType="TextBox" BasedOn="{StaticResource Input}">
+                <Setter Property="Padding" Value="6,3"/>
+            </Style>
+            <Style x:Key="CellInputMono" TargetType="TextBox" BasedOn="{StaticResource CellInput}">
+                <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            </Style>
+
+            <!-- ======= Text chỉ-đọc nhưng CHỌN & COPY được (dùng cho dialog xem chi tiết) ======= -->
+            <Style x:Key="CopyableText" TargetType="TextBox">
+                <Setter Property="IsReadOnly" Value="True"/>
+                <Setter Property="IsReadOnlyCaretVisible" Value="False"/>
+                <Setter Property="IsTabStop" Value="False"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Cursor" Value="IBeam"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======= Cảnh báo đỏ dưới field (thay MessageBox nhập thiếu) ======= -->
+            <Style x:Key="FieldWarn" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource Rose600}"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Margin" Value="0,5,0,0"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Style>
+
+            <!-- ======= ComboBox bo góc ======= -->
+            <Style x:Key="SelectItem" TargetType="ComboBoxItem">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate100}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Blue50}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="Select" TargetType="ComboBox">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="ItemContainerStyle" Value="{StaticResource SelectItem}"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="toggle" Focusable="False" ClickMode="Press"
+                                              Background="{TemplateBinding Background}"
+                                              IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                    BorderThickness="1" CornerRadius="8"/>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter Margin="10,0,26,0" IsHitTestVisible="False"
+                                                  VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
+                                <Path Data="M 0 0 L 4 4 L 8 0" Stroke="{StaticResource Slate400}" StrokeThickness="1.4"
+                                      HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,1,10,0"
+                                      IsHitTestVisible="False"/>
+                                <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                       AllowsTransparency="True" PopupAnimation="Fade" Focusable="False">
+                                    <Border Background="White" BorderBrush="{StaticResource Slate200}"
+                                            BorderThickness="1" CornerRadius="8" Margin="0,4,8,8"
+                                            MinWidth="{TemplateBinding ActualWidth}" MaxHeight="260">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.12" Color="#0F172A"/>
+                                        </Border.Effect>
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <StackPanel IsItemsHost="True"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======= Thanh tiến trình mini (biểu đồ ngang trên Dashboard) ======= -->
+            <Style x:Key="MiniBar" TargetType="ProgressBar">
+                <Setter Property="Height" Value="8"/>
+                <Setter Property="Background" Value="{StaticResource Slate100}"/>
+                <Setter Property="Foreground" Value="{StaticResource Blue500}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Maximum" Value="100"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ProgressBar">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4"/>
+                                <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}"
+                                        CornerRadius="4" HorizontalAlignment="Left"/>
+                                <Border x:Name="PART_Track" Background="Transparent"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======= Thanh cuộn mảnh (giống ::-webkit-scrollbar 6px) ======= -->
+            <Style x:Key="SlimThumb" TargetType="Thumb">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border x:Name="bd" Background="{StaticResource Slate300}" CornerRadius="3"/>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate400}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style TargetType="ScrollBar">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Width" Value="8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource SlimThumb}" Margin="1"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Width" Value="Auto"/>
+                        <Setter Property="Height" Value="8"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ScrollBar">
+                                    <Grid Background="Transparent">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="False">
+                                            <Track.Thumb>
+                                                <Thumb Style="{StaticResource SlimThumb}" Margin="1"/>
+                                            </Track.Thumb>
+                                        </Track>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ======= DataGrid tương tác (sort / kéo đổi thứ tự / kéo giãn cột / border dọc) ======= -->
+            <!-- Header: template tự vẽ border phải (kẻ dọc giữa cột) + giữ gripper resize + mũi tên sort -->
+            <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="{StaticResource Slate50}"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
+                <Setter Property="FontSize" Value="10.5"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Padding" Value="14,10"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DataGridColumnHeader">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{StaticResource Slate300}"
+                                        BorderThickness="0,0,1,1"
+                                        Padding="{TemplateBinding Padding}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ContentPresenter Grid.Column="0"
+                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                        <Path x:Name="SortArrow" Grid.Column="1" Width="8" Height="6" Margin="8,0,0,0"
+                                              VerticalAlignment="Center" Visibility="Collapsed"
+                                              Fill="{StaticResource Slate400}" Stretch="Fill"
+                                              Data="M 0 4 L 4 0 L 8 4 Z"/>
+                                    </Grid>
+                                </Border>
+                                <Thumb x:Name="PART_LeftHeaderGripper" HorizontalAlignment="Left" Width="8" Cursor="SizeWE">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb"><Border Background="Transparent"/></ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                                <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right" Width="8" Cursor="SizeWE">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb"><Border Background="Transparent"/></ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="SortDirection" Value="Ascending">
+                                    <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="SortDirection" Value="Descending">
+                                    <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="SortArrow" Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                                    <Setter TargetName="SortArrow" Property="RenderTransform">
+                                        <Setter.Value><RotateTransform Angle="180"/></Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Cell: bỏ khung focus nét đứt mặc định, thêm padding -->
+            <Style x:Key="GridCell" TargetType="DataGridCell">
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DataGridCell">
+                            <Border Background="{TemplateBinding Background}" Padding="14,9" SnapsToDevicePixels="True">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Row: hover slate-50, chọn = xanh nhạt -->
+            <Style x:Key="GridRow" TargetType="DataGridRow">
+                <Setter Property="Background" Value="White"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{StaticResource Slate50}"/>
+                    </Trigger>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="#1A3B82F6"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="DataTable" TargetType="DataGrid">
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+                <Setter Property="CanUserAddRows" Value="False"/>
+                <Setter Property="CanUserDeleteRows" Value="False"/>
+                <Setter Property="CanUserReorderColumns" Value="True"/>
+                <Setter Property="CanUserResizeColumns" Value="True"/>
+                <Setter Property="CanUserResizeRows" Value="False"/>
+                <Setter Property="CanUserSortColumns" Value="True"/>
+                <Setter Property="IsReadOnly" Value="True"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="SelectionMode" Value="Single"/>
+                <Setter Property="SelectionUnit" Value="FullRow"/>
+                <Setter Property="GridLinesVisibility" Value="All"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Slate200}"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Slate200}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="RowBackground" Value="White"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="MinRowHeight" Value="46"/>
+                <Setter Property="ColumnHeaderHeight" Value="38"/>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+                <Setter Property="ColumnHeaderStyle" Value="{StaticResource GridHeader}"/>
+                <Setter Property="CellStyle" Value="{StaticResource GridCell}"/>
+                <Setter Property="RowStyle" Value="{StaticResource GridRow}"/>
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

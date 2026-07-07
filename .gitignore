@@ -1,0 +1,15 @@
+# .NET build artifacts
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Output đóng gói (exe self-contained + installer)
+build/
+
+# Cơ sở dữ liệu SQLite phát sinh khi chạy
+*.db
+*.db-shm
+*.db-wal
+
+.DS_Store
+*.log
