@@ -97,7 +97,7 @@ public partial class IssuesView : UserControl, IModuleView
         }
 
         double cbm;
-        if (item.Lot.WoodType == "Gỗ Dương")
+        if (AppState.GetVolumeRule(item.Lot.WoodType) == VolumeRule.ByFootage)
         {
             var proportionateFootage = (double)qty / item.Lot.OriginalQuantity * item.Lot.Footage;
             cbm = Math.Round(proportionateFootage / 1000.0 * 2.36, 4);

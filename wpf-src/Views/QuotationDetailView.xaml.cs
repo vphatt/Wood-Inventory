@@ -17,9 +17,13 @@ public partial class QuotationDetailView : UserControl
     {
         public QuotationItem Item { get; }
         public string WoodType => Item.WoodType;
-        public double Thickness => Item.Thickness;
-        public string ThicknessText => $"{Fmt.Num(Item.Thickness)} mm";
         public string Grade => Item.Grade;
+        public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "Bất kỳ" : Item.Grade;
+        public string ThicknessText => Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
+        public string WidthText => Fmt.Range(Item.WidthMin, Item.WidthMax);
+        public string LengthText => Fmt.Range(Item.LengthMin, Item.LengthMax);
+        public string Origin => Item.Origin;
+        public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? "Bất kỳ" : Item.Origin;
         public string Specification => Item.Specification;
         public decimal Price => Item.PriceUsd;
         public string PriceText => Fmt.Usd(Item.PriceUsd);
@@ -95,6 +99,7 @@ public partial class QuotationDetailView : UserControl
         if (term.Length == 0) return true;
         return (r.WoodType ?? "").ToLowerInvariant().Contains(term)
             || (r.Grade ?? "").ToLowerInvariant().Contains(term)
+            || (r.Origin ?? "").ToLowerInvariant().Contains(term)
             || (r.Specification ?? "").ToLowerInvariant().Contains(term);
     }
 
@@ -118,7 +123,7 @@ public partial class QuotationDetailView : UserControl
     private static void ShowWarn(TextBlock w, string msg) { w.Text = msg; w.Visibility = Visibility.Visible; }
 
     private void ClearWarnings() =>
-        WThickness.Visibility = WGrade.Visibility = WPrice.Visibility = Visibility.Collapsed;
+        WThickRange.Visibility = WWidthRange.Visibility = WLengthRange.Visibility = WPrice.Visibility = Visibility.Collapsed;
 
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
@@ -130,11 +135,37 @@ public partial class QuotationDetailView : UserControl
     private static double D(string s) =>
         double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
+    private static string NullIfBlank(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    /// <summary>Parse 1 cặp Từ/Đến: trống = null (không giới hạn); validate số hợp lệ và Từ &lt;= Đến.</summary>
+    private static bool ValidateRange(string minText, string maxText, TextBlock warn, string label, out double? min, out double? max)
+    {
+        var minOk = TryParseOptional(minText, out min);
+        var maxOk = TryParseOptional(maxText, out max);
+        if (!minOk || !maxOk) { ShowWarn(warn, $"{label}: giá trị không hợp lệ."); return false; }
+        if (min != null && max != null && min > max) { ShowWarn(warn, $"{label}: giá trị 'Từ' phải nhỏ hơn hoặc bằng 'Đến'."); return false; }
+        return true;
+    }
+
+    private static bool TryParseOptional(string text, out double? value)
+    {
+        if (string.IsNullOrWhiteSpace(text)) { value = null; return true; }
+        if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) && v >= 0)
+        {
+            value = v;
+            return true;
+        }
+        value = null;
+        return false;
+    }
+
     private void SetReadOnly(bool ro)
     {
-        FThickness.IsReadOnly = FGrade.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
+        FGrade.IsReadOnly = FOrigin.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
+        FThickMin.IsReadOnly = FThickMax.IsReadOnly = FWidthMin.IsReadOnly = FWidthMax.IsReadOnly = FLengthMin.IsReadOnly = FLengthMax.IsReadOnly = ro;
         var bg = ro ? (Brush)FindResource("Slate50") : Brushes.White;
-        FThickness.Background = FGrade.Background = FSpec.Background = FPrice.Background = bg;
+        FGrade.Background = FOrigin.Background = FSpec.Background = FPrice.Background = bg;
+        FThickMin.Background = FThickMax.Background = FWidthMin.Background = FWidthMax.Background = FLengthMin.Background = FLengthMax.Background = bg;
         FWoodType.IsEnabled = !ro;
     }
 
@@ -147,14 +178,23 @@ public partial class QuotationDetailView : UserControl
         FormTitle.Text = "Thêm Mục Giá Mới";
         FormSaveBtn.Content = "Lưu mục giá";
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
-        FThickness.Text = FGrade.Text = FSpec.Text = FPrice.Text = "";
+        FGrade.Text = FOrigin.Text = FSpec.Text = FPrice.Text = "";
+        FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
     }
+
+    private static string NumOrBlank(double? v) => v.HasValue ? Fmt.Num(v.Value) : "";
 
     private void FillForm(QuotationItem it)
     {
         SelectByTag(FWoodType, it.WoodType);
-        FThickness.Text = Fmt.Num(it.Thickness);
         FGrade.Text = it.Grade;
+        FOrigin.Text = it.Origin;
+        FThickMin.Text = NumOrBlank(it.ThicknessMin);
+        FThickMax.Text = NumOrBlank(it.ThicknessMax);
+        FWidthMin.Text = NumOrBlank(it.WidthMin);
+        FWidthMax.Text = NumOrBlank(it.WidthMax);
+        FLengthMin.Text = NumOrBlank(it.LengthMin);
+        FLengthMax.Text = NumOrBlank(it.LengthMax);
         FSpec.Text = it.Specification;
         FPrice.Text = Fmt.Num((double)it.PriceUsd);
     }
@@ -166,7 +206,7 @@ public partial class QuotationDetailView : UserControl
         ClearWarnings();
         FillForm(it);
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} {Fmt.Num(it.Thickness)}mm";
+        FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({Fmt.Range(it.ThicknessMin, it.ThicknessMax)})";
         FormSaveBtn.Content = "Chỉnh sửa";
         AddFormPanel.Visibility = Visibility.Visible;
     }
@@ -178,7 +218,7 @@ public partial class QuotationDetailView : UserControl
         SetReadOnly(false);
         FormTitle.Text = "Sửa Mục Giá";
         FormSaveBtn.Content = "Cập nhật";
-        FThickness.Focus();
+        FGrade.Focus();
     }
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
@@ -204,8 +244,9 @@ public partial class QuotationDetailView : UserControl
 
         ClearWarnings();
         var ok = true;
-        if (D(FThickness.Text) <= 0) { ShowWarn(WThickness, "Độ dày phải lớn hơn 0."); ok = false; }
-        if (string.IsNullOrWhiteSpace(FGrade.Text)) { ShowWarn(WGrade, "Vui lòng nhập chất lượng (grade)."); ok = false; }
+        if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, "Độ dày", out var thickMin, out var thickMax)) ok = false;
+        if (!ValidateRange(FWidthMin.Text, FWidthMax.Text, WWidthRange, "Rộng", out var widthMin, out var widthMax)) ok = false;
+        if (!ValidateRange(FLengthMin.Text, FLengthMax.Text, WLengthRange, "Dài", out var lengthMin, out var lengthMax)) ok = false;
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, "Đơn giá phải lớn hơn 0."); ok = false; }
         if (!ok) return;
 
@@ -213,9 +254,15 @@ public partial class QuotationDetailView : UserControl
         {
             Id = _editingId,
             WoodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "",
-            Thickness = D(FThickness.Text),
-            Grade = FGrade.Text.Trim(),
-            Specification = string.IsNullOrWhiteSpace(FSpec.Text) ? "Standard" : FSpec.Text.Trim(),
+            Grade = NullIfBlank(FGrade.Text),
+            ThicknessMin = thickMin,
+            ThicknessMax = thickMax,
+            WidthMin = widthMin,
+            WidthMax = widthMax,
+            LengthMin = lengthMin,
+            LengthMax = lengthMax,
+            Origin = NullIfBlank(FOrigin.Text),
+            Specification = NullIfBlank(FSpec.Text),
             PriceUsd = (decimal)D(FPrice.Text)
         };
 
@@ -240,7 +287,7 @@ public partial class QuotationDetailView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
-        var confirm = MessageBox.Show($"Xóa mục giá {r.WoodType} {r.ThicknessText} khỏi báo giá?",
+        var confirm = MessageBox.Show($"Xóa mục giá {r.WoodType} ({r.ThicknessText}) khỏi báo giá?",
             "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 

@@ -203,31 +203,6 @@ public static class AppState
 
     // ---------------- Nghiệp vụ ----------------
 
-    /// <summary>Khai báo kiện gỗ thủ công.</summary>
-    public static void AddLot(WoodLot lot)
-    {
-        using var db = new AppDbContext();
-        if (db.WoodLots.Any(l => l.Id == lot.Id))
-            throw new InvalidOperationException($"Mã kiện {lot.Id} đã tồn tại trong hệ thống.");
-
-        // Phiếu nhập thủ công dùng chung mã REC-MANUAL — tạo nếu chưa có
-        if (!string.IsNullOrEmpty(lot.ReceiptId) && !db.WarehouseReceipts.Any(r => r.Id == lot.ReceiptId))
-        {
-            db.WarehouseReceipts.Add(new WarehouseReceipt
-            {
-                Id = lot.ReceiptId,
-                SupplierId = lot.SupplierId,
-                Date = lot.ImportDate,
-                Invoice = lot.Invoice,
-                PackingList = lot.PackingList,
-                Status = "completed"
-            });
-        }
-        db.WoodLots.Add(lot);
-        db.SaveChanges();
-        Commit();
-    }
-
     public static void DeleteLot(string id)
     {
         using var db = new AppDbContext();
@@ -290,8 +265,14 @@ public static class AppState
         var existing = db.QuotationItems.Find(item.Id);
         if (existing == null) return;
         existing.WoodType = item.WoodType;
-        existing.Thickness = item.Thickness;
         existing.Grade = item.Grade;
+        existing.ThicknessMin = item.ThicknessMin;
+        existing.ThicknessMax = item.ThicknessMax;
+        existing.WidthMin = item.WidthMin;
+        existing.WidthMax = item.WidthMax;
+        existing.LengthMin = item.LengthMin;
+        existing.LengthMax = item.LengthMax;
+        existing.Origin = item.Origin;
         existing.Specification = item.Specification;
         existing.PriceUsd = item.PriceUsd;
         var q = db.WoodQuotations.Find(existing.QuotationId);

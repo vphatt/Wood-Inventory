@@ -17,6 +17,8 @@ public static class DbSeeder
         EnsureWoodCategoriesTable(context);
         SeedWoodCategories(context);
         EnsureSupplierColumns(context);
+        EnsureQuotationItemColumns(context);
+        EnsureWoodLotColumns(context);
         MergeQuotationsPerSupplier(context);
 
         if (context.Suppliers.Any())
@@ -41,10 +43,13 @@ public static class DbSeeder
                 Version = "", IsActive = true,
                 Items =
                 {
-                    new QuotationItem { Id = "QI-101", WoodType = "Gỗ Dương", Thickness = 25, Grade = "FAS", Specification = "Random Width", PriceUsd = 680 },
-                    new QuotationItem { Id = "QI-102", WoodType = "Gỗ Sồi", Thickness = 26, Grade = "FAS", Specification = "Width 150mm+", PriceUsd = 1150 },
-                    new QuotationItem { Id = "QI-103", WoodType = "Gỗ Sồi", Thickness = 38, Grade = "FAS", Specification = "Width 150mm+", PriceUsd = 1250 },
-                    new QuotationItem { Id = "QI-104", WoodType = "Gỗ Tần Bì", Thickness = 32, Grade = "1C", Specification = "Width 120mm+", PriceUsd = 850 }
+                    // Gỗ Dương: chỉ cần Grade + Thickness là biết giá — không giới hạn Rộng/Dài/Xuất xứ.
+                    new QuotationItem { Id = "QI-101", WoodType = "Gỗ Dương", ThicknessMin = 25, ThicknessMax = 25, Grade = "FAS", PriceUsd = 680 },
+                    // Gỗ Sồi: đủ Dày (giá trị đơn) + Rộng từ 150mm trở lên (range mở, không giới hạn trên).
+                    new QuotationItem { Id = "QI-102", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 150, Grade = "FAS", PriceUsd = 1150 },
+                    new QuotationItem { Id = "QI-103", WoodType = "Gỗ Sồi", ThicknessMin = 38, ThicknessMax = 38, WidthMin = 150, Grade = "FAS", PriceUsd = 1250 },
+                    // Gỗ Tần Bì: cần thêm Xuất xứ để phân biệt giá.
+                    new QuotationItem { Id = "QI-104", WoodType = "Gỗ Tần Bì", ThicknessMin = 32, ThicknessMax = 32, WidthMin = 120, Grade = "1C", Origin = "Mỹ", PriceUsd = 850 }
                 }
             },
             new()
@@ -53,9 +58,10 @@ public static class DbSeeder
                 Version = "", IsActive = true,
                 Items =
                 {
-                    new QuotationItem { Id = "QI-201", WoodType = "Gỗ Sồi", Thickness = 26, Grade = "AB", Specification = "Width 120mm+", PriceUsd = 1000 },
-                    new QuotationItem { Id = "QI-202", WoodType = "Gỗ Thông", Thickness = 20, Grade = "Col", Specification = "Standard", PriceUsd = 420 },
-                    new QuotationItem { Id = "QI-203", WoodType = "Gỗ Cao Su", Thickness = 18, Grade = "AA", Specification = "Standard Joint", PriceUsd = 380 }
+                    new QuotationItem { Id = "QI-201", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 120, Grade = "AB", PriceUsd = 1000 },
+                    // Gỗ Thông: chỉ cần độ dày — không set Grade/Rộng/Dài/Xuất xứ.
+                    new QuotationItem { Id = "QI-202", WoodType = "Gỗ Thông", ThicknessMin = 20, ThicknessMax = 20, PriceUsd = 420 },
+                    new QuotationItem { Id = "QI-203", WoodType = "Gỗ Cao Su", ThicknessMin = 18, ThicknessMax = 18, Grade = "AA", Specification = "Standard Joint", PriceUsd = 380 }
                 }
             }
         };
@@ -111,7 +117,7 @@ public static class DbSeeder
                 Id = "LOT-2601A", SupplierId = "SUP-001", ImportDate = DateTime.Parse("2026-05-20"),
                 ReceiptId = "REC-26001", Invoice = "INV-7721A", PackingList = "PL-7721A",
                 WoodType = "Gỗ Dương", WoodName = "Gỗ Dương FAS 25mm (Poplar)",
-                ThicknessMm = 25, WidthMm = 0, LengthMm = 0,
+                ThicknessMm = 25, WidthMm = 0, LengthMm = 0, LengthNote = "96\"108\"120\"",
                 OriginalQuantity = 120, Quantity = 120, Footage = 2450,
                 PriceUsd = 680, ExchangeRate = 25450, TaxPercent = 10, Grade = "FAS"
             }),
@@ -210,6 +216,76 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "Suppliers" ADD COLUMN "TaxCode" TEXT;""");
         if (existing.Count > 0 && !existing.Contains("BankAccount"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "Suppliers" ADD COLUMN "BankAccount" TEXT;""");
+    }
+
+    /// <summary>
+    /// Thêm các cột range/optional mới vào bảng QuotationItems cũ nếu thiếu (SQLite không có
+    /// ADD COLUMN IF NOT EXISTS). Nếu cột "Thickness" (giá trị đơn) cũ còn tồn tại, backfill
+    /// sang ThicknessMin/Max để giữ đúng ngữ nghĩa dữ liệu cũ (giá trị đơn = khoảng đóng bằng chính nó).
+    /// </summary>
+    private static void EnsureQuotationItemColumns(AppDbContext context)
+    {
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var conn = context.Database.GetDbConnection();
+        var openedHere = conn.State != System.Data.ConnectionState.Open;
+        if (openedHere) conn.Open();
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "PRAGMA table_info('QuotationItems');";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                existing.Add(reader.GetString(1)); // cột index 1 = tên cột
+        }
+        finally
+        {
+            if (openedHere) conn.Close();
+        }
+
+        if (existing.Count == 0) return; // bảng chưa tồn tại (DB mới) — EnsureCreated đã lo đủ cột
+
+        if (!existing.Contains("ThicknessMin"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMin" REAL;""");
+        if (!existing.Contains("ThicknessMax"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMax" REAL;""");
+        if (!existing.Contains("WidthMin"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "WidthMin" REAL;""");
+        if (!existing.Contains("WidthMax"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "WidthMax" REAL;""");
+        if (!existing.Contains("LengthMin"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthMin" REAL;""");
+        if (!existing.Contains("LengthMax"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthMax" REAL;""");
+        if (!existing.Contains("Origin"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "Origin" TEXT;""");
+
+        if (existing.Contains("Thickness"))
+            context.Database.ExecuteSqlRaw(
+                """UPDATE "QuotationItems" SET "ThicknessMin" = "Thickness", "ThicknessMax" = "Thickness" WHERE "ThicknessMin" IS NULL AND "Thickness" IS NOT NULL;""");
+    }
+
+    /// <summary>Thêm cột LengthNote vào bảng WoodLots cũ nếu thiếu (SQLite không có ADD COLUMN IF NOT EXISTS).</summary>
+    private static void EnsureWoodLotColumns(AppDbContext context)
+    {
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var conn = context.Database.GetDbConnection();
+        var openedHere = conn.State != System.Data.ConnectionState.Open;
+        if (openedHere) conn.Open();
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "PRAGMA table_info('WoodLots');";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                existing.Add(reader.GetString(1)); // cột index 1 = tên cột
+        }
+        finally
+        {
+            if (openedHere) conn.Close();
+        }
+
+        if (existing.Count > 0 && !existing.Contains("LengthNote"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "LengthNote" TEXT;""");
     }
 
     /// <summary>Seed các loại gỗ mặc định (chỉ khi bảng rỗng). Gỗ Dương tính theo Footage, còn lại theo quy cách.</summary>

@@ -44,6 +44,9 @@
                     </StackPanel>
                     <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
 
+                    <TextBlock Text="Chỉ Loại gỗ và Đơn giá là bắt buộc. Để trống field nào thì mục giá đó khớp với MỌI giá trị của field đó (vd để trống Xuất xứ = áp dụng cho mọi xuất xứ)."
+                               FontSize="11" Foreground="{StaticResource Slate500}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -55,6 +58,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
@@ -62,23 +66,68 @@
                             <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="ĐỘ DÀY (MM) *" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FThickness" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
-                                     Tag="{Binding ElementName=WThickness}" TextChanged="Field_Changed"/>
-                            <TextBlock x:Name="WThickness" Style="{StaticResource FieldWarn}"/>
+                            <TextBlock Text="CHẤT LƯỢNG (GRADE)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FGrade" Style="{StaticResource Input}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="CHẤT LƯỢNG (GRADE) *" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FGrade" Style="{StaticResource Input}"
-                                     Tag="{Binding ElementName=WGrade}" TextChanged="Field_Changed"/>
-                            <TextBlock x:Name="WGrade" Style="{StaticResource FieldWarn}"/>
+                            <TextBlock Text="XUẤT XỨ (ORIGIN)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FOrigin" Style="{StaticResource Input}"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Top">
-                            <TextBlock Text="QUY CÁCH KHÁC (SPECIFICATION)" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="ĐỘ DÀY (MM) — TỪ / ĐẾN" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="FThickMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WThickRange}" TextChanged="Field_Changed"/>
+                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBox x:Name="FThickMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WThickRange}" TextChanged="Field_Changed"/>
+                            </Grid>
+                            <TextBlock x:Name="WThickRange" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="RỘNG (MM) — TỪ / ĐẾN" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="FWidthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBox x:Name="FWidthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
+                            </Grid>
+                            <TextBlock x:Name="WWidthRange" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="DÀI (MM) — TỪ / ĐẾN" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="FLengthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBox x:Name="FLengthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
+                                         Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
+                            </Grid>
+                            <TextBlock x:Name="WLengthRange" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top">
+                            <TextBlock Text="GHI CHÚ / QUY CÁCH KHÁC" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FSpec" Style="{StaticResource Input}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2" VerticalAlignment="Top">
+                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
                             <TextBlock Text="ĐƠN GIÁ USD/M³ *" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FPrice" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                      Tag="{Binding ElementName=WPrice}" TextChanged="Field_Changed"/>
@@ -102,7 +151,7 @@
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
-                    <TextBlock x:Name="SearchHint" Text="Tìm loại gỗ, grade, quy cách..." FontSize="12"
+                    <TextBlock x:Name="SearchHint" Text="Tìm loại gỗ, grade, xuất xứ, quy cách..." FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
@@ -135,7 +184,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐỘ DÀY (MM)" Binding="{Binding ThicknessText}" Width="120" SortMemberPath="Thickness">
+                                <DataGridTextColumn Header="CHẤT LƯỢNG" Binding="{Binding GradeText}" Width="110">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -146,7 +195,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="CHẤT LƯỢNG" Binding="{Binding Grade}" Width="130">
+                                <DataGridTextColumn Header="ĐỘ DÀY (MM)" Binding="{Binding ThicknessText}" Width="120" SortMemberPath="ThicknessMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -157,7 +206,39 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="QUY CÁCH KHÁC" Binding="{Binding Specification}" Width="2*" MinWidth="160">
+                                <DataGridTextColumn Header="RỘNG (MM)" Binding="{Binding WidthText}" Width="120" SortMemberPath="WidthMin">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="DÀI (MM)" Binding="{Binding LengthText}" Width="120" SortMemberPath="LengthMin">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="XUẤT XỨ" Binding="{Binding OriginText}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="1.6*" MinWidth="140">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>

@@ -42,16 +42,15 @@ Mỗi loại gỗ gắn 1 `VolumeRule`:
 - **`BySpecification`** (Theo quy cách Dày × Rộng × Dài): khi nhập/xuất loại gỗ này **BẮT BUỘC nhập đủ 3 thông số Dày + Rộng + Dài**.
 - **`ByFootage`** (Theo Footage): khi nhập/xuất **CHỈ bắt buộc Dày + Footage** (không cần Rộng/Dài).
 
-Tra rule bằng `AppState.GetVolumeRule(tênLoạiGỗ)` (fallback đoán theo tên nếu chưa có trong danh mục). Danh sách tên loại gỗ cho dropdown: `AppState.CategoryNames`.
+Tra rule bằng `AppState.GetVolumeRule(tênLoạiGỗ)` (fallback đoán theo tên nếu chưa có trong danh mục). Danh sách tên loại gỗ cho dropdown: `AppState.CategoryNames`. Đã áp dụng xong ở `ReceiptsView` (Nhập Kho) và `LotsView` (hiển thị) — dropdown đọc động, ẩn/hiện Footage vs Rộng/Dài + validate bắt buộc theo rule.
 
-**TODO các phần sau (chưa làm):** màn Nhập Kho / Xuất Kho / Khai báo kiện đang còn hardcode `WoodTypes[]` và check `== "Gỗ Dương"` để chọn Footage vs quy cách. Khi làm tiếp phải:
-1. Đổi dropdown loại gỗ sang đọc `AppState.CategoryNames`.
-2. Ẩn/hiện field Footage vs Rộng/Dài dựa vào `AppState.GetVolumeRule(...)` thay vì so tên "Gỗ Dương".
-3. Validate **bắt buộc** theo rule như trên trước khi lưu.
+Với gỗ nhóm **ByFootage**, số mm chính xác không có ý nghĩa tính toán (công thức chỉ dùng Footage) nên:
+- Độ dày cho phép nhập ký hiệu ngành gỗ Mỹ: `1"`, `4/4"`, `5/4"`... — parse bằng `WoodVolumeCalculator.ParseFootageThicknessMm(text)`.
+- Chiều dài cho phép mô tả nhiều giá trị (vd `132"144"`) lưu ở `WoodLot.LengthNote` (chỉ hiển thị, không tính toán).
 
 ## Quy tắc & pattern PHẢI theo
 - **Nghiệp vụ tính toán chỉ có 1 chỗ:** `WoodVolumeCalculator`. Đừng bao giờ nhân/chia công thức thể tích hay giá vốn rải rác trong View. Công thức: rule ByFootage = `(Footage/1000)*2.36`; BySpecification = `Dài*Rộng*Dày*SốLượng/1e9`. Giá vốn VND/m³ = `USD * tỷ giá * (1 + thuế%/100)`.
-- **Mọi ghi dữ liệu đi qua `AppState`** (AddCategory/UpdateCategory/DeleteCategory, AddSupplier/UpdateSupplier/DeleteSupplier, AddLot, AddReceipt, AddIssue, AddQuotationItem/UpdateQuotationItem/DeleteQuotationItem/DeleteQuotation, DeleteLot). Lưu ý: `UpdateCategory` khi đổi TÊN loại gỗ sẽ cascade cập nhật `WoodType` của mọi WoodLot + QuotationItem đang dùng tên cũ. `DeleteSupplier`/`DeleteCategory` chặn xóa nếu đang được tham chiếu. Nó tự mở `AppDbContext`, `SaveChanges`, rồi `Reload()` + bắn event `Changed`. View đừng tự đụng DbContext để ghi.
+- **Mọi ghi dữ liệu đi qua `AppState`** (AddCategory/UpdateCategory/DeleteCategory, AddSupplier/UpdateSupplier/DeleteSupplier, AddReceipt, AddIssue, AddQuotationItem/UpdateQuotationItem/DeleteQuotationItem/DeleteQuotation, DeleteLot). Kiện gỗ (`WoodLot`) CHỈ được tạo qua `AddReceipt` (phiếu Nhập Kho) — `LotsView` (Quản Lý Kiện Gỗ) thuần xem/lọc/xóa, không có add/edit. Lưu ý: `UpdateCategory` khi đổi TÊN loại gỗ sẽ cascade cập nhật `WoodType` của mọi WoodLot + QuotationItem đang dùng tên cũ. `DeleteSupplier`/`DeleteCategory` chặn xóa nếu đang được tham chiếu. Nó tự mở `AppDbContext`, `SaveChanges`, rồi `Reload()` + bắn event `Changed`. View đừng tự đụng DbContext để ghi.
 - **View nào cần tự làm mới thì implement `IModuleView.RefreshView()`.** MainWindow gọi lại khi đổi tab / khi `AppState.Changed`.
 - **UI build bằng code-behind là chủ đạo** (thẻ, badge, form... dựng bằng C# trong `Build...()`), XAML chỉ dựng khung + style. Giữ nguyên phong cách đó cho nhất quán, đừng nửa nạc nửa mỡ.
 - **Bảng dữ liệu = `DataGrid` (style `DataTable` trong App.xaml)**, KHÔNG dựng tay bằng Grid/ItemsControl nữa. Cho sẵn sort/kéo đổi thứ tự cột/kéo giãn cột/border dọc. Pattern: mỗi View có 1 class `XxxRow` (bọc entity + expose property cho binding), `List<XxxRow> _rows` + `ICollectionView _view = CollectionViewSource.GetDefaultView(_rows)` với `_view.Filter = FilterPredicate`; cột định nghĩa trong XAML (DataGridTextColumn dùng `ElementStyle`; ô đặc biệt/badge/nút thao tác dùng `DataGridTemplateColumn` + `Click` handler lấy `DataContext` ra `XxxRow`). Search/filter = TextBox + ComboBox gọi `_view.Refresh()`. **Đặt tên DataGrid KHÁC "Grid"** (vd `HistoryGrid`, `LotGrid`) vì code-behind còn dùng `Grid.SetColumn(...)` — trùng tên sẽ lỗi biên dịch.

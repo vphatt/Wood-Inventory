@@ -54,24 +54,36 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="16"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock Text="NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FSupplier" Style="{StaticResource Select}" SelectionChanged="FSupplier_Changed"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="2">
+                        <StackPanel Grid.Row="0" Grid.Column="2">
                             <TextBlock Text="NGÀY NHẬP KHO" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FDate" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="4">
+                        <StackPanel Grid.Row="0" Grid.Column="4">
                             <TextBlock Text="SỐ HÓA ĐƠN (INVOICE)" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FInvoice" Style="{StaticResource Input}"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="6">
+                        <StackPanel Grid.Row="2" Grid.Column="0">
                             <TextBlock Text="PACKING LIST" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FPackingList" Style="{StaticResource Input}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="2">
+                            <TextBlock Text="TỶ GIÁ VND/USD" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FExchangeRate" Style="{StaticResource Input}" Text="25400"
+                                     FontFamily="{StaticResource FontMono}" TextChanged="FRate_Changed"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="4">
+                            <TextBlock Text="THUẾ NHẬP KHẨU (%)" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="FTaxPercent" Style="{StaticResource Select}" SelectionChanged="FRate_Changed"/>
                         </StackPanel>
                     </Grid>
 

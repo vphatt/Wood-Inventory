@@ -12,13 +12,11 @@ namespace TimberFlowDesktop.Views;
 
 public partial class ReceiptsView : UserControl, IModuleView
 {
-    private static readonly string[] WoodTypes = { "Gỗ Sồi", "Gỗ Dương", "Gỗ Tần Bì", "Gỗ Thông", "Gỗ Tràm" };
-
     /// <summary>Một dòng kiện gỗ đang khai báo trong phiếu nhập.</summary>
     private sealed class DraftLot
     {
         public string Id = "LOT-NEW-1";
-        public string WoodType = "Gỗ Sồi";
+        public string WoodType = AppState.CategoryNames.FirstOrDefault() ?? "Gỗ Sồi";
         public string Thickness = "26";
         public string Grade = "FAS";
         public string Width = "150";
@@ -26,8 +24,6 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string Footage = "0";
         public string Quantity = "150";
         public string ManualPriceUsd = "0";
-        public string ExchangeRate = "25400";
-        public string TaxPercent = "10";
 
         // Kết quả tính toán gần nhất
         public double Cbm;
@@ -43,10 +39,21 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         InitializeComponent();
         FDate.Text = Fmt.Date(DateTime.Today);
+        InitTaxCombo();
         ResetDraft();
         RefreshView();
         Helpers.GridLayoutStore.Attach(HistoryGrid, "receipts");
     }
+
+    private void InitTaxCombo()
+    {
+        foreach (var t in new[] { "0", "5", "8", "10" })
+            FTaxPercent.Items.Add(new ComboBoxItem { Content = $"{t}%", Tag = t, IsSelected = t == "10" });
+    }
+
+    /// <summary>Tỷ giá + thuế nhập khẩu áp dụng chung cho cả phiếu — không khai báo riêng theo từng kiện.</summary>
+    private double SelectedExchangeRate => D(FExchangeRate.Text);
+    private double SelectedTaxPercent => D((FTaxPercent.SelectedItem as ComboBoxItem)?.Tag as string ?? "10");
 
     private void ResetDraft()
     {
@@ -72,29 +79,35 @@ public partial class ReceiptsView : UserControl, IModuleView
     private static double D(string s) =>
         double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
+    /// <summary>Parse độ dày theo loại gỗ — nhóm Footage chấp nhận thêm ký hiệu inch/quarter (1", 4/4").</summary>
+    private static double ParseThickness(DraftLot lot) =>
+        AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage
+            ? WoodVolumeCalculator.ParseFootageThicknessMm(lot.Thickness)
+            : D(lot.Thickness);
+
     private string SelectedSupplierId => (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
 
-    /// <summary>Tra đơn giá USD từ báo giá đang kích hoạt của NCC (khớp loại gỗ + độ dày + grade).</summary>
-    private static decimal LookupQuotationPrice(string supplierId, string woodType, double thickness, string grade)
+    /// <summary>Tra đơn giá USD từ báo giá của NCC — khớp dòng giá cụ thể nhất theo loại gỗ + kích thước + grade.</summary>
+    private static decimal LookupQuotationPrice(string supplierId, string woodType, double thickness, double width, double length, string grade)
     {
         if (string.IsNullOrEmpty(supplierId)) return 0;
-        var active = AppState.Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
-        var item = active?.Items.FirstOrDefault(i =>
-            string.Equals(i.WoodType, woodType, StringComparison.OrdinalIgnoreCase)
-            && Math.Abs(i.Thickness - thickness) < 0.0001
-            && string.Equals(i.Grade, grade?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var quotation = AppState.Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
+        if (quotation == null) return 0;
+        var item = QuotationPriceMatcher.FindBestMatch(quotation.Items, woodType,
+            thickness: thickness, width: width, length: length, grade: grade);
         return item?.PriceUsd ?? 0;
     }
 
     private void Recalculate(DraftLot lot)
     {
-        var quotPrice = LookupQuotationPrice(SelectedSupplierId, lot.WoodType, D(lot.Thickness), lot.Grade);
+        var thickness = ParseThickness(lot);
+        var quotPrice = LookupQuotationPrice(SelectedSupplierId, lot.WoodType, thickness, D(lot.Width), D(lot.Length), lot.Grade);
         lot.PriceFromQuotation = quotPrice > 0;
         lot.EffectivePriceUsd = quotPrice > 0 ? quotPrice : (decimal)D(lot.ManualPriceUsd);
-        lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, D(lot.Thickness), D(lot.Width),
+        lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
             D(lot.Length), (int)D(lot.Quantity), D(lot.Footage));
         lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePriceUsd,
-            (decimal)D(lot.ExchangeRate), (decimal)D(lot.TaxPercent));
+            (decimal)SelectedExchangeRate, (decimal)SelectedTaxPercent);
         lot.TotalValueVnd = WoodVolumeCalculator.CalculateTotalValue(lot.CostPriceVnd, lot.Cbm);
     }
 
@@ -186,7 +199,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center
         };
         StackPanel dimPanel = null;
-        foreach (var t in WoodTypes)
+        foreach (var t in AppState.CategoryNames)
             typeCombo.Items.Add(new ComboBoxItem { Content = t, Tag = t, IsSelected = t == lot.WoodType });
         typeCombo.SelectionChanged += (_, _) =>
         {
@@ -252,7 +265,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     private void BuildDimPanel(StackPanel panel, DraftLot lot, Action update)
     {
         panel.Children.Clear();
-        if (lot.WoodType == "Gỗ Dương")
+        if (AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage)
         {
             var footBox = Cell(lot.Footage, s => { lot.Footage = s; update(); }, mono: true);
             footBox.Width = 90;
@@ -306,6 +319,13 @@ public partial class ReceiptsView : UserControl, IModuleView
         foreach (var update in _rowUpdaters.ToList()) update();
     }
 
+    /// <summary>Tỷ giá/Thuế chung của phiếu đổi → tính lại giá vốn cho mọi kiện đang khai báo.</summary>
+    private void FRate_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        foreach (var update in _rowUpdaters.ToList()) update();
+    }
+
     private void BtnAddLotRow_Click(object sender, RoutedEventArgs e)
     {
         _draftLots.Add(new DraftLot
@@ -335,6 +355,12 @@ public partial class ReceiptsView : UserControl, IModuleView
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+        if (SelectedExchangeRate <= 0)
+        {
+            MessageBox.Show("Tỷ giá VND/USD phải lớn hơn 0.", "TimberFlow ERP",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         if (_draftLots.Count == 0)
         {
             MessageBox.Show("Phiếu nhập kho phải chứa ít nhất một kiện gỗ.", "TimberFlow ERP",
@@ -356,6 +382,37 @@ public partial class ReceiptsView : UserControl, IModuleView
             return;
         }
 
+        foreach (var d in _draftLots)
+        {
+            if (ParseThickness(d) <= 0)
+            {
+                MessageBox.Show($"Kiện {d.Id}: Độ dày phải lớn hơn 0.", "TimberFlow ERP",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (AppState.GetVolumeRule(d.WoodType) == VolumeRule.ByFootage)
+            {
+                if (D(d.Footage) <= 0)
+                {
+                    MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo Footage — Footage phải lớn hơn 0.",
+                        "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+            else if (D(d.Width) <= 0 || D(d.Length) <= 0)
+            {
+                MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo quy cách — Rộng và Dài phải lớn hơn 0.",
+                    "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if ((int)D(d.Quantity) <= 0)
+            {
+                MessageBox.Show($"Kiện {d.Id}: Số lượng phải lớn hơn 0.", "TimberFlow ERP",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         var receiptId = $"REC-{Random.Shared.Next(10000, 99999)}";
         var receipt = new WarehouseReceipt
         {
@@ -371,6 +428,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             Recalculate(d);
             var quantity = (int)D(d.Quantity);
+            var thicknessMm = ParseThickness(d);
             receipt.Lots.Add(new WoodLot
             {
                 Id = d.Id.Trim().ToUpperInvariant(),
@@ -380,8 +438,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 Invoice = invoice,
                 PackingList = packingList,
                 WoodType = d.WoodType,
-                WoodName = $"{d.WoodType} {d.Grade} {Fmt.Num(D(d.Thickness))}mm",
-                ThicknessMm = D(d.Thickness),
+                WoodName = $"{d.WoodType} {d.Grade} {Fmt.Num(thicknessMm)}mm",
+                ThicknessMm = thicknessMm,
                 WidthMm = D(d.Width),
                 LengthMm = D(d.Length),
                 OriginalQuantity = quantity,
@@ -390,8 +448,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 Cbm = d.Cbm,
                 RemainingCbm = d.Cbm,
                 PriceUsd = d.EffectivePriceUsd,
-                ExchangeRate = (decimal)D(d.ExchangeRate),
-                TaxPercent = (decimal)D(d.TaxPercent),
+                ExchangeRate = (decimal)SelectedExchangeRate,
+                TaxPercent = (decimal)SelectedTaxPercent,
                 CostPriceVnd = d.CostPriceVnd,
                 TotalValueVnd = d.TotalValueVnd,
                 Grade = string.IsNullOrWhiteSpace(d.Grade) ? "FAS" : d.Grade.Trim()
@@ -404,6 +462,8 @@ public partial class ReceiptsView : UserControl, IModuleView
             AddFormPanel.Visibility = Visibility.Collapsed;
             FInvoice.Text = "";
             FPackingList.Text = "";
+            FExchangeRate.Text = "25400";
+            FTaxPercent.SelectedIndex = 3;
             ResetDraft();
         }
         catch (Exception ex)

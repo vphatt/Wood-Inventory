@@ -271,6 +271,7 @@
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
                 <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="Height" Value="40"/>
                 <Setter Property="ItemContainerStyle" Value="{StaticResource SelectItem}"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
                 <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
@@ -289,7 +290,7 @@
                                         </ControlTemplate>
                                     </ToggleButton.Template>
                                 </ToggleButton>
-                                <ContentPresenter Margin="10,0,26,0" IsHitTestVisible="False"
+                                <ContentPresenter Margin="10,6,26,6" IsHitTestVisible="False"
                                                   VerticalAlignment="Center" HorizontalAlignment="Left"
                                                   Content="{TemplateBinding SelectionBoxItem}"
                                                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>

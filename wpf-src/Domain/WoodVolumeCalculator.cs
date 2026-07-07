@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace TimberFlowDesktop.Domain;
 
 /// <summary>
@@ -6,6 +8,33 @@ namespace TimberFlowDesktop.Domain;
 /// </summary>
 public static class WoodVolumeCalculator
 {
+    /// <summary>
+    /// Parse độ dày cho gỗ nhóm Footage — chấp nhận thêm ký hiệu ngành gỗ Mỹ vì số mm chính xác
+    /// không có ý nghĩa tính toán với nhóm này (công thức chỉ dùng Footage):
+    ///  - "1\"" (a") = 1 inch = 25.4mm
+    ///  - "4/4\"" (a/b", hệ quarter) = (a/b) inch, vd 4/4"=25.4mm, 5/4"=31.75mm
+    ///  - Số thường không có " hay / vẫn hiểu là mm như cũ (tương thích ngược).
+    /// </summary>
+    public static double ParseFootageThicknessMm(string text)
+    {
+        text = (text ?? "").Trim();
+        if (text.Length == 0) return 0;
+
+        var isInches = text.EndsWith("\"");
+        if (isInches) text = text[..^1].Trim();
+
+        var slash = text.IndexOf('/');
+        if (slash > 0)
+        {
+            var aOk = double.TryParse(text[..slash].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var a);
+            var bOk = double.TryParse(text[(slash + 1)..].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var b);
+            return aOk && bOk && b != 0 ? Math.Round(a / b * 25.4, 4) : 0;
+        }
+
+        if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var value)) return 0;
+        return isInches ? Math.Round(value * 25.4, 4) : value;
+    }
+
     /// <summary>
     /// Tính thể tích m³ theo chủng loại gỗ.
     ///  - Gỗ Dương (Poplar):  m³ = (Footage / 1000) * 2.36

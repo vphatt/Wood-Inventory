@@ -30,4 +30,13 @@ public static class Fmt
 
     /// <summary>Ghép "26 x 150 x 2400" gọn.</summary>
     public static string Num(double value) => value.ToString("0.##", En);
+
+    /// <summary>"20–30mm" / "≥150mm" / "≤2400mm" / "25mm" (min=max) / "Bất kỳ" (cả hai null).</summary>
+    public static string Range(double? min, double? max, string unit = "mm")
+    {
+        if (min == null && max == null) return "Bất kỳ";
+        if (min != null && max != null)
+            return min == max ? $"{Num(min.Value)}{unit}" : $"{Num(min.Value)}–{Num(max.Value)}{unit}";
+        return min != null ? $"≥{Num(min.Value)}{unit}" : $"≤{Num(max.Value)}{unit}";
+    }
 }

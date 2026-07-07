@@ -28,13 +28,6 @@
                     <ComboBox x:Name="FilterSupplier" Style="{StaticResource Select}" MinWidth="190" MaxWidth="280"
                               Margin="12,0,0,0" SelectionChanged="Filters_Changed"/>
                 </StackPanel>
-                <Button x:Name="BtnToggleAdd" Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right"
-                        Click="BtnToggleAdd_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                        <TextBlock Text="Khai báo kiện mới"/>
-                    </StackPanel>
-                </Button>
             </Grid>
         </Border>
 
@@ -47,139 +40,6 @@
 
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="24">
-
-                    <!-- ===== Form khai báo kiện thủ công ===== -->
-                    <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24"
-                            Visibility="Collapsed">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                                           Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                                <TextBlock Text="Khai Báo Kiện Gỗ Nguyên Liệu Thủ Công" FontSize="13" FontWeight="Bold"
-                                           Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
-                            </StackPanel>
-                            <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-
-                                <!-- Hàng 1 -->
-                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
-                                    <TextBlock Text="MÃ KIỆN (LOT ID)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FLotId" Style="{StaticResource Input}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
-                                    <TextBlock Text="NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox x:Name="FSupplier" Style="{StaticResource Select}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14">
-                                    <TextBlock Text="LOẠI GỖ" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"
-                                              SelectionChanged="FWoodType_Changed"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="6" Margin="0,0,0,14">
-                                    <TextBlock Text="CHẤT LƯỢNG (GRADE)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FGrade" Style="{StaticResource Input}" Text="FAS"/>
-                                </StackPanel>
-
-                                <!-- Hàng 2 -->
-                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
-                                    <TextBlock Text="ĐỘ DÀY (MM)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FThickness" Style="{StaticResource Input}" Text="26"
-                                             TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel x:Name="PWidth" Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
-                                    <TextBlock Text="CHIỀU RỘNG (MM)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FWidth" Style="{StaticResource Input}" Text="150"
-                                             TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel x:Name="PLength" Grid.Row="1" Grid.Column="4" Margin="0,0,0,14">
-                                    <TextBlock Text="CHIỀU DÀI (MM)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FLength" Style="{StaticResource Input}" Text="2400"
-                                             TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel x:Name="PFootage" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3"
-                                            Margin="0,0,0,14" Visibility="Collapsed">
-                                    <TextBlock Text="FOOTAGE (BFT - BOARD FEET)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FFootage" Style="{StaticResource Input}" Text="0"
-                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="6" Margin="0,0,0,14">
-                                    <TextBlock Text="SỐ LƯỢNG (THANH/TẤM)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FQuantity" Style="{StaticResource Input}" Text="100"
-                                             TextChanged="Calc_Changed"/>
-                                </StackPanel>
-
-                                <!-- Hàng 3: tài chính -->
-                                <StackPanel Grid.Row="2" Grid.Column="0">
-                                    <TextBlock Text="ĐƠN GIÁ USD (PER CBM)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FPriceUsd" Style="{StaticResource Input}" Text="1150"
-                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="2">
-                                    <TextBlock Text="TỶ GIÁ VND/USD" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FExchangeRate" Style="{StaticResource Input}" Text="25400"
-                                             FontFamily="{StaticResource FontMono}" TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="4">
-                                    <TextBlock Text="THUẾ NHẬP KHẨU (%)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FTaxPercent" Style="{StaticResource Input}" Text="10"
-                                             TextChanged="Calc_Changed"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="6">
-                                    <TextBlock Text="HÓA ĐƠN (INVOICE)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="FInvoice" Style="{StaticResource Input}"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- Xem trước tính toán -->
-                            <Border Background="#80EFF6FF" BorderBrush="{StaticResource Blue100}" BorderThickness="1"
-                                    CornerRadius="8" Padding="16,12" Margin="0,16,0,0">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Dữ liệu tính toán tự động:" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Slate700}" Margin="8,0,0,0"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Foreground="{StaticResource Slate500}" VerticalAlignment="Center" Text="Thể tích: "/>
-                                        <TextBlock x:Name="CalcVolume" Text="0.0000 m³" FontWeight="Bold"
-                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Blue600}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Foreground="{StaticResource Slate500}" Margin="20,0,0,0" VerticalAlignment="Center" Text="Giá vốn (VND/m³): "/>
-                                        <TextBlock x:Name="CalcCost" Text="0 ₫" FontWeight="Bold"
-                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Blue600}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Foreground="{StaticResource Slate500}" Margin="20,0,0,0" VerticalAlignment="Center" Text="Tổng giá trị: "/>
-                                        <TextBlock x:Name="CalcTotal" Text="0 ₫" FontWeight="Bold"
-                                                   FontFamily="{StaticResource FontMono}" Foreground="{StaticResource Emerald600}"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                                <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
-                                <Button Style="{StaticResource BtnPrimary}" Content="Xác nhận nhập kho"
-                                        Margin="8,0,0,0" Click="BtnSubmitAdd_Click"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
 
                     <!-- ===== Bảng kiện gỗ (DataGrid tương tác) ===== -->
                     <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
@@ -363,10 +223,15 @@
                                     <TextBlock x:Name="DSpec" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
-                                <Grid x:Name="DFootageRow" Visibility="Collapsed">
+                                <Grid x:Name="DFootageRow" Visibility="Collapsed" Margin="0,0,0,6">
                                     <TextBlock Text="Footage:" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DFootage" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid x:Name="DLengthNoteRow" Visibility="Collapsed">
+                                    <TextBlock Text="Chiều dài:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DLengthNote" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                             </StackPanel>
                         </Border>

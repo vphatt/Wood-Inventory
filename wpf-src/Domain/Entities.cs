@@ -41,15 +41,25 @@ public class Supplier
     public string BankAccount { get; set; }  // Số tài khoản
 }
 
-/// <summary>Một dòng giá trong bảng báo giá.</summary>
+/// <summary>
+/// Một dòng giá trong bảng báo giá. Mọi field ngoài WoodType/PriceUsd đều optional —
+/// NULL nghĩa là khớp mọi giá trị (wildcard). Field range chỉ set Min = "từ Min trở lên",
+/// chỉ set Max = "đến Max", set cả hai = khoảng đóng (bằng nhau = giá trị đơn).
+/// </summary>
 public class QuotationItem
 {
     public string Id { get; set; }
     public string QuotationId { get; set; }
     public string WoodType { get; set; }
-    public double Thickness { get; set; }
-    public string Grade { get; set; }
-    public string Specification { get; set; }
+    public string Grade { get; set; }          // null = mọi grade
+    public double? ThicknessMin { get; set; }
+    public double? ThicknessMax { get; set; }
+    public double? WidthMin { get; set; }
+    public double? WidthMax { get; set; }
+    public double? LengthMin { get; set; }
+    public double? LengthMax { get; set; }
+    public string Origin { get; set; }         // null = mọi xuất xứ
+    public string Specification { get; set; }  // ghi chú tự do, không dùng để khớp giá
     public decimal PriceUsd { get; set; }
 }
 
@@ -82,6 +92,7 @@ public class WoodLot
     public double ThicknessMm { get; set; }
     public double WidthMm { get; set; }
     public double LengthMm { get; set; }
+    public string LengthNote { get; set; }         // Mô tả chiều dài dạng inch cho gỗ nhóm Footage, vd 132"144" — chỉ hiển thị, không dùng tính toán
     public int OriginalQuantity { get; set; }
     public int Quantity { get; set; }              // Số thanh còn tồn
     public double Footage { get; set; }            // BFT — chỉ dùng cho Gỗ Dương

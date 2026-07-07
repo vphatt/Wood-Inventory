@@ -28,18 +28,8 @@ public partial class LotsView : UserControl, IModuleView
     public LotsView()
     {
         InitializeComponent();
-        InitStaticCombos();
         RefreshView();
         Helpers.GridLayoutStore.Attach(LotGrid, "lots");
-    }
-
-    private void InitStaticCombos()
-    {
-        FWoodType.Items.Add(new ComboBoxItem { Content = "Gỗ Sồi", Tag = "Gỗ Sồi", IsSelected = true });
-        FWoodType.Items.Add(new ComboBoxItem { Content = "Gỗ Dương (Poplar)", Tag = "Gỗ Dương" });
-        FWoodType.Items.Add(new ComboBoxItem { Content = "Gỗ Tần Bì", Tag = "Gỗ Tần Bì" });
-        FWoodType.Items.Add(new ComboBoxItem { Content = "Gỗ Thông", Tag = "Gỗ Thông" });
-        FWoodType.Items.Add(new ComboBoxItem { Content = "Gỗ Tràm", Tag = "Gỗ Tràm" });
     }
 
     public void RefreshView()
@@ -62,18 +52,9 @@ public partial class LotsView : UserControl, IModuleView
             FilterSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         SelectByTag(FilterSupplier, currentSup);
 
-        // NCC trong form khai báo
-        var currentFormSup = (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-        FSupplier.Items.Clear();
-        FSupplier.Items.Add(new ComboBoxItem { Content = "-- Chọn NCC --", Tag = "" });
-        foreach (var s in AppState.Suppliers)
-            FSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
-        SelectByTag(FSupplier, currentFormSup);
-
         _loading = false;
 
         RebuildRows();
-        UpdateCalcPreview();
         RefreshDetail();
     }
 
@@ -114,8 +95,10 @@ public partial class LotsView : UserControl, IModuleView
         public string InvoiceLabel => $"Invoice: {Lot.Invoice}";
         public double Thickness => Lot.ThicknessMm;
         public string ThicknessText => Fmt.Num(Lot.ThicknessMm);
-        public bool IsPoplar => Lot.WoodType == "Gỗ Dương";
-        public string DimText => IsPoplar ? "Đo theo Footage" : $"{Fmt.Num(Lot.WidthMm)} x {Fmt.Num(Lot.LengthMm)}";
+        public bool IsPoplar => AppState.GetVolumeRule(Lot.WoodType) == VolumeRule.ByFootage;
+        public string DimText => IsPoplar
+            ? (string.IsNullOrWhiteSpace(Lot.LengthNote) ? "Đo theo Footage" : $"Đo theo Footage ({Lot.LengthNote})")
+            : $"{Fmt.Num(Lot.WidthMm)} x {Fmt.Num(Lot.LengthMm)}";
         public int Quantity => Lot.Quantity;
         public bool IsLow => Lot.Quantity <= 30;
         public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} thanh";
@@ -230,9 +213,12 @@ public partial class LotsView : UserControl, IModuleView
         DWoodType.Text = lot.WoodType;
         DGrade.Text = lot.Grade;
         DSpec.Text = $"{Fmt.Num(lot.ThicknessMm)} x {Fmt.Num(lot.WidthMm)} x {Fmt.Num(lot.LengthMm)}";
-        DFootageRow.Visibility = lot.WoodType == "Gỗ Dương" ? Visibility.Visible : Visibility.Collapsed;
+        var isPoplarLot = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
+        DFootageRow.Visibility = isPoplarLot ? Visibility.Visible : Visibility.Collapsed;
         DFootage.Text = $"{Fmt.Num(lot.Footage)} BFT";
-        DFormula.Text = lot.WoodType == "Gỗ Dương"
+        DLengthNoteRow.Visibility = string.IsNullOrWhiteSpace(lot.LengthNote) ? Visibility.Collapsed : Visibility.Visible;
+        DLengthNote.Text = lot.LengthNote;
+        DFormula.Text = isPoplarLot
             ? $"({Fmt.Num(lot.Footage)} / 1000) * 2.36 = {Fmt.Num(lot.Cbm)} m³"
             : $"({Fmt.Num(lot.ThicknessMm)} * {Fmt.Num(lot.WidthMm)} * {Fmt.Num(lot.LengthMm)} * {lot.OriginalQuantity}) / 1,000,000,000 = {Fmt.Num(lot.Cbm)} m³";
         DPriceUsd.Text = $"${Fmt.Num((double)lot.PriceUsd)} / m³";
@@ -266,106 +252,6 @@ public partial class LotsView : UserControl, IModuleView
         _selectedLotId = null;
         RebuildRows();
         RefreshDetail();
-    }
-
-    // ---------------- Form khai báo ----------------
-
-    private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
-        => AddFormPanel.Visibility = AddFormPanel.Visibility == Visibility.Visible
-            ? Visibility.Collapsed : Visibility.Visible;
-
-    private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
-        => AddFormPanel.Visibility = Visibility.Collapsed;
-
-    private void FWoodType_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (PWidth == null || PFootage == null) return;
-        var isPoplar = ((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string) == "Gỗ Dương";
-        PWidth.Visibility = isPoplar ? Visibility.Collapsed : Visibility.Visible;
-        PLength.Visibility = isPoplar ? Visibility.Collapsed : Visibility.Visible;
-        PFootage.Visibility = isPoplar ? Visibility.Visible : Visibility.Collapsed;
-        UpdateCalcPreview();
-    }
-
-    private void Calc_Changed(object sender, TextChangedEventArgs e) => UpdateCalcPreview();
-
-    private static double D(TextBox box) =>
-        double.TryParse(box?.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
-
-    private void UpdateCalcPreview()
-    {
-        if (CalcVolume == null) return;
-        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "Gỗ Sồi";
-        var volume = WoodVolumeCalculator.CalculateVolume(woodType, D(FThickness), D(FWidth), D(FLength),
-            (int)D(FQuantity), D(FFootage));
-        var cost = WoodVolumeCalculator.CalculateCostPricePerM3((decimal)D(FPriceUsd), (decimal)D(FExchangeRate),
-            (decimal)D(FTaxPercent));
-        var total = WoodVolumeCalculator.CalculateTotalValue(cost, volume);
-
-        CalcVolume.Text = $"{Fmt.M3(volume)} m³";
-        CalcCost.Text = Fmt.Vnd(cost);
-        CalcTotal.Text = Fmt.Vnd(total);
-    }
-
-    private void BtnSubmitAdd_Click(object sender, RoutedEventArgs e)
-    {
-        var lotId = (FLotId.Text ?? "").Trim().ToUpperInvariant();
-        var supplierId = (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-
-        if (lotId.Length == 0)
-        {
-            MessageBox.Show("Vui lòng nhập Mã Kiện Gỗ.", "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-        if (supplierId.Length == 0)
-        {
-            MessageBox.Show("Vui lòng chọn Nhà Cung Cấp.", "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "Gỗ Sồi";
-        var grade = string.IsNullOrWhiteSpace(FGrade.Text) ? "FAS" : FGrade.Text.Trim();
-        var quantity = (int)D(FQuantity);
-        var volume = WoodVolumeCalculator.CalculateVolume(woodType, D(FThickness), D(FWidth), D(FLength), quantity, D(FFootage));
-        var cost = WoodVolumeCalculator.CalculateCostPricePerM3((decimal)D(FPriceUsd), (decimal)D(FExchangeRate), (decimal)D(FTaxPercent));
-
-        var lot = new WoodLot
-        {
-            Id = lotId,
-            SupplierId = supplierId,
-            ImportDate = DateTime.Today,
-            ReceiptId = "REC-MANUAL",
-            Invoice = string.IsNullOrWhiteSpace(FInvoice.Text) ? "INV-MANUAL" : FInvoice.Text.Trim(),
-            PackingList = "PL-MANUAL",
-            WoodType = woodType,
-            WoodName = $"{woodType} {grade} {Fmt.Num(D(FThickness))}mm",
-            ThicknessMm = D(FThickness),
-            WidthMm = D(FWidth),
-            LengthMm = D(FLength),
-            OriginalQuantity = quantity,
-            Quantity = quantity,
-            Footage = D(FFootage),
-            Cbm = volume,
-            RemainingCbm = volume,
-            PriceUsd = (decimal)D(FPriceUsd),
-            ExchangeRate = (decimal)D(FExchangeRate),
-            TaxPercent = (decimal)D(FTaxPercent),
-            CostPriceVnd = cost,
-            TotalValueVnd = WoodVolumeCalculator.CalculateTotalValue(cost, volume),
-            Grade = grade
-        };
-
-        try
-        {
-            AppState.AddLot(lot);
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            FLotId.Text = "";
-            FInvoice.Text = "";
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message, "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
     }
 
     private void Filters_Changed(object sender, RoutedEventArgs e)
