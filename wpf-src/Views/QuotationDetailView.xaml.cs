@@ -31,6 +31,10 @@ public partial class QuotationDetailView : UserControl
         public string Specification => Item.Specification;
         public decimal Price => Item.PriceUsd;
         public string PriceText => Fmt.Usd(Item.PriceUsd);
+        public DateTime? Updated => Item.UpdatedAt;
+        public string UpdatedAtText => Item.UpdatedAt.HasValue
+            ? Item.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")
+            : "—";
         public ItemRow(QuotationItem i) => Item = i;
     }
 
@@ -94,6 +98,7 @@ public partial class QuotationDetailView : UserControl
             _view = CollectionViewSource.GetDefaultView(_rows);
             _view.Filter = FilterPredicate;
             ItemGrid.ItemsSource = _view;
+            ActionGrid.ItemsSource = _view;   // cột thao tác tách riêng, cùng nguồn dữ liệu
         }
         _view.Refresh();
         UpdateCountAndEmpty();
@@ -178,10 +183,10 @@ public partial class QuotationDetailView : UserControl
 
     private void SetReadOnly(bool ro)
     {
-        FGrade.IsReadOnly = FOrigin.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
+        FOrigin.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
         FThickMin.IsReadOnly = FThickMax.IsReadOnly = FWidthMin.IsReadOnly = FWidthMax.IsReadOnly = FLengthMin.IsReadOnly = FLengthMax.IsReadOnly = ro;
         var bg = ro ? (Brush)FindResource("Slate50") : Brushes.White;
-        FGrade.Background = FOrigin.Background = FSpec.Background = FPrice.Background = bg;
+        FOrigin.Background = FSpec.Background = FPrice.Background = bg;
         FThickMin.Background = FThickMax.Background = FWidthMin.Background = FWidthMax.Background = FLengthMin.Background = FLengthMax.Background = bg;
         FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
     }
@@ -197,7 +202,7 @@ public partial class QuotationDetailView : UserControl
         FormCancelBtn.Content = "Hủy bỏ";
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
-        FGrade.Text = FOrigin.Text = FSpec.Text = FPrice.Text = "";
+        FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
     }
 
@@ -207,7 +212,6 @@ public partial class QuotationDetailView : UserControl
     {
         SelectByTag(FWoodType, it.WoodType);
         PopulateSubCombo(it.WoodType, it.WoodSubType);
-        FGrade.Text = it.Grade;
         FOrigin.Text = it.Origin;
         FThickMin.Text = NumOrBlank(it.ThicknessMin);
         FThickMax.Text = NumOrBlank(it.ThicknessMax);
@@ -240,7 +244,7 @@ public partial class QuotationDetailView : UserControl
         FormTitle.Text = "Sửa Mục Giá";
         FormSaveBtn.Content = "Cập nhật";
         FormCancelBtn.Content = "Hủy sửa";
-        FGrade.Focus();
+        FWoodSubType.Focus();
     }
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
@@ -295,7 +299,7 @@ public partial class QuotationDetailView : UserControl
             Id = _editingId,
             WoodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "",
             WoodSubType = NullIfBlank((FWoodSubType.SelectedItem as ComboBoxItem)?.Tag as string),
-            Grade = NullIfBlank(FGrade.Text),
+            Grade = null,
             ThicknessMin = thickMin,
             ThicknessMax = thickMax,
             WidthMin = widthMin,

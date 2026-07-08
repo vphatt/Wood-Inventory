@@ -869,6 +869,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             _recView = CollectionViewSource.GetDefaultView(_recRows);
             _recView.Filter = HistoryFilter;
             HistoryGrid.ItemsSource = _recView;
+            ActionGrid.ItemsSource = _recView;   // cột thao tác tách riêng, cùng nguồn
         }
         _recView.Refresh();
         UpdateEmpty();

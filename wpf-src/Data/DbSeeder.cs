@@ -68,6 +68,9 @@ public static class DbSeeder
                 }
             }
         };
+        foreach (var q in quotations)
+            foreach (var it in q.Items)
+                it.UpdatedAt = q.EffectiveDate;   // mục giá seed: mốc "tạo" = ngày áp dụng báo giá
         context.WoodQuotations.AddRange(quotations);
         context.SaveChanges();
 
@@ -330,6 +333,13 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthMax" REAL;""");
         if (!existing.Contains("Origin"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "Origin" TEXT;""");
+        if (!existing.Contains("UpdatedAt"))
+        {
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "UpdatedAt" TEXT;""");
+            // Dòng cũ: lấy ngày áp dụng của báo giá làm "thời điểm tạo" ban đầu.
+            context.Database.ExecuteSqlRaw(
+                """UPDATE "QuotationItems" SET "UpdatedAt" = (SELECT "EffectiveDate" FROM "WoodQuotations" WHERE "WoodQuotations"."Id" = "QuotationItems"."QuotationId") WHERE "UpdatedAt" IS NULL;""");
+        }
 
         if (existing.Contains("Thickness"))
         {

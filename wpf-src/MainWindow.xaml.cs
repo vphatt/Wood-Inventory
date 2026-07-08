@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -29,7 +29,6 @@ public partial class MainWindow : Window
         new("categories", "Phân Loại Gỗ",         ""),
         new("suppliers",  "Nhà Cung Cấp",           ""),
         new("lots",       "Quản Lý Kiện Gỗ (Lots)", ""),
-        new("quotations", "Báo Giá Gỗ NCC",         ""),
         new("receipts",   "Nhập Kho Gỗ",            ""),
         new("issues",     "Xuất Kho Gỗ",            ""),
         new("dotnet",     "Mã C# .NET / WPF",       ""),

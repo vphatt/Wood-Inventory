@@ -73,6 +73,7 @@ public class QuotationItem
     public string Origin { get; set; }         // null = mọi xuất xứ
     public string Specification { get; set; }  // ghi chú tự do, không dùng để khớp giá
     public decimal PriceUsd { get; set; }
+    public DateTime? UpdatedAt { get; set; }    // thời điểm chỉnh sửa gần nhất (ban đầu = lúc tạo dòng)
 }
 
 /// <summary>Bảng báo giá gỗ của nhà cung cấp (quản lý theo phiên bản).</summary>

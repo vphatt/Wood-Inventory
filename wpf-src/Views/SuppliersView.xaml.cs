@@ -27,6 +27,10 @@ public partial class SuppliersView : UserControl, IModuleView
     private readonly List<SupRow> _rows = new();
     private ICollectionView _view;
 
+    private QuotationDetailView _detailView;
+    private Supplier _detailSupplier;
+    private MainWindow Main => Window.GetWindow(this) as MainWindow;
+
     public SuppliersView()
     {
         InitializeComponent();
@@ -36,6 +40,14 @@ public partial class SuppliersView : UserControl, IModuleView
 
     public void RefreshView()
     {
+        if (_detailView != null && _detailSupplier != null)
+        {
+            // Đang ở trang báo giá của 1 NCC → cập nhật nó + giữ breadcrumb
+            _detailView.RefreshView();
+            Main?.SetBreadcrumbDetail(_detailSupplier.Name, BackToList);
+            return;
+        }
+
         _rows.Clear();
         foreach (var s in AppState.Suppliers) _rows.Add(new SupRow(s));
 
@@ -44,6 +56,7 @@ public partial class SuppliersView : UserControl, IModuleView
             _view = CollectionViewSource.GetDefaultView(_rows);
             _view.Filter = FilterPredicate;
             Grid.ItemsSource = _view;
+            ActionGrid.ItemsSource = _view;   // cột thao tác tách riêng, cùng nguồn
         }
         _view.Refresh();
         UpdateCountAndEmpty();
@@ -66,6 +79,38 @@ public partial class SuppliersView : UserControl, IModuleView
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
         _view.Refresh();
         UpdateCountAndEmpty();
+    }
+
+    // ---------------- Điều hướng sang trang báo giá của NCC (trong cùng tab) ----------------
+
+    private void OpenQuotation_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is SupRow r) OpenDetail(r.Supplier);
+    }
+
+    private void OpenDetail(Supplier s)
+    {
+        // Đóng form thêm/sửa NCC (nếu đang mở) trước khi vào trang báo giá
+        AddFormPanel.Visibility = Visibility.Collapsed;
+        EnterAddMode();
+
+        _detailSupplier = s;
+        _detailView = new QuotationDetailView(s, BackToList);
+        DetailHost.Content = _detailView;
+        ListRoot.Visibility = Visibility.Collapsed;
+        DetailHost.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail(s.Name, BackToList);
+    }
+
+    private void BackToList()
+    {
+        _detailView = null;
+        _detailSupplier = null;
+        DetailHost.Content = null;
+        DetailHost.Visibility = Visibility.Collapsed;
+        ListRoot.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail(null);
+        RefreshView();
     }
 
     private void UpdateCountAndEmpty()

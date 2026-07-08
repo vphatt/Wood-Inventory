@@ -202,7 +202,12 @@
             <!-- ===== Lịch sử phiếu nhập (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
                 <Grid>
-                    <DataGrid x:Name="HistoryGrid" Style="{StaticResource DataTable}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <DataGrid x:Name="HistoryGrid" Grid.Column="0" Style="{StaticResource DataTable}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                 Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -224,7 +229,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="NHÀ CUNG CẤP" Binding="{Binding SupplierName}" Width="260" MinWidth="260">
+                            <DataGridTextColumn Header="NHÀ CUNG CẤP" Binding="{Binding SupplierName}" Width="*" MinWidth="200">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -297,7 +302,16 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Header="THAO TÁC" Width="130" MinWidth="120"
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn -->
+                    <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
+                              BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="THAO TÁC" Width="130" MinWidth="130"
                                                     CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -320,7 +334,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <TextBlock x:Name="EmptyRow" Text="Không có phiếu nhập nào khớp bộ lọc."
+                    <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Không có phiếu nhập nào khớp bộ lọc."
                                Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                 </Grid>

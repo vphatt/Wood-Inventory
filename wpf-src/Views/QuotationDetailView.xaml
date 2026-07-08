@@ -12,7 +12,7 @@
                         <Button Style="{StaticResource BtnLink}" Click="BtnBack_Click" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,4,0"/>
-                                <TextBlock Text="Danh sách báo giá"/>
+                                <TextBlock Text="Quay lại"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -64,13 +64,11 @@
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="LOẠI GỖ *" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"/>
-                            <TextBlock Text="PHÂN LOẠI CON" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/>
-                            <ComboBox x:Name="FWoodSubType" Style="{StaticResource Select}"/>
-                            <TextBlock x:Name="WSubType" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="CHẤT LƯỢNG (GRADE)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FGrade" Style="{StaticResource Input}"/>
+                            <TextBlock Text="PHÂN LOẠI CON" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="FWoodSubType" Style="{StaticResource Select}"/>
+                            <TextBlock x:Name="WSubType" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="XUẤT XỨ (ORIGIN)" Style="{StaticResource FieldLabel}"/>
@@ -175,7 +173,13 @@
                     </Border>
 
                     <Grid>
-                        <DataGrid x:Name="ItemGrid" Style="{StaticResource DataTable}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- THỬ NGHIỆM: data cuộn ngang bên trái (*), cột thao tác tách riêng ghim phải (Auto) -->
+                        <DataGrid x:Name="ItemGrid" Grid.Column="0" Style="{StaticResource DataTable}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -192,17 +196,6 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
-                                            <Setter Property="VerticalAlignment" Value="Center"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-
-                                <DataGridTextColumn Header="CHẤT LƯỢNG" Binding="{Binding GradeText}" Width="110" MinWidth="100">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
-                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
-                                            <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
@@ -251,7 +244,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="220" MinWidth="220">
+                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="*" MinWidth="160">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
@@ -273,7 +266,28 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTemplateColumn Header="THAO TÁC" Width="120" MinWidth="110"
+                                <DataGridTextColumn Header="CHỈNH SỬA LẦN CUỐI" Binding="{Binding UpdatedAtText}" Width="180" MinWidth="170" SortMemberPath="Updated">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Cột thao tác tách riêng: bind cùng nguồn _view, không cuộn, luôn hiện bên phải -->
+                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
+                                  BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="THAO TÁC" Width="120" MinWidth="120"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -292,7 +306,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <TextBlock x:Name="EmptyRow" Text="Chưa có mục giá nào. Bấm &quot;Thêm mục giá&quot; để khai báo."
+                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Chưa có mục giá nào. Bấm &quot;Thêm mục giá&quot; để khai báo."
                                    Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                     </Grid>

@@ -342,6 +342,7 @@ public static class AppState
         var q = GetOrCreate(db, supplierId);
         item.Id = $"QI-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
         item.QuotationId = q.Id;
+        item.UpdatedAt = DateTime.Now;   // mốc tạo = lần chỉnh sửa đầu tiên
         q.Items.Add(item);
         q.EffectiveDate = DateTime.Today;
         db.SaveChanges();
@@ -366,6 +367,7 @@ public static class AppState
         existing.Origin = item.Origin;
         existing.Specification = item.Specification;
         existing.PriceUsd = item.PriceUsd;
+        existing.UpdatedAt = DateTime.Now;   // ghi lại thời điểm chỉnh sửa gần nhất
         var q = db.WoodQuotations.Find(existing.QuotationId);
         if (q != null) q.EffectiveDate = DateTime.Today;
         db.SaveChanges();

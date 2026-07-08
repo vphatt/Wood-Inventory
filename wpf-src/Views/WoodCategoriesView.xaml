@@ -107,7 +107,12 @@
                     </Border>
 
                     <Grid>
-                        <DataGrid x:Name="Grid" Style="{StaticResource DataTable}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -119,7 +124,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="TÊN LOẠI GỖ" Binding="{Binding Name}" Width="260" MinWidth="260">
+                                <DataGridTextColumn Header="TÊN LOẠI GỖ" Binding="{Binding Name}" Width="*" MinWidth="180">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -163,7 +168,16 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="THAO TÁC" Width="130" MinWidth="110"
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn -->
+                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
+                                  BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="THAO TÁC" Width="120" MinWidth="120"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -182,7 +196,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <TextBlock x:Name="EmptyRow" Text="Không có loại gỗ nào khớp bộ lọc."
+                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Không có loại gỗ nào khớp bộ lọc."
                                    Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                     </Grid>

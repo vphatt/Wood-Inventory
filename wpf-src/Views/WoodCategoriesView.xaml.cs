@@ -100,6 +100,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
             _view = CollectionViewSource.GetDefaultView(_rows);
             _view.Filter = FilterPredicate;
             Grid.ItemsSource = _view;
+            ActionGrid.ItemsSource = _view;   // cột thao tác tách riêng, cùng nguồn
         }
         _view.Refresh();
         UpdateCountAndEmpty();

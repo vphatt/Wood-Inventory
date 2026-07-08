@@ -180,7 +180,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="280" MinWidth="280">
+                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="*" MinWidth="220">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">
