@@ -177,7 +177,17 @@
                     <Grid>
                         <DataGrid x:Name="ItemGrid" Style="{StaticResource DataTable}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="LOẠI GỖ" Binding="{Binding WoodTypeDisplay}" Width="2*" MinWidth="150" SortMemberPath="WoodType">
+                                <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="LOẠI GỖ" Binding="{Binding WoodTypeDisplay}" Width="200" MinWidth="200" SortMemberPath="WoodType">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -187,7 +197,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="CHẤT LƯỢNG" Binding="{Binding GradeText}" Width="110">
+                                <DataGridTextColumn Header="CHẤT LƯỢNG" Binding="{Binding GradeText}" Width="110" MinWidth="100">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -198,7 +208,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐỘ DÀY (MM)" Binding="{Binding ThicknessText}" Width="120" SortMemberPath="ThicknessMin">
+                                <DataGridTextColumn Header="ĐỘ DÀY (MM)" Binding="{Binding ThicknessText}" Width="120" MinWidth="110" SortMemberPath="ThicknessMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -209,7 +219,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="RỘNG (MM)" Binding="{Binding WidthText}" Width="120" SortMemberPath="WidthMin">
+                                <DataGridTextColumn Header="RỘNG (MM)" Binding="{Binding WidthText}" Width="120" MinWidth="110" SortMemberPath="WidthMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -220,7 +230,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="DÀI (MM)" Binding="{Binding LengthText}" Width="120" SortMemberPath="LengthMin">
+                                <DataGridTextColumn Header="DÀI (MM)" Binding="{Binding LengthText}" Width="120" MinWidth="110" SortMemberPath="LengthMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -231,7 +241,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="XUẤT XỨ" Binding="{Binding OriginText}" Width="120">
+                                <DataGridTextColumn Header="XUẤT XỨ" Binding="{Binding OriginText}" Width="120" MinWidth="110">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
@@ -241,7 +251,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="1.6*" MinWidth="140">
+                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="220" MinWidth="220">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
@@ -251,7 +261,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐƠN GIÁ USD/M³" Binding="{Binding PriceText}" Width="150" SortMemberPath="Price">
+                                <DataGridTextColumn Header="ĐƠN GIÁ USD/M³" Binding="{Binding PriceText}" Width="150" MinWidth="130" SortMemberPath="Price">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>

@@ -59,7 +59,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="NGÀY XUẤT KHO" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FDate" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
+                            <DatePicker x:Name="FDate" Style="{StaticResource DatePickerField}"/>
                         </StackPanel>
                     </Grid>
 
@@ -77,11 +77,12 @@
                     <!-- Bảng các dòng xuất -->
                     <Border BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8">
                         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel MinWidth="1030">
+                            <StackPanel MinWidth="1075">
                                 <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
                                         BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="45"/>
                                             <ColumnDefinition Width="220"/>
                                             <ColumnDefinition Width="*" MinWidth="200"/>
                                             <ColumnDefinition Width="150"/>
@@ -91,14 +92,15 @@
                                             <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="50"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="KIỆN GỖ NGUỒN (LOT ID)" Style="{StaticResource THead}" Margin="12,9"/>
-                                        <TextBlock Grid.Column="1" Text="LOẠI GỖ / THÔNG SỐ KIỆN" Style="{StaticResource THead}" Margin="12,9"/>
-                                        <TextBlock Grid.Column="2" Text="TỒN KHẢ DỤNG" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="SỐ LƯỢNG XUẤT" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="4" Text="THỂ TÍCH XUẤT (M³)" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="5" Text="GIÁ VỐN VND/M³" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="6" Text="CHI PHÍ XUẤT" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="7" Text="XÓA" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="STT" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="KIỆN GỖ NGUỒN (LOT ID)" Style="{StaticResource THead}" Margin="12,9"/>
+                                        <TextBlock Grid.Column="2" Text="LOẠI GỖ / THÔNG SỐ KIỆN" Style="{StaticResource THead}" Margin="12,9"/>
+                                        <TextBlock Grid.Column="3" Text="TỒN KHẢ DỤNG" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="SỐ LƯỢNG XUẤT" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="5" Text="THỂ TÍCH XUẤT (M³)" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="6" Text="GIÁ VỐN VND/M³" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="7" Text="CHI PHÍ XUẤT" Style="{StaticResource THead}" Margin="6,9" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="8" Text="XÓA" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
                                     </Grid>
                                 </Border>
                                 <ItemsControl x:Name="IssueRowsPanel"/>
@@ -158,6 +160,16 @@
                 <Grid>
                     <DataGrid x:Name="HistoryGrid" Style="{StaticResource DataTable}">
                         <DataGrid.Columns>
+                            <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                                Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="SỐ PHIẾU XUẤT" Binding="{Binding Id}" Width="130" MinWidth="110">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
@@ -168,7 +180,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="2*" MinWidth="210">
+                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="280" MinWidth="280">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">
@@ -182,7 +194,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="NGÀY XUẤT" Binding="{Binding DateText}" Width="110">
+                            <DataGridTextColumn Header="NGÀY XUẤT" Binding="{Binding DateText}" Width="110" MinWidth="100">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -214,7 +226,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="TỔNG THANH XUẤT" Binding="{Binding QtyText}" Width="120" SortMemberPath="Qty">
+                            <DataGridTextColumn Header="TỔNG THANH XUẤT" Binding="{Binding QtyText}" Width="120" MinWidth="110" SortMemberPath="Qty">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -225,7 +237,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="TỔNG THỂ TÍCH M³" Binding="{Binding VolText}" Width="140" SortMemberPath="Vol">
+                            <DataGridTextColumn Header="TỔNG THỂ TÍCH M³" Binding="{Binding VolText}" Width="140" MinWidth="130" SortMemberPath="Vol">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -237,7 +249,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="HẠCH TOÁN GIÁ VỐN" Binding="{Binding ValText}" Width="160" SortMemberPath="Val">
+                            <DataGridTextColumn Header="HẠCH TOÁN GIÁ VỐN" Binding="{Binding ValText}" Width="160" MinWidth="140" SortMemberPath="Val">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>

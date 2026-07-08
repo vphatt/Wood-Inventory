@@ -48,7 +48,17 @@
                         <Grid>
                             <DataGrid x:Name="SupplierGrid" Style="{StaticResource DataTable}">
                                 <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="NHÀ CUNG CẤP" SortMemberPath="Name" Width="2.4*" MinWidth="260">
+                                    <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                                        Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="NHÀ CUNG CẤP" SortMemberPath="Name" Width="340" MinWidth="340">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel VerticalAlignment="Center">
@@ -61,7 +71,7 @@
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
 
-                                    <DataGridTextColumn Header="SỐ MỤC GIÁ" Binding="{Binding ItemCountText}" Width="130" SortMemberPath="ItemCount">
+                                    <DataGridTextColumn Header="SỐ MỤC GIÁ" Binding="{Binding ItemCountText}" Width="130" MinWidth="110" SortMemberPath="ItemCount">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -72,7 +82,7 @@
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
 
-                                    <DataGridTextColumn Header="NGÀY ÁP DỤNG" Binding="{Binding DateText}" Width="150" SortMemberPath="Date">
+                                    <DataGridTextColumn Header="NGÀY ÁP DỤNG" Binding="{Binding DateText}" Width="150" MinWidth="130" SortMemberPath="Date">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>

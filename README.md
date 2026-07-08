@@ -5,17 +5,21 @@ Phần mềm ERP quản lý kho gỗ nguyên liệu, chạy **desktop thuần .N
 
 ## Phân hệ
 - **Bảng Điều Khiển** — KPI tồn kho, biểu đồ theo chủng loại & nhà cung cấp, cảnh báo tồn thấp
-- **Quản Lý Kiện Gỗ (Lots)** — tra cứu, khai báo kiện, truy xuất nguồn gốc & lịch sử xuất
-- **Báo Giá Gỗ NCC** — quản lý báo giá theo phiên bản, kích hoạt/tạm dừng
-- **Nhập Kho Gỗ** — lập phiếu nhập, tự tra đơn giá từ báo giá đang kích hoạt, khóa giá vốn
+- **Phân Loại Gỗ** — danh mục loại gỗ (cha) + phân loại con, gắn nguyên tắc tính m³ (theo quy cách Dày×Rộng×Dài hoặc theo Footage) — không hardcode, mọi nơi khác lấy dropdown từ đây
+- **Nhà Cung Cấp** — thông tin NCC (mã số thuế, địa chỉ, tài khoản ngân hàng...)
+- **Quản Lý Kiện Gỗ (Lots)** — tra cứu, lọc, xóa kiện gỗ (kiện chỉ được tạo/sửa qua phiếu Nhập Kho, không có form thêm riêng)
+- **Báo Giá Gỗ NCC** — mỗi NCC 1 danh sách giá (không còn phiên bản/kích hoạt), field linh hoạt theo range (đủ Dày, hoặc Dày+Rộng+Dài, có/không Xuất xứ...), tự khớp giá cụ thể nhất khi nhập kho
+- **Nhập Kho Gỗ** — lập phiếu nhập, tự tra đơn giá từ báo giá NCC theo loại gỗ/phân loại con/xuất xứ/kích thước (cập nhật realtime), khóa giá vốn theo tỷ giá + thuế nhập khẩu khai báo ở phiếu
 - **Xuất Kho Gỗ** — xuất theo đơn hàng, hạch toán giá vốn đích danh, khấu trừ tồn
 
 ## Cấu trúc mã nguồn (`wpf-src/`)
 ```
-Domain/     Entities + WoodVolumeCalculator (nghiệp vụ thuần)
+Domain/     Entities + QuotationPriceMatcher + WoodVolumeCalculator (nghiệp vụ thuần)
 Data/       AppDbContext (EF Core + SQLite) + DbSeeder + AppState
-Views/      6 màn hình WPF (Dashboard, Lots, Quotations, Receipts, Issues, DotNet)
-App.xaml    Bảng màu + style dùng chung (slate/blue/emerald/rose)
+Helpers/    Fmt (format số/tiền/ngày vi-VN + parse ngược) + GridLayoutStore (nhớ bố cục cột) + RowNumberConverter (STT)
+Views/      8 màn hình WPF chính (Dashboard, Phân Loại Gỗ, Nhà Cung Cấp, Lots, Quotations, Receipts, Issues, DotNet)
+            + 2 trang con drill-down (chi tiết báo giá NCC, phân loại con)
+App.xaml    Bảng màu + style dùng chung (slate/blue/emerald/rose) + thanh cuộn mảnh riêng theo theme
 MainWindow  Sidebar + dải tab động + breadcrumb + thanh trạng thái
 ```
 

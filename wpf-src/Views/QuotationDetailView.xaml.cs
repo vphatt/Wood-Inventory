@@ -150,8 +150,7 @@ public partial class QuotationDetailView : UserControl
 
     // ---------------- Thêm / Xem / Sửa ----------------
 
-    private static double D(string s) =>
-        double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+    private static double D(string s) => Fmt.ParseNum(s);
 
     private static string NullIfBlank(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
@@ -168,7 +167,7 @@ public partial class QuotationDetailView : UserControl
     private static bool TryParseOptional(string text, out double? value)
     {
         if (string.IsNullOrWhiteSpace(text)) { value = null; return true; }
-        if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) && v >= 0)
+        if (double.TryParse(text, NumberStyles.Any, CultureInfo.GetCultureInfo("vi-VN"), out var v) && v >= 0)
         {
             value = v;
             return true;

@@ -1,4 +1,4 @@
-using System.Globalization;
+using TimberFlowDesktop.Helpers;
 
 namespace TimberFlowDesktop.Domain;
 
@@ -26,12 +26,12 @@ public static class WoodVolumeCalculator
         var slash = text.IndexOf('/');
         if (slash > 0)
         {
-            var aOk = double.TryParse(text[..slash].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var a);
-            var bOk = double.TryParse(text[(slash + 1)..].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var b);
-            return aOk && bOk && b != 0 ? Math.Round(a / b * 25.4, 4) : 0;
+            var a = Fmt.ParseNum(text[..slash].Trim());
+            var b = Fmt.ParseNum(text[(slash + 1)..].Trim());
+            return b != 0 ? Math.Round(a / b * 25.4, 4) : 0;
         }
 
-        if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var value)) return 0;
+        var value = Fmt.ParseNum(text);
         return isInches ? Math.Round(value * 25.4, 4) : value;
     }
 
@@ -62,4 +62,16 @@ public static class WoodVolumeCalculator
     /// <summary>Tổng giá trị VND = Giá vốn/m³ * m³.</summary>
     public static decimal CalculateTotalValue(decimal costPriceVnd, double cbm)
         => Math.Round(costPriceVnd * (decimal)cbm, 0);
+
+    /// <summary>Tổng tiền USD = Đơn giá USD/m³ * Thể tích m³.</summary>
+    public static decimal CalculateTotalUsd(decimal priceUsd, double cbm)
+        => Math.Round(priceUsd * (decimal)cbm, 2);
+
+    /// <summary>Quy đổi một khoản USD sang VND theo tỷ giá, làm tròn đến đồng.</summary>
+    public static decimal ConvertUsdToVnd(decimal amountUsd, decimal exchangeRate)
+        => Math.Round(amountUsd * exchangeRate, 0);
+
+    /// <summary>Tiền thuế VND = Tổng tiền VND * Thuế% / 100, làm tròn đến đồng.</summary>
+    public static decimal CalculateTaxAmountVnd(decimal totalVnd, decimal taxPercent)
+        => Math.Round(totalVnd * taxPercent / 100m, 0);
 }

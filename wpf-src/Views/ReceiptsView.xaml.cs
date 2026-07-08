@@ -17,6 +17,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         // Dòng kiện mới: mọi field để TRỐNG (loại gỗ = placeholder chưa chọn).
         public string Id = "";
+        public string DeliveryNote = "";
         public string WoodType = "";
         public string WoodSubType;   // phân loại con (null = chưa chọn/không phân loại)
         public string Thickness = "";
@@ -32,6 +33,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         public double Cbm;
         public decimal EffectivePriceUsd;
         public decimal CostPriceVnd;
+        public decimal TotalUsd;
+        public decimal TotalVnd;
+        public decimal TaxVnd;
         public decimal TotalValueVnd;
         public bool PriceFromQuotation;
     }
@@ -45,7 +49,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     public ReceiptsView()
     {
         InitializeComponent();
-        FDate.Text = Fmt.Date(DateTime.Today);
+        FDate.SelectedDate = DateTime.Today;
         InitTaxCombo();
         ResetDraft();
         RefreshView();
@@ -83,8 +87,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         RebuildHistory();
     }
 
-    private static double D(string s) =>
-        double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+    private static double D(string s) => Fmt.ParseNum(s);
 
     private static string Blank2Null(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
@@ -118,7 +121,10 @@ public partial class ReceiptsView : UserControl, IModuleView
             D(lot.Length), (int)D(lot.Quantity), D(lot.Footage));
         lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePriceUsd,
             (decimal)SelectedExchangeRate, (decimal)SelectedTaxPercent);
-        lot.TotalValueVnd = WoodVolumeCalculator.CalculateTotalValue(lot.CostPriceVnd, lot.Cbm);
+        lot.TotalUsd = WoodVolumeCalculator.CalculateTotalUsd(lot.EffectivePriceUsd, lot.Cbm);
+        lot.TotalVnd = WoodVolumeCalculator.ConvertUsdToVnd(lot.TotalUsd, (decimal)SelectedExchangeRate);
+        lot.TaxVnd = WoodVolumeCalculator.CalculateTaxAmountVnd(lot.TotalVnd, (decimal)SelectedTaxPercent);
+        lot.TotalValueVnd = lot.TotalVnd + lot.TaxVnd;
     }
 
     // ---------------- Bảng khai báo ----------------
@@ -127,20 +133,84 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         LotRowsPanel.Items.Clear();
         _rowUpdaters.Clear();
-        foreach (var lot in _draftLots)
-            LotRowsPanel.Items.Add(BuildLotRow(lot));
+        for (var i = 0; i < _draftLots.Count; i++)
+        {
+            var lot = _draftLots[i];
+            LotRowsPanel.Items.Add(_mode == "view" ? BuildLotRowReadOnly(lot, i + 1) : BuildLotRow(lot, i + 1));
+        }
         UpdateTotals();
     }
 
-    private FrameworkElement BuildLotRow(DraftLot lot)
+    /// <summary>Chế độ xem: danh sách kiện hiển thị thuần bảng đọc (TextBlock), không phải field form.</summary>
+    private FrameworkElement BuildLotRowReadOnly(DraftLot lot, int stt)
+    {
+        Recalculate(lot);
+        var isFootage = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
+
+        var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 140, 110, 120, 110, -1, 50 })
+            grid.ColumnDefinitions.Add(w < 0
+                ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
+                : new ColumnDefinition { Width = new GridLength(w) });
+
+        void Cell(string text, int col, HorizontalAlignment align, bool mono = true,
+            Brush color = null, FontWeight? weight = null, Thickness? margin = null)
+        {
+            var tb = new TextBlock
+            {
+                Text = string.IsNullOrWhiteSpace(text) ? "-" : text,
+                Foreground = color ?? (Brush)FindResource("Slate700"),
+                HorizontalAlignment = align, VerticalAlignment = VerticalAlignment.Center,
+                Margin = margin ?? new Thickness(6, 0, 6, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            if (mono) tb.FontFamily = (FontFamily)FindResource("FontMono");
+            if (weight.HasValue) tb.FontWeight = weight.Value;
+            Grid.SetColumn(tb, col);
+            grid.Children.Add(tb);
+        }
+
+        Cell(stt.ToString(), 0, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
+        Cell(lot.Id, 1, HorizontalAlignment.Left, weight: FontWeights.SemiBold,
+            color: (Brush)FindResource("Slate900"), margin: new Thickness(12, 0, 6, 0));
+        Cell(lot.DeliveryNote, 2, HorizontalAlignment.Left, mono: false);
+        Cell(lot.WoodType, 3, HorizontalAlignment.Left, mono: false);
+        Cell(lot.WoodSubType, 4, HorizontalAlignment.Left, mono: false);
+        Cell(lot.Origin, 5, HorizontalAlignment.Center);
+        Cell(lot.Thickness, 6, HorizontalAlignment.Center);
+        Cell(isFootage ? "-" : lot.Width, 7, HorizontalAlignment.Center);
+        Cell(isFootage ? lot.LengthNote : lot.Length, 8, HorizontalAlignment.Center);
+        Cell(isFootage ? lot.Footage : "-", 9, HorizontalAlignment.Center);
+        Cell(lot.Quantity, 10, HorizontalAlignment.Center);
+        Cell(Fmt.M3(lot.Cbm), 11, HorizontalAlignment.Right);
+        Cell(lot.EffectivePriceUsd > 0 ? Fmt.Usd(lot.EffectivePriceUsd) : "Chưa xác định", 12, HorizontalAlignment.Right,
+            color: (Brush)FindResource(lot.EffectivePriceUsd > 0 ? "Slate800" : "Slate400"));
+        Cell(Fmt.Usd(lot.TotalUsd), 13, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalVnd), 14, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TaxVnd), 15, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalValueVnd), 16, HorizontalAlignment.Right,
+            weight: FontWeights.SemiBold, color: (Brush)FindResource("Emerald600"), margin: new Thickness(6, 0, 12, 0));
+        // Cột 17 (Xóa): để trống — chế độ xem không cho xóa.
+
+        return new Border
+        {
+            BorderBrush = (Brush)FindResource("Slate100"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Background = Brushes.White,
+            Child = grid
+        };
+    }
+
+    private FrameworkElement BuildLotRow(DraftLot lot, int stt)
     {
         Recalculate(lot);
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        // MãKiện, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, GiáUSD, GiáVND(*), Xóa
-        foreach (var w in new[] { 100.0, 120, 120, 95, 70, 70, 95, 80, 70, 90, 100, -1, 50 })
+        // STT, MãKiện, PhiếuGiaoHàng, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, ĐơnGiáUSD,
+        // TổngTiềnUSD, TổngTiềnVND, TiềnThuếVND, TổngCộngVND(*), Xóa
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 140, 110, 120, 110, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
-                ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 110 }
+                ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
                 : new ColumnDefinition { Width = new GridLength(w) });
 
         // Kết quả (tạo trước để các handler cập nhật được)
@@ -151,13 +221,23 @@ public partial class ReceiptsView : UserControl, IModuleView
             Margin = new Thickness(6, 0, 6, 0),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center
         };
-        var costText = new TextBlock
+        TextBlock MoneyText(bool bold = false, Brush color = null) => new()
         {
-            Text = Fmt.Vnd(lot.CostPriceVnd), FontFamily = (FontFamily)FindResource("FontMono"),
-            Foreground = (Brush)FindResource("Slate800"),
-            Margin = new Thickness(6, 0, 12, 0),
+            FontFamily = (FontFamily)FindResource("FontMono"),
+            FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal,
+            Foreground = color ?? (Brush)FindResource("Slate800"),
+            Margin = new Thickness(6, 0, 6, 0),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center
         };
+        var totalUsdText = MoneyText();
+        var totalVndText = MoneyText();
+        var taxVndText = MoneyText();
+        var grandTotalText = MoneyText(bold: true, color: (Brush)FindResource("Emerald600"));
+        grandTotalText.Margin = new Thickness(6, 0, 12, 0);
+        totalUsdText.Text = Fmt.Usd(lot.TotalUsd);
+        totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
+        taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
+        grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
         var priceBox = new TextBox
         {
             Style = (Style)FindResource("CellInputMono"),
@@ -167,15 +247,30 @@ public partial class ReceiptsView : UserControl, IModuleView
             IsReadOnly = ReadOnly || lot.PriceFromQuotation,
             Foreground = lot.PriceFromQuotation
                 ? (Brush)FindResource("Emerald600")
-                : (Brush)FindResource("Rose500"),
+                : (Brush)FindResource("Slate700"),
             FontWeight = lot.PriceFromQuotation ? FontWeights.SemiBold : FontWeights.Normal
+        };
+        // Chưa khớp báo giá và cũng chưa nhập tay → hiện "Chưa xác định" đè lên ô trống
+        // (giống pattern SearchHint), thay vì chỉ tô đỏ giá trị hiện có.
+        var priceHint = new TextBlock
+        {
+            Text = "Chưa xác định", FontStyle = FontStyles.Italic,
+            FontFamily = (FontFamily)FindResource("FontMono"), FontSize = 11,
+            Foreground = (Brush)FindResource("Slate400"),
+            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(6, 0, 12, 0), IsHitTestVisible = false,
+            Visibility = !lot.PriceFromQuotation && string.IsNullOrWhiteSpace(lot.ManualPriceUsd)
+                ? Visibility.Visible : Visibility.Collapsed
         };
 
         void Update()
         {
             Recalculate(lot);
             cbmText.Text = Fmt.M3(lot.Cbm);
-            costText.Text = Fmt.Vnd(lot.CostPriceVnd);
+            totalUsdText.Text = Fmt.Usd(lot.TotalUsd);
+            totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
+            taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
+            grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
             if (lot.PriceFromQuotation)
             {
                 priceBox.IsReadOnly = true;
@@ -183,12 +278,17 @@ public partial class ReceiptsView : UserControl, IModuleView
                 priceBox.FontWeight = FontWeights.SemiBold;
                 var autoText = Fmt.Num((double)lot.EffectivePriceUsd);
                 if (priceBox.Text != autoText) priceBox.Text = autoText;
+                priceHint.Visibility = Visibility.Collapsed;
             }
             else
             {
                 priceBox.IsReadOnly = ReadOnly;
-                priceBox.Foreground = (Brush)FindResource("Rose500");
+                priceBox.Foreground = (Brush)FindResource("Slate700");
                 priceBox.FontWeight = FontWeights.Normal;
+                // Reset lại text nếu trước đó đang hiện giá tự động (vd đổi độ dày làm mất khớp báo giá)
+                if (priceBox.Text != lot.ManualPriceUsd) priceBox.Text = lot.ManualPriceUsd;
+                priceHint.Visibility = string.IsNullOrWhiteSpace(lot.ManualPriceUsd)
+                    ? Visibility.Visible : Visibility.Collapsed;
             }
             UpdateTotals();
         }
@@ -199,10 +299,23 @@ public partial class ReceiptsView : UserControl, IModuleView
             if (!lot.PriceFromQuotation) { lot.ManualPriceUsd = priceBox.Text; Update(); }
         };
 
-        // 0. Mã kiện
+        // STT (không sửa được, chỉ hiển thị thứ tự)
+        var sttText = new TextBlock
+        {
+            Text = stt.ToString(), Foreground = (Brush)FindResource("Slate400"),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(sttText, 0); grid.Children.Add(sttText);
+
+        // 1. Mã kiện
         var idBox = Cell(lot.Id, s => { lot.Id = s; }, mono: true, bold: true);
         idBox.Margin = new Thickness(12, 0, 6, 0);
-        Grid.SetColumn(idBox, 0); grid.Children.Add(idBox);
+        Grid.SetColumn(idBox, 1); grid.Children.Add(idBox);
+
+        // 2. Phiếu giao hàng
+        var deliveryNoteBox = Cell(lot.DeliveryNote, s => { lot.DeliveryNote = s; }, mono: false);
+        deliveryNoteBox.Margin = new Thickness(6, 0, 6, 0);
+        Grid.SetColumn(deliveryNoteBox, 2); grid.Children.Add(deliveryNoteBox);
 
         // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³)
         var widthBox = Cell(lot.Width, s => { lot.Width = s; Update(); }, mono: true, center: true);
@@ -225,7 +338,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             lengthNoteBox.Visibility = footage ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        // 1. Loại gỗ (cha) + 2. Phân loại con (hai cột riêng, cha trái con phải)
+        // 3. Loại gỗ (cha) + 4. Phân loại con (hai cột riêng, cha trái con phải)
         var typeCombo = new ComboBox
         {
             Style = (Style)FindResource("Select"),
@@ -269,37 +382,41 @@ public partial class ReceiptsView : UserControl, IModuleView
         RebuildSub();
         ApplyRuleVisibility();
 
-        Grid.SetColumn(typeCombo, 1); grid.Children.Add(typeCombo);
-        Grid.SetColumn(subCombo, 2); grid.Children.Add(subCombo);
+        Grid.SetColumn(typeCombo, 3); grid.Children.Add(typeCombo);
+        Grid.SetColumn(subCombo, 4); grid.Children.Add(subCombo);
 
-        // 3. Xuất xứ
+        // 5. Xuất xứ
         var originBox = Cell(lot.Origin, s => { lot.Origin = s; Update(); }, mono: true, center: true);
         originBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(originBox, 3); grid.Children.Add(originBox);
+        Grid.SetColumn(originBox, 5); grid.Children.Add(originBox);
 
-        // 4. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...)
+        // 6. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...)
         var thickBox = Cell(lot.Thickness, s => { lot.Thickness = s; Update(); }, mono: true, center: true);
         thickBox.Margin = new Thickness(6, 0, 6, 0);
         thickBox.ToolTip = "Số mm; gỗ nhóm Footage có thể nhập dạng inch: 1\", 4/4\", 5/4\"";
-        Grid.SetColumn(thickBox, 4); grid.Children.Add(thickBox);
+        Grid.SetColumn(thickBox, 6); grid.Children.Add(thickBox);
 
-        // 5. Rộng (ẩn nếu gỗ footage)
-        Grid.SetColumn(widthBox, 5); grid.Children.Add(widthBox);
-        // 6. Dài (quy cách = mm; footage = ký hiệu inch — hai ô chồng nhau, toggle theo rule)
-        Grid.SetColumn(lengthBox, 6); grid.Children.Add(lengthBox);
-        Grid.SetColumn(lengthNoteBox, 6); grid.Children.Add(lengthNoteBox);
-        // 7. Footage (ẩn nếu gỗ quy cách)
-        Grid.SetColumn(footageBox, 7); grid.Children.Add(footageBox);
+        // 7. Rộng (ẩn nếu gỗ footage)
+        Grid.SetColumn(widthBox, 7); grid.Children.Add(widthBox);
+        // 8. Dài (quy cách = mm; footage = ký hiệu inch — hai ô chồng nhau, toggle theo rule)
+        Grid.SetColumn(lengthBox, 8); grid.Children.Add(lengthBox);
+        Grid.SetColumn(lengthNoteBox, 8); grid.Children.Add(lengthNoteBox);
+        // 9. Footage (ẩn nếu gỗ quy cách)
+        Grid.SetColumn(footageBox, 9); grid.Children.Add(footageBox);
 
-        // 8. Số lượng
+        // 10. Số lượng
         var qtyBox = Cell(lot.Quantity, s => { lot.Quantity = s; Update(); }, mono: true, center: true);
         qtyBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(qtyBox, 8); grid.Children.Add(qtyBox);
+        Grid.SetColumn(qtyBox, 10); grid.Children.Add(qtyBox);
 
-        // 9. Thể tích  10. Giá USD  11. Giá vốn VND
-        Grid.SetColumn(cbmText, 9); grid.Children.Add(cbmText);
-        Grid.SetColumn(priceBox, 10); grid.Children.Add(priceBox);
-        Grid.SetColumn(costText, 11); grid.Children.Add(costText);
+        // 11. Thể tích  12. Đơn giá USD  13-16. Tổng tiền USD/VND, Tiền thuế, Tổng cộng
+        Grid.SetColumn(cbmText, 11); grid.Children.Add(cbmText);
+        Grid.SetColumn(priceBox, 12); grid.Children.Add(priceBox);
+        Grid.SetColumn(priceHint, 12); grid.Children.Add(priceHint);
+        Grid.SetColumn(totalUsdText, 13); grid.Children.Add(totalUsdText);
+        Grid.SetColumn(totalVndText, 14); grid.Children.Add(totalVndText);
+        Grid.SetColumn(taxVndText, 15); grid.Children.Add(taxVndText);
+        Grid.SetColumn(grandTotalText, 16); grid.Children.Add(grandTotalText);
 
         // Xóa
         var del = new Button
@@ -314,7 +431,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             _draftLots.Remove(lot);
             RebuildLotRows();
         };
-        Grid.SetColumn(del, 12); grid.Children.Add(del);
+        Grid.SetColumn(del, 17); grid.Children.Add(del);
 
         return new Border
         {
@@ -410,11 +527,12 @@ public partial class ReceiptsView : UserControl, IModuleView
     /// <summary>Bật/tắt chỉ-đọc cho các ô ở phần header chứng từ.</summary>
     private void SetHeaderReadOnly(bool ro)
     {
-        foreach (var box in new[] { FDate, FInvoice, FPackingList, FExchangeRate })
+        foreach (var box in new[] { FInvoice, FPackingList, FExchangeRate })
         {
             box.IsReadOnly = ro;
             box.Background = ro ? (Brush)FindResource("Slate50") : Brushes.White;
         }
+        FDate.IsEnabled = !ro;
         FSupplier.IsEnabled = !ro;
         FTaxPercent.IsEnabled = !ro;
     }
@@ -432,7 +550,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         FPackingList.Text = "";
         FExchangeRate.Text = "25400";
         FTaxPercent.SelectedIndex = 3;
-        FDate.Text = Fmt.Date(DateTime.Today);
+        FDate.SelectedDate = DateTime.Today;
         if (FSupplier.Items.Count > 0) FSupplier.SelectedIndex = 0;
         ResetDraft();
     }
@@ -470,7 +588,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         foreach (ComboBoxItem it in FSupplier.Items)
             if ((it.Tag as string) == r.SupplierId) { FSupplier.SelectedItem = it; break; }
-        FDate.Text = Fmt.Date(r.Date);
+        FDate.SelectedDate = r.Date;
         FInvoice.Text = r.Invoice;
         FPackingList.Text = r.PackingList;
 
@@ -495,6 +613,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         return new DraftLot
         {
             Id = l.Id,
+            DeliveryNote = l.DeliveryNote ?? "",
             WoodType = l.WoodType,
             WoodSubType = l.WoodSubType,
             // Gỗ footage: hiện lại ký hiệu inch gốc nếu có, không thì rơi về mm.
@@ -567,9 +686,7 @@ public partial class ReceiptsView : UserControl, IModuleView
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (!DateTime.TryParseExact(FDate.Text?.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var date))
-            date = DateTime.Today;
+        var date = FDate.SelectedDate ?? DateTime.Today;
 
         var ids = _draftLots.Select(l => (l.Id ?? "").Trim().ToUpperInvariant()).ToList();
         var duplicates = ids.GroupBy(i => i).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
@@ -663,6 +780,7 @@ public partial class ReceiptsView : UserControl, IModuleView
                 ReceiptId = receiptId,
                 Invoice = invoice,
                 PackingList = packingList,
+                DeliveryNote = Blank2Null(d.DeliveryNote),
                 WoodType = d.WoodType,
                 WoodSubType = d.WoodSubType,
                 WoodName = string.Join(" ", new[] { d.WoodType + subPart, Blank2Null(d.Origin), thicknessLabel }
@@ -690,8 +808,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             if (_mode == "edit") AppState.UpdateReceipt(receipt);
             else AppState.AddReceipt(receipt);
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            EnterAddMode();
+            var saved = AppState.Receipts.FirstOrDefault(r => r.Id == receiptId);
+            if (saved != null) EnterViewMode(saved);
+            else { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
         }
         catch (Exception ex)
         {

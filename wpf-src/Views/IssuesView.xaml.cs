@@ -32,7 +32,7 @@ public partial class IssuesView : UserControl, IModuleView
     public IssuesView()
     {
         InitializeComponent();
-        FDate.Text = Fmt.Date(DateTime.Today);
+        FDate.SelectedDate = DateTime.Today;
         ResetDraft();
         RefreshView();
         Helpers.GridLayoutStore.Attach(HistoryGrid, "issues");
@@ -63,8 +63,7 @@ public partial class IssuesView : UserControl, IModuleView
         RebuildHistory();
     }
 
-    private static double D(string s) =>
-        double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+    private static double D(string s) => Fmt.ParseNum(s);
 
     /// <summary>Tính toán/kiểm tra một dòng xuất — logic khớp bản web.</summary>
     private static void Recalculate(DraftItem item)
@@ -119,21 +118,28 @@ public partial class IssuesView : UserControl, IModuleView
     private void RebuildRows()
     {
         IssueRowsPanel.Items.Clear();
-        foreach (var item in _draftItems)
-            IssueRowsPanel.Items.Add(BuildRow(item));
+        for (var i = 0; i < _draftItems.Count; i++)
+            IssueRowsPanel.Items.Add(BuildRow(_draftItems[i], i + 1));
         UpdateTotalsAndErrors();
     }
 
-    private FrameworkElement BuildRow(DraftItem item)
+    private FrameworkElement BuildRow(DraftItem item, int stt)
     {
         Recalculate(item);
         var availableLots = AppState.Lots.Where(l => l.Quantity > 0).ToList();
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        foreach (var w in new[] { 220.0, -1, 150, 100, 115, 120, 120, 50 })
+        foreach (var w in new[] { 45.0, 220, -1, 150, 100, 115, 120, 120, 50 })
             grid.ColumnDefinitions.Add(w < 0
                 ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 200 }
                 : new ColumnDefinition { Width = new GridLength(w) });
+
+        var sttText = new TextBlock
+        {
+            Text = stt.ToString(), Foreground = (Brush)FindResource("Slate400"),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(sttText, 0); grid.Children.Add(sttText);
 
         // Các ô hiển thị (khai báo trước để handler cập nhật)
         var infoPanel = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -214,10 +220,10 @@ public partial class IssuesView : UserControl, IModuleView
             item.WoodLotId = (lotCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
             UpdateCells();
         };
-        Grid.SetColumn(lotCombo, 0); grid.Children.Add(lotCombo);
+        Grid.SetColumn(lotCombo, 1); grid.Children.Add(lotCombo);
 
-        Grid.SetColumn(infoPanel, 1); grid.Children.Add(infoPanel);
-        Grid.SetColumn(availText, 2); grid.Children.Add(availText);
+        Grid.SetColumn(infoPanel, 2); grid.Children.Add(infoPanel);
+        Grid.SetColumn(availText, 3); grid.Children.Add(availText);
 
         // Số lượng xuất
         var qtyBox = new TextBox
@@ -228,11 +234,11 @@ public partial class IssuesView : UserControl, IModuleView
             HorizontalAlignment = HorizontalAlignment.Center
         };
         qtyBox.TextChanged += (_, _) => { item.Quantity = qtyBox.Text; UpdateCells(); };
-        Grid.SetColumn(qtyBox, 3); grid.Children.Add(qtyBox);
+        Grid.SetColumn(qtyBox, 4); grid.Children.Add(qtyBox);
 
-        Grid.SetColumn(cbmText, 4); grid.Children.Add(cbmText);
-        Grid.SetColumn(costText, 5); grid.Children.Add(costText);
-        Grid.SetColumn(totalText, 6); grid.Children.Add(totalText);
+        Grid.SetColumn(cbmText, 5); grid.Children.Add(cbmText);
+        Grid.SetColumn(costText, 6); grid.Children.Add(costText);
+        Grid.SetColumn(totalText, 7); grid.Children.Add(totalText);
 
         var del = new Button
         {
@@ -245,7 +251,7 @@ public partial class IssuesView : UserControl, IModuleView
             _draftItems.Remove(item);
             RebuildRows();
         };
-        Grid.SetColumn(del, 7); grid.Children.Add(del);
+        Grid.SetColumn(del, 8); grid.Children.Add(del);
 
         UpdateCells();
 
@@ -317,9 +323,7 @@ public partial class IssuesView : UserControl, IModuleView
                 "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (!DateTime.TryParseExact(FDate.Text?.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var date))
-            date = DateTime.Today;
+        var date = FDate.SelectedDate ?? DateTime.Today;
 
         var issue = new WarehouseIssue
         {

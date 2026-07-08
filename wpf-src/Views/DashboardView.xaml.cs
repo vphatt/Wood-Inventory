@@ -52,7 +52,7 @@ public partial class DashboardView : UserControl, IModuleView
                 return new BarRow
                 {
                     Name = g.Key,
-                    ValueText = $"{Fmt.M3Short(vol)} m³ ({percent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}%)",
+                    ValueText = $"{Fmt.M3Short(vol)} m³ ({Fmt.Pct1(percent)}%)",
                     Percent = percent
                 };
             })

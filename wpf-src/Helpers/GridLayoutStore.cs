@@ -76,6 +76,10 @@ public static class GridLayoutStore
                     if (col != null && st.Order >= 0 && st.Order < grid.Columns.Count)
                         col.DisplayIndex = st.Order;
                 }
+                // Cột STT luôn ghim vị trí đầu — layout đã lưu từ trước khi có cột STT
+                // (bảng cũ) không được đẩy nó ra sau.
+                var sttCol = grid.Columns.FirstOrDefault(c => ColKey(c) == "STT");
+                if (sttCol != null) sttCol.DisplayIndex = 0;
             }
             catch { /* dữ liệu lệch → bỏ qua */ }
             finally { applying = false; }
@@ -93,6 +97,30 @@ public static class GridLayoutStore
             }).ToList();
             Persist();
         }
+
+        // Bẫy đã dính: lần đầu tiên mở app (chưa có file grid-layout.json → ApplySaved() ở trên
+        // không set lại Width cột nào cả) thì kéo tay viền cột để resize KHÔNG ăn — phải double-click
+        // vào viền 1 lần (thao tác auto-fit có sẵn của DataGrid, tự set thẳng vào Width) thì các lần
+        // kéo sau mới bình thường. Tức là DataGrid cần một lượt set-Width THẬT SỰ (đổi giá trị rồi đổi
+        // lại) để "khởi động" đúng phần hình học của gripper resize; các lần chạy sau có file đã lưu nên
+        // ApplySaved() ở trên vô tình làm việc này giúp, chỉ lần đầu tiên là thiếu. Giả lập lại thao tác
+        // double-click đó ngay sau khi DataGrid Loaded để mọi lần mở đều nhất quán, không phân biệt
+        // có file layout hay chưa.
+        void PrimeColumnWidths()
+        {
+            applying = true;
+            try
+            {
+                foreach (var col in grid.Columns)
+                {
+                    var w = col.Width;
+                    col.Width = new DataGridLength(w.Value + 1, w.UnitType);
+                    col.Width = w;
+                }
+            }
+            finally { applying = false; }
+        }
+        grid.Loaded += (_, _) => PrimeColumnWidths();
 
         ApplySaved();
 

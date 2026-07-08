@@ -66,7 +66,17 @@
                                 <DataGrid x:Name="LotGrid" Style="{StaticResource DataTable}"
                                           SelectionChanged="LotGrid_SelectionChanged">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110">
+                                        <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                                            Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110" MinWidth="100">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="Bold"/>
@@ -76,7 +86,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="LOẠI GỖ / TÊN KIỆN" SortMemberPath="WoodName" Width="2*" MinWidth="190">
+                                        <DataGridTemplateColumn Header="LOẠI GỖ / TÊN KIỆN" SortMemberPath="WoodName" Width="260" MinWidth="260">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel VerticalAlignment="Center">
@@ -89,7 +99,7 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTextColumn Header="DÀY (MM)" Binding="{Binding ThicknessText}" Width="72" SortMemberPath="Thickness">
+                                        <DataGridTextColumn Header="DÀY (MM)" Binding="{Binding ThicknessText}" Width="72" MinWidth="64" SortMemberPath="Thickness">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -100,7 +110,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="RỘNG X DÀI (MM)" Width="130" CanUserSort="False">
+                                        <DataGridTemplateColumn Header="RỘNG X DÀI (MM)" Width="130" MinWidth="120" CanUserSort="False">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding DimText}" FontFamily="{StaticResource FontMono}"
@@ -110,7 +120,7 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTemplateColumn Header="S.LƯỢNG TỒN" Width="140" SortMemberPath="Quantity">
+                                        <DataGridTemplateColumn Header="S.LƯỢNG TỒN" Width="140" MinWidth="120" SortMemberPath="Quantity">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border x:Name="pill" CornerRadius="999" Padding="8,2" Background="{StaticResource Slate100}"
@@ -129,7 +139,7 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" SortMemberPath="RemainingCbm">
+                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -141,7 +151,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="GIÁ VỐN VND/M³" Binding="{Binding CostText}" Width="120" SortMemberPath="CostPriceVnd">
+                                        <DataGridTextColumn Header="GIÁ VỐN VND/M³" Binding="{Binding CostText}" Width="120" MinWidth="110" SortMemberPath="CostPriceVnd">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -152,7 +162,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="GIÁ TRỊ TỒN" Binding="{Binding ValText}" Width="125" SortMemberPath="TotalValueVnd">
+                                        <DataGridTextColumn Header="GIÁ TRỊ TỒN" Binding="{Binding ValText}" Width="125" MinWidth="110" SortMemberPath="TotalValueVnd">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -164,7 +174,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="THAO TÁC" Width="90" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                        <DataGridTemplateColumn Header="THAO TÁC" Width="90" MinWidth="90" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">

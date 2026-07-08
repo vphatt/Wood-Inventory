@@ -368,6 +368,8 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "ThicknessNote" TEXT;""");
         if (existing.Count > 0 && !existing.Contains("Origin"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "Origin" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("DeliveryNote"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "DeliveryNote" TEXT;""");
     }
 
     /// <summary>Seed các loại gỗ mặc định (chỉ khi bảng rỗng). Gỗ Dương tính theo Footage, còn lại theo quy cách.</summary>

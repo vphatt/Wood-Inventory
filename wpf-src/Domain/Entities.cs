@@ -99,6 +99,7 @@ public class WoodLot
     public string ReceiptId { get; set; }          // Phiếu nhập gốc
     public string Invoice { get; set; }
     public string PackingList { get; set; }
+    public string DeliveryNote { get; set; }       // Phiếu giao hàng riêng của kiện (khác Invoice/PackingList chung phiếu)
     public string WoodType { get; set; }           // "Gỗ Dương", "Gỗ Sồi", ... (loại cha)
     public string WoodSubType { get; set; }        // phân loại con (cấp 2), vd "1 com" / "Thông trắng"; null = chưa phân loại
     public string WoodName { get; set; }

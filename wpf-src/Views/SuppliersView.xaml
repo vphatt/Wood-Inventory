@@ -124,7 +124,17 @@
                     <Grid>
                         <DataGrid x:Name="Grid" Style="{StaticResource DataTable}">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="TÊN NHÀ CUNG CẤP" SortMemberPath="Name" Width="2*" MinWidth="240">
+                                <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="TÊN NHÀ CUNG CẤP" SortMemberPath="Name" Width="300" MinWidth="300">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel VerticalAlignment="Center">
@@ -147,7 +157,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="2.4*" MinWidth="240">
+                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="340" MinWidth="340">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
