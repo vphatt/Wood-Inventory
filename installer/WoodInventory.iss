@@ -1,11 +1,11 @@
-; Inno Setup script cho TimberFlow ERP Desktop (WPF thuần .NET + SQLite)
+; Inno Setup script cho Quản Lý Gỗ Desktop (WPF thuần .NET + SQLite)
 ; Đóng gói bản publish self-contained thành file cài đặt Windows hoàn chỉnh.
 ; Chạy offline 100%% — máy đích không cần cài .NET hay bất kỳ thành phần web nào.
 
-#define MyAppName "TimberFlow ERP Desktop"
+#define MyAppName "Quản Lý Gỗ"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "TimberFlow"
-#define MyAppExeName "TimberFlowDesktop.exe"
+#define MyAppPublisher "Công Ty TNHH MTV Hưng Diệu"
+#define MyAppExeName "WoodInventory.exe"
 #define MyAppSource "..\build\desktop-app"
 
 [Setup]
@@ -17,11 +17,11 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\build\installer
-OutputBaseFilename=TimberFlowDesktop-Setup
+OutputBaseFilename=WoodInventory-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-; Cài per-machine (Program Files). Database ghi tại %APPDATA%\TimberFlowDesktop
+; Cài per-machine (Program Files). Database ghi tại %APPDATA%\WoodInventory
 ; nên thư mục cài chỉ-đọc không gây vấn đề.
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible

@@ -1,15 +1,15 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class LotsView : UserControl, IModuleView
 {
@@ -177,7 +177,7 @@ public partial class LotsView : UserControl, IModuleView
     private void DeleteLot(WoodLot lot)
     {
         var confirm = MessageBox.Show($"Bạn có chắc muốn xóa Kiện gỗ {lot.Id} khỏi hệ thống?",
-            "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         try

@@ -1,10 +1,10 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class DashboardView : UserControl, IModuleView
 {

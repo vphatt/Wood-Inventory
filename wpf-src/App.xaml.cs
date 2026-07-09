@@ -1,7 +1,7 @@
-using System.Windows;
-using TimberFlowDesktop.Data;
+﻿using System.Windows;
+using WoodInventory.Data;
 
-namespace TimberFlowDesktop;
+namespace WoodInventory;
 
 public partial class App : Application
 {
@@ -11,7 +11,7 @@ public partial class App : Application
 
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show(args.Exception.Message, "TimberFlow ERP — Lỗi",
+            MessageBox.Show(args.Exception.Message, "Quản Lý Gỗ — Lỗi",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };

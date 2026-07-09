@@ -1,6 +1,6 @@
-using TimberFlowDesktop.Helpers;
+﻿using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Domain;
+namespace WoodInventory.Domain;
 
 /// <summary>
 /// Dịch vụ nghiệp vụ trung tâm: tính thể tích gỗ (m³), giá vốn và giá trị tồn kho.

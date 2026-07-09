@@ -1,12 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Views;
+using WoodInventory.Data;
+using WoodInventory.Views;
 
-namespace TimberFlowDesktop;
+namespace WoodInventory;
 
 /// <summary>
 /// Cửa sổ chính: sidebar điều hướng + dải tab động (mở/đóng tab như bản web)
@@ -31,7 +30,6 @@ public partial class MainWindow : Window
         new("lots",       "Quản Lý Kiện Gỗ (Lots)", ""),
         new("receipts",   "Nhập Kho Gỗ",            ""),
         new("issues",     "Xuất Kho Gỗ",            ""),
-        new("dotnet",     "Mã C# .NET / WPF",       ""),
     };
 
     private readonly List<WorkTab> _tabs = new();
@@ -47,13 +45,11 @@ public partial class MainWindow : Window
 
         OpenModule("dashboard");
 
-        // Hỗ trợ mở thẳng một module khi khởi động: TimberFlowDesktop.exe --module lots
+        // Hỗ trợ mở thẳng một module khi khởi động: WoodInventory.exe --module lots
         var args = Environment.GetCommandLineArgs();
         var idx = Array.IndexOf(args, "--module");
         if (idx >= 0 && idx + 1 < args.Length)
             OpenModule(args[idx + 1]);
-
-        StartPulseAnimation();
     }
 
     private void OnDataChanged()
@@ -344,16 +340,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // Chấm emerald "Hệ Thống Sẵn Sàng" nhấp nháy như animate-pulse
-    private void StartPulseAnimation()
-    {
-        var anim = new DoubleAnimation(1.0, 0.25, TimeSpan.FromSeconds(1))
-        {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever
-        };
-        PulseDot.BeginAnimation(OpacityProperty, anim);
-    }
 }
 
 /// <summary>Các màn hình cài đặt interface này để được làm mới khi kích hoạt tab / dữ liệu đổi.</summary>

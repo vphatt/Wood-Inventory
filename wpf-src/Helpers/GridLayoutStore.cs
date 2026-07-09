@@ -1,6 +1,6 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace TimberFlowDesktop.Helpers;
+namespace WoodInventory.Helpers;
 
 /// <summary>
 /// (ĐÃ VÔ HIỆU HÓA) Trước đây lưu/khôi phục bố cục cột DataGrid theo user (thứ tự + độ rộng).

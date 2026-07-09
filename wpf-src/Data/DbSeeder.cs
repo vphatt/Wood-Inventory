@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using TimberFlowDesktop.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Data;
+namespace WoodInventory.Data;
 
 /// <summary>
-/// Khởi tạo cơ sở dữ liệu và nạp dữ liệu mẫu ngành gỗ (giống hệt bản web TimberFlow).
+/// Khởi tạo cơ sở dữ liệu và nạp dữ liệu mẫu ngành gỗ.
 /// </summary>
 public static class DbSeeder
 {
@@ -333,6 +333,10 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthMax" REAL;""");
         if (!existing.Contains("Origin"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "Origin" TEXT;""");
+        if (!existing.Contains("ThicknessMinNote"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMinNote" TEXT;""");
+        if (!existing.Contains("ThicknessMaxNote"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMaxNote" TEXT;""");
         if (!existing.Contains("UpdatedAt"))
         {
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "UpdatedAt" TEXT;""");

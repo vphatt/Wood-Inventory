@@ -1,4 +1,4 @@
-# TimberFlow ERP — Desktop (WPF + SQLite)
+﻿# Quản Lý Gỗ (WoodInventory) — Desktop (WPF + SQLite)
 
 Phần mềm ERP quản lý kho gỗ nguyên liệu, chạy **desktop thuần .NET (WPF)**, lưu dữ liệu bằng **SQLite** cục bộ.
 **Offline 100%** — không cần internet, không server, không thành phần web (không React/trình duyệt/WebView).
@@ -23,7 +23,7 @@ App.xaml    Bảng màu + style dùng chung (slate/blue/emerald/rose) + thanh cu
 MainWindow  Sidebar + dải tab động + breadcrumb + thanh trạng thái
 ```
 
-Dữ liệu lưu tại: `%APPDATA%\TimberFlowDesktop\timberflow.db` (tự tạo + seed dữ liệu mẫu lần chạy đầu).
+Dữ liệu lưu tại: `%APPDATA%\WoodInventory\woodinventory.db` (tự tạo + seed dữ liệu mẫu lần chạy đầu).
 
 ## Yêu cầu
 - .NET 8 SDK
@@ -31,7 +31,7 @@ Dữ liệu lưu tại: `%APPDATA%\TimberFlowDesktop\timberflow.db` (tự tạo 
 
 ## Chạy khi phát triển
 ```powershell
-dotnet run --project wpf-src\TimberFlowDesktop.csproj
+dotnet run --project wpf-src\WoodInventory.csproj
 ```
 Mở thẳng một phân hệ: thêm `--module lots` (hoặc `dashboard`, `quotations`, `receipts`, `issues`, `dotnet`).
 
@@ -40,5 +40,5 @@ Mở thẳng một phân hệ: thêm `--module lots` (hoặc `dashboard`, `quota
 powershell -ExecutionPolicy Bypass -File .\build-wpf-desktop.ps1
 ```
 Kết quả:
-- `build\desktop-app\TimberFlowDesktop.exe` — 1 file exe self-contained (máy đích không cần cài .NET)
-- `build\installer\TimberFlowDesktop-Setup.exe` — file cài đặt Windows hoàn chỉnh
+- `build\desktop-app\WoodInventory.exe` — 1 file exe self-contained (máy đích không cần cài .NET)
+- `build\installer\WoodInventory-Setup.exe` — file cài đặt Windows hoàn chỉnh

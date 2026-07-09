@@ -1,12 +1,12 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
+using WoodInventory.Data;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 /// <summary>
 /// Trang quản lý phân loại con (cấp 2) của một loại gỗ cha. Điều hướng vào từ

@@ -1,12 +1,12 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
+using WoodInventory.Data;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class SuppliersView : UserControl, IModuleView
 {
@@ -277,7 +277,7 @@ public partial class SuppliersView : UserControl, IModuleView
     private void DeleteSupplier(Supplier s)
     {
         var confirm = MessageBox.Show($"Bạn có chắc muốn xóa nhà cung cấp \"{s.Name}\"?",
-            "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         try

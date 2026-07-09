@@ -1,4 +1,4 @@
-namespace TimberFlowDesktop.Domain;
+﻿namespace WoodInventory.Domain;
 
 /// <summary>
 /// Khớp giá cho một kiện gỗ cụ thể theo danh sách báo giá của NCC.

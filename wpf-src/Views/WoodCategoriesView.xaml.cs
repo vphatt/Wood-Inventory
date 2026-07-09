@@ -1,12 +1,12 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
+using WoodInventory.Data;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class WoodCategoriesView : UserControl, IModuleView
 {
@@ -317,7 +317,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
     private void DeleteCategory(WoodCategory cat)
     {
         var confirm = MessageBox.Show($"Bạn có chắc muốn xóa loại gỗ \"{cat.Name}\" khỏi danh mục?",
-            "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         try

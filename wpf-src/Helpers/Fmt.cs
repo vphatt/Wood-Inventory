@@ -1,6 +1,6 @@
-using System.Globalization;
+﻿using System.Globalization;
 
-namespace TimberFlowDesktop.Helpers;
+namespace WoodInventory.Helpers;
 
 /// <summary>Định dạng số liệu hiển thị — thống nhất kiểu vi-VN: dấu chấm phân cách hàng nghìn, dấu phẩy thập phân.</summary>
 public static class Fmt
@@ -48,5 +48,18 @@ public static class Fmt
         if (min != null && max != null)
             return min == max ? $"{Num(min.Value)}{unit}" : $"{Num(min.Value)}–{Num(max.Value)}{unit}";
         return min != null ? $"≥{Num(min.Value)}{unit}" : $"≤{Num(max.Value)}{unit}";
+    }
+
+    /// <summary>
+    /// Như <see cref="Range"/> nhưng hiển thị theo ký hiệu gốc (vd "4/4\"", "8/4\"") thay vì số mm —
+    /// dùng cho độ dày gỗ nhóm Footage. Rơi về <see cref="Range"/> (số mm) nếu không có ký hiệu.
+    /// </summary>
+    public static string RangeNote(string minNote, string maxNote, double? min, double? max)
+    {
+        if (string.IsNullOrWhiteSpace(minNote) && string.IsNullOrWhiteSpace(maxNote))
+            return Range(min, max);
+        if (!string.IsNullOrWhiteSpace(minNote) && !string.IsNullOrWhiteSpace(maxNote))
+            return minNote == maxNote ? minNote : $"{minNote}–{maxNote}";
+        return !string.IsNullOrWhiteSpace(minNote) ? $"≥{minNote}" : $"≤{maxNote}";
     }
 }

@@ -1,14 +1,14 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class IssuesView : UserControl, IModuleView
 {
@@ -310,7 +310,7 @@ public partial class IssuesView : UserControl, IModuleView
         var orderId = (FOrder.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         if (orderId.Length == 0)
         {
-            MessageBox.Show("Vui lòng chọn hoặc lập Đơn hàng sản xuất.", "TimberFlow ERP",
+            MessageBox.Show("Vui lòng chọn hoặc lập Đơn hàng sản xuất.", "Quản Lý Gỗ",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -320,7 +320,7 @@ public partial class IssuesView : UserControl, IModuleView
         if (invalid != null)
         {
             MessageBox.Show($"Lỗi danh sách xuất kho: {invalid.Error}. Vui lòng kiểm tra lại.",
-                "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         var date = FDate.SelectedDate ?? DateTime.Today;

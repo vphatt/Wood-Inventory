@@ -1,6 +1,6 @@
-# Build toàn bộ TimberFlow ERP Desktop (WPF thuần .NET + SQLite, không web):
-#   1. Publish exe self-contained single-file  -> build\desktop-app\TimberFlowDesktop.exe
-#   2. Biên dịch installer Inno Setup          -> build\installer\TimberFlowDesktop-Setup.exe
+# Build toàn bộ Quản Lý Gỗ (WoodInventory) Desktop (WPF thuần .NET + SQLite, không web):
+#   1. Publish exe self-contained single-file  -> build\desktop-app\WoodInventory.exe
+#   2. Biên dịch installer Inno Setup          -> build\installer\WoodInventory-Setup.exe
 #
 # Cách chạy:  powershell -ExecutionPolicy Bypass -File .\build-wpf-desktop.ps1
 # Yêu cầu: .NET 8 SDK, Inno Setup 6.
@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 
 Write-Host "==> [1/2] Publish exe self-contained..." -ForegroundColor Cyan
-dotnet publish "$root\wpf-src\TimberFlowDesktop.csproj" `
+dotnet publish "$root\wpf-src\WoodInventory.csproj" `
     -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
@@ -25,9 +25,9 @@ $iscc = @(
 if (-not $iscc) {
     throw "Khong tim thay Inno Setup 6. Tai tai https://jrsoftware.org/isdl.php"
 }
-& $iscc "$root\installer\TimberFlowDesktop.iss"
+& $iscc "$root\installer\WoodInventory.iss"
 
 Write-Host ""
 Write-Host "==> Hoan tat." -ForegroundColor Green
-Write-Host "  Exe chay truc tiep : $root\build\desktop-app\TimberFlowDesktop.exe"
-Write-Host "  File cai dat       : $root\build\installer\TimberFlowDesktop-Setup.exe"
+Write-Host "  Exe chay truc tiep : $root\build\desktop-app\WoodInventory.exe"
+Write-Host "  File cai dat       : $root\build\installer\WoodInventory-Setup.exe"

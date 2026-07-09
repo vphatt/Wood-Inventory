@@ -6,8 +6,8 @@
     <UseWPF>true</UseWPF>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>TimberFlowDesktop</RootNamespace>
-    <AssemblyName>TimberFlowDesktop</AssemblyName>
+    <RootNamespace>WoodInventory</RootNamespace>
+    <AssemblyName>WoodInventory</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 

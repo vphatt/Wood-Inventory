@@ -1,14 +1,14 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class ReceiptsView : UserControl, IModuleView
 {
@@ -342,12 +342,14 @@ public partial class ReceiptsView : UserControl, IModuleView
         var typeCombo = new ComboBox
         {
             Style = (Style)FindResource("Select"),
+            Height = 32, // khớp Height của CellInput/CellInputMono cùng hàng (Select mặc định 40 — quá cao cho bảng)
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = !ReadOnly
         };
         var subCombo = new ComboBox
         {
             Style = (Style)FindResource("Select"),
+            Height = 32,
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = !ReadOnly
         };
@@ -544,7 +546,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         SetHeaderReadOnly(false);
         BtnAddLotRow.Visibility = Visibility.Visible;
         FormTitle.Text = "Lập Phiếu Nhập Kho Mới";
-        FormSaveBtn.Content = "Hoàn tất & Khóa phiếu nhập";
+        FormSaveBtn.Content = "Lưu phiếu nhập kho";
         FormCancelBtn.Content = "Hủy bỏ";
         FInvoice.Text = "";
         FPackingList.Text = "";
@@ -668,21 +670,21 @@ public partial class ReceiptsView : UserControl, IModuleView
         var invoice = (FInvoice.Text ?? "").Trim();
         var packingList = (FPackingList.Text ?? "").Trim();
 
-        if (supplierId.Length == 0 || invoice.Length == 0 || packingList.Length == 0)
+        if (supplierId.Length == 0 || invoice.Length == 0)
         {
-            MessageBox.Show("Vui lòng nhập đầy đủ thông tin chứng từ.", "TimberFlow ERP",
+            MessageBox.Show("Vui lòng nhập đầy đủ thông tin chứng từ.", "Quản Lý Gỗ",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (SelectedExchangeRate <= 0)
         {
-            MessageBox.Show("Tỷ giá VND/USD phải lớn hơn 0.", "TimberFlow ERP",
+            MessageBox.Show("Tỷ giá VND/USD phải lớn hơn 0.", "Quản Lý Gỗ",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (_draftLots.Count == 0)
         {
-            MessageBox.Show("Phiếu nhập kho phải chứa ít nhất một kiện gỗ.", "TimberFlow ERP",
+            MessageBox.Show("Phiếu nhập kho phải chứa ít nhất một kiện gỗ.", "Quản Lý Gỗ",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -695,7 +697,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             MessageBox.Show(
                 $"Mã kiện gỗ bị trùng lặp trong phiếu: {string.Join(", ", duplicates)}. " +
                 "Mỗi kiện gỗ phải có một mã định danh duy nhất.",
-                "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -703,25 +705,25 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             if (string.IsNullOrWhiteSpace(d.Id))
             {
-                MessageBox.Show("Vui lòng nhập Mã kiện cho tất cả các dòng kiện gỗ.", "TimberFlow ERP",
+                MessageBox.Show("Vui lòng nhập Mã kiện cho tất cả các dòng kiện gỗ.", "Quản Lý Gỗ",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (string.IsNullOrWhiteSpace(d.WoodType))
             {
-                MessageBox.Show($"Kiện {d.Id}: vui lòng chọn loại gỗ.", "TimberFlow ERP",
+                MessageBox.Show($"Kiện {d.Id}: vui lòng chọn loại gỗ.", "Quản Lý Gỗ",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (AppState.CategoryHasSubs(d.WoodType) && string.IsNullOrWhiteSpace(d.WoodSubType))
             {
                 MessageBox.Show($"Kiện {d.Id}: {d.WoodType} có phân loại con — vui lòng chọn phân loại con.",
-                    "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (ParseThickness(d) <= 0)
             {
-                MessageBox.Show($"Kiện {d.Id}: Độ dày phải lớn hơn 0.", "TimberFlow ERP",
+                MessageBox.Show($"Kiện {d.Id}: Độ dày phải lớn hơn 0.", "Quản Lý Gỗ",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -730,19 +732,19 @@ public partial class ReceiptsView : UserControl, IModuleView
                 if (D(d.Footage) <= 0)
                 {
                     MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo Footage — Footage phải lớn hơn 0.",
-                        "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
             }
             else if (D(d.Width) <= 0 || D(d.Length) <= 0)
             {
                 MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo quy cách — Rộng và Dài phải lớn hơn 0.",
-                    "TimberFlow ERP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if ((int)D(d.Quantity) <= 0)
             {
-                MessageBox.Show($"Kiện {d.Id}: Số lượng phải lớn hơn 0.", "TimberFlow ERP",
+                MessageBox.Show($"Kiện {d.Id}: Số lượng phải lớn hơn 0.", "Quản Lý Gỗ",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -827,20 +829,33 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string Id => Receipt.Id;
         public string SupplierName { get; }
         public string DateText => Fmt.Date(Receipt.Date);
-        public string InvoiceTag => $"Inv: {Receipt.Invoice}";
-        public string PackingTag => $"PL: {Receipt.PackingList}";
+        public string InvoiceText => string.IsNullOrWhiteSpace(Receipt.Invoice) ? "—" : Receipt.Invoice;
         public string LotCountText => $"{Receipt.Lots.Count} kiện";
         public double Vol { get; }
         public string VolText => $"{Fmt.M3(Vol)} m³";
-        public decimal Val { get; }
+        public decimal VndTotal { get; }
+        public string VndText => Fmt.Vnd(VndTotal);
+        public decimal TaxTotal { get; }
+        public string TaxText => Fmt.Vnd(TaxTotal);
+        public decimal Val => VndTotal + TaxTotal;
         public string ValText => Fmt.Vnd(Val);
         public RecRow(WarehouseReceipt r)
         {
             Receipt = r;
             SupplierName = AppState.FindSupplier(r.SupplierId)?.Name ?? "Unknown";
             Vol = r.Lots.Sum(l => l.Cbm);
-            Val = r.Lots.Sum(l => l.TotalValueVnd);
+            VndTotal = r.Lots.Sum(LotVnd);
+            TaxTotal = r.Lots.Sum(l => WoodVolumeCalculator.CalculateTaxAmountVnd(LotVnd(l), l.TaxPercent));
         }
+
+        /// <summary>
+        /// Tiền hàng VND (chưa thuế) của 1 kiện tại thời điểm NHẬP — dùng thể tích BAN ĐẦU (l.Cbm),
+        /// không dùng RemainingCbm (đã bị Xuất Kho trừ dần). Phiếu nhập là chứng từ lịch sử, giá trị
+        /// của nó không được đổi theo tồn kho hiện tại — khớp đúng với cách LoadReceiptIntoForm/ToDraft
+        /// hiển thị lại phiếu (luôn dựng lại từ OriginalQuantity).
+        /// </summary>
+        private static decimal LotVnd(WoodLot l) =>
+            WoodVolumeCalculator.ConvertUsdToVnd(WoodVolumeCalculator.CalculateTotalUsd(l.PriceUsd, l.Cbm), l.ExchangeRate);
     }
 
     private readonly List<RecRow> _recRows = new();

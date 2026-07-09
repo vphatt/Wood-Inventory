@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using TimberFlowDesktop.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Data;
+namespace WoodInventory.Data;
 
 /// <summary>
 /// Kho dữ liệu dùng chung của ứng dụng: nạp toàn bộ từ SQLite vào bộ nhớ
@@ -360,6 +360,8 @@ public static class AppState
         existing.Grade = item.Grade;
         existing.ThicknessMin = item.ThicknessMin;
         existing.ThicknessMax = item.ThicknessMax;
+        existing.ThicknessMinNote = item.ThicknessMinNote;
+        existing.ThicknessMaxNote = item.ThicknessMaxNote;
         existing.WidthMin = item.WidthMin;
         existing.WidthMax = item.WidthMax;
         existing.LengthMin = item.LengthMin;

@@ -1,4 +1,4 @@
-namespace TimberFlowDesktop.Domain;
+﻿namespace WoodInventory.Domain;
 
 /// <summary>
 /// Nguyên tắc tính thể tích m³ của một loại gỗ.
@@ -66,6 +66,8 @@ public class QuotationItem
     public string Grade { get; set; }          // null = mọi grade
     public double? ThicknessMin { get; set; }
     public double? ThicknessMax { get; set; }
+    public string ThicknessMinNote { get; set; } // ký hiệu gốc gỗ Footage, vd "4/4\"" — chỉ hiển thị, ThicknessMin (mm) vẫn dùng để khớp giá
+    public string ThicknessMaxNote { get; set; }
     public double? WidthMin { get; set; }
     public double? WidthMax { get; set; }
     public double? LengthMin { get; set; }

@@ -1,12 +1,12 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 /// <summary>
 /// Trang danh sách báo giá: mỗi NCC một dòng (số mục giá + ngày áp dụng).
@@ -134,12 +134,12 @@ public partial class QuotationsView : UserControl, IModuleView
         if ((sender as FrameworkElement)?.DataContext is not QuoRow r) return;
         if (!r.HasQuotation)
         {
-            MessageBox.Show("Nhà cung cấp này chưa có mục giá nào.", "TimberFlow ERP",
+            MessageBox.Show("Nhà cung cấp này chưa có mục giá nào.", "Quản Lý Gỗ",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var confirm = MessageBox.Show($"Xóa toàn bộ báo giá ({r.ItemCount} mục) của \"{r.Name}\"?",
-            "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         AppState.DeleteQuotation(r.Supplier.Id);

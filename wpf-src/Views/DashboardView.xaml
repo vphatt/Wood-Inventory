@@ -1,4 +1,4 @@
-<UserControl x:Class="TimberFlowDesktop.Views.DashboardView"
+﻿<UserControl x:Class="WoodInventory.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="Segoe UI" FontSize="12">
@@ -11,7 +11,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock Text="Bảng Điều Hành Trung Tâm (ERP TimberFlow)" FontSize="19" FontWeight="Bold"
+                        <TextBlock Text="Bảng Điều Hành Trung Tâm (Quản Lý Gỗ)" FontSize="19" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                     <TextBlock Text="Phân tích dòng chảy gỗ, giá trị tồn kho và tình trạng vận hành theo thời gian thực."

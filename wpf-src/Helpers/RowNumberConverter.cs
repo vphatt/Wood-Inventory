@@ -1,7 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows.Data;
 
-namespace TimberFlowDesktop.Helpers;
+namespace WoodInventory.Helpers;
 
 /// <summary>
 /// Chuyển AlternationIndex (0-based, do WPF tự gán theo vị trí hiển thị hiện tại của dòng

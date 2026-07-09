@@ -1,11 +1,11 @@
-using System.IO;
+﻿using System.IO;
 using Microsoft.EntityFrameworkCore;
-using TimberFlowDesktop.Domain;
+using WoodInventory.Domain;
 
-namespace TimberFlowDesktop.Data;
+namespace WoodInventory.Data;
 
 /// <summary>
-/// EF Core DbContext cấu hình cho SQLite cục bộ (file trong %APPDATA%\TimberFlowDesktop).
+/// EF Core DbContext cấu hình cho SQLite cục bộ (file trong %APPDATA%\WoodInventory).
 /// </summary>
 public class AppDbContext : DbContext
 {
@@ -16,9 +16,9 @@ public class AppDbContext : DbContext
     {
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "TimberFlowDesktop");
+            "WoodInventory");
         Directory.CreateDirectory(dir);
-        return Path.Combine(dir, "timberflow.db");
+        return Path.Combine(dir, "woodinventory.db");
     }
 
     public DbSet<WoodCategory> WoodCategories { get; set; }

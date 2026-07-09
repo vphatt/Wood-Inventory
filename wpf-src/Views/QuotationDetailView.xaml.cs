@@ -1,14 +1,14 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using TimberFlowDesktop.Data;
-using TimberFlowDesktop.Domain;
-using TimberFlowDesktop.Helpers;
+using WoodInventory.Data;
+using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 /// <summary>Trang chi tiết báo giá của MỘT nhà cung cấp: danh sách mục giá + search/filter + CRUD.</summary>
 public partial class QuotationDetailView : UserControl
@@ -23,7 +23,9 @@ public partial class QuotationDetailView : UserControl
             : $"{Item.WoodType} · {Item.WoodSubType}";
         public string Grade => Item.Grade;
         public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "Bất kỳ" : Item.Grade;
-        public string ThicknessText => Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
+        public string ThicknessText => AppState.GetVolumeRule(Item.WoodType) == VolumeRule.ByFootage
+            ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax)
+            : Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
         public string WidthText => Fmt.Range(Item.WidthMin, Item.WidthMax);
         public string LengthText => Fmt.Range(Item.LengthMin, Item.LengthMax);
         public string Origin => Item.Origin;
@@ -61,7 +63,10 @@ public partial class QuotationDetailView : UserControl
         foreach (var name in AppState.CategoryNames)
             FWoodType.Items.Add(new ComboBoxItem { Content = name, Tag = name });
         FWoodType.SelectionChanged += (_, _) =>
+        {
             PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
+            UpdateThicknessLabel();
+        };
         FWoodSubType.SelectionChanged += (_, _) => WSubType.Visibility = Visibility.Collapsed;
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
     }
@@ -151,6 +156,26 @@ public partial class QuotationDetailView : UserControl
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is TextBlock w) w.Visibility = Visibility.Collapsed;
+        if (sender == FThickMin || sender == FThickMax) UpdateThicknessHints();
+    }
+
+    /// <summary>Gỗ nhóm Footage — mm chính xác vô nghĩa, độ dày chỉ mô tả theo ký hiệu ngành gỗ Mỹ.</summary>
+    private static bool IsFootage(string woodType) => AppState.GetVolumeRule(woodType) == VolumeRule.ByFootage;
+
+    /// <summary>Đổi nhãn + placeholder field Độ dày theo loại gỗ đang chọn (mm thường vs ký hiệu inch của Footage).</summary>
+    private void UpdateThicknessLabel()
+    {
+        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+        LblThickness.Text = IsFootage(woodType) ? "ĐỘ DÀY — TỪ / ĐẾN" : "ĐỘ DÀY (MM) — TỪ / ĐẾN";
+        UpdateThicknessHints();
+    }
+
+    /// <summary>Placeholder "vd: 4/4&quot;" đè lên ô trống — chỉ hiện khi loại gỗ đang chọn thuộc nhóm Footage.</summary>
+    private void UpdateThicknessHints()
+    {
+        var footage = IsFootage((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
+        FThickMinHint.Visibility = footage && string.IsNullOrEmpty(FThickMin.Text) ? Visibility.Visible : Visibility.Collapsed;
+        FThickMaxHint.Visibility = footage && string.IsNullOrEmpty(FThickMax.Text) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---------------- Thêm / Xem / Sửa ----------------
@@ -166,6 +191,33 @@ public partial class QuotationDetailView : UserControl
         var maxOk = TryParseOptional(maxText, out max);
         if (!minOk || !maxOk) { ShowWarn(warn, $"{label}: giá trị không hợp lệ."); return false; }
         if (min != null && max != null && min > max) { ShowWarn(warn, $"{label}: giá trị 'Từ' phải nhỏ hơn hoặc bằng 'Đến'."); return false; }
+        return true;
+    }
+
+    /// <summary>
+    /// Như <see cref="ValidateRange"/> nhưng cho độ dày gỗ Footage: chấp nhận ký hiệu inch (4/4", 1"...)
+    /// thay vì chỉ số mm. Parse ra mm để khớp giá (qua <see cref="WoodVolumeCalculator.ParseFootageThicknessMm"/>)
+    /// nhưng vẫn giữ nguyên văn ký hiệu gốc để hiển thị lại.
+    /// </summary>
+    private static bool ValidateFootageThickness(string minText, string maxText, TextBlock warn,
+        out double? min, out double? max, out string minNote, out string maxNote)
+    {
+        minText = (minText ?? "").Trim();
+        maxText = (maxText ?? "").Trim();
+        minNote = minText.Length == 0 ? null : minText;
+        maxNote = maxText.Length == 0 ? null : maxText;
+        min = minNote == null ? null : WoodVolumeCalculator.ParseFootageThicknessMm(minText);
+        max = maxNote == null ? null : WoodVolumeCalculator.ParseFootageThicknessMm(maxText);
+        if ((minNote != null && min == 0) || (maxNote != null && max == 0))
+        {
+            ShowWarn(warn, "Độ dày: ký hiệu không hợp lệ (vd 4/4\", 8/4\", 1\").");
+            return false;
+        }
+        if (min != null && max != null && min > max)
+        {
+            ShowWarn(warn, "Độ dày: giá trị 'Từ' phải nhỏ hơn hoặc bằng 'Đến'.");
+            return false;
+        }
         return true;
     }
 
@@ -202,6 +254,7 @@ public partial class QuotationDetailView : UserControl
         FormCancelBtn.Content = "Hủy bỏ";
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
+        UpdateThicknessLabel();
         FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
     }
@@ -212,9 +265,10 @@ public partial class QuotationDetailView : UserControl
     {
         SelectByTag(FWoodType, it.WoodType);
         PopulateSubCombo(it.WoodType, it.WoodSubType);
+        UpdateThicknessLabel();
         FOrigin.Text = it.Origin;
-        FThickMin.Text = NumOrBlank(it.ThicknessMin);
-        FThickMax.Text = NumOrBlank(it.ThicknessMax);
+        FThickMin.Text = IsFootage(it.WoodType) ? (it.ThicknessMinNote ?? NumOrBlank(it.ThicknessMin)) : NumOrBlank(it.ThicknessMin);
+        FThickMax.Text = IsFootage(it.WoodType) ? (it.ThicknessMaxNote ?? NumOrBlank(it.ThicknessMax)) : NumOrBlank(it.ThicknessMax);
         FWidthMin.Text = NumOrBlank(it.WidthMin);
         FWidthMax.Text = NumOrBlank(it.WidthMax);
         FLengthMin.Text = NumOrBlank(it.LengthMin);
@@ -230,7 +284,7 @@ public partial class QuotationDetailView : UserControl
         ClearWarnings();
         FillForm(it);
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({Fmt.Range(it.ThicknessMin, it.ThicknessMax)})";
+        FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({new ItemRow(it).ThicknessText})";
         FormSaveBtn.Content = "Chỉnh sửa";
         FormCancelBtn.Content = "Hủy bỏ";
         AddFormPanel.Visibility = Visibility.Visible;
@@ -285,9 +339,21 @@ public partial class QuotationDetailView : UserControl
     {
         if (_mode == "view") { EnterEditMode(); return; }
 
+        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+        var footage = IsFootage(woodType);
+
         ClearWarnings();
         var ok = true;
-        if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, "Độ dày", out var thickMin, out var thickMax)) ok = false;
+        string thickMinNote = null, thickMaxNote = null;
+        double? thickMin, thickMax;
+        if (footage)
+        {
+            if (!ValidateFootageThickness(FThickMin.Text, FThickMax.Text, WThickRange, out thickMin, out thickMax, out thickMinNote, out thickMaxNote)) ok = false;
+        }
+        else
+        {
+            if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, "Độ dày", out thickMin, out thickMax)) ok = false;
+        }
         if (!ValidateRange(FWidthMin.Text, FWidthMax.Text, WWidthRange, "Rộng", out var widthMin, out var widthMax)) ok = false;
         if (!ValidateRange(FLengthMin.Text, FLengthMax.Text, WLengthRange, "Dài", out var lengthMin, out var lengthMax)) ok = false;
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, "Đơn giá phải lớn hơn 0."); ok = false; }
@@ -297,11 +363,13 @@ public partial class QuotationDetailView : UserControl
         var item = new QuotationItem
         {
             Id = _editingId,
-            WoodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "",
+            WoodType = woodType,
             WoodSubType = NullIfBlank((FWoodSubType.SelectedItem as ComboBoxItem)?.Tag as string),
             Grade = null,
             ThicknessMin = thickMin,
             ThicknessMax = thickMax,
+            ThicknessMinNote = thickMinNote,
+            ThicknessMaxNote = thickMaxNote,
             WidthMin = widthMin,
             WidthMax = widthMax,
             LengthMin = lengthMin,
@@ -341,7 +409,7 @@ public partial class QuotationDetailView : UserControl
     {
         if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
         var confirm = MessageBox.Show($"Xóa mục giá {r.WoodType} ({r.ThicknessText}) khỏi báo giá?",
-            "TimberFlow ERP", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         AppState.DeleteQuotationItem(r.Item.Id);

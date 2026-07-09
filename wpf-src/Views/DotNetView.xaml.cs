@@ -1,6 +1,6 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace TimberFlowDesktop.Views;
+namespace WoodInventory.Views;
 
 public partial class DotNetView : UserControl, IModuleView
 {
@@ -10,7 +10,7 @@ public partial class DotNetView : UserControl, IModuleView
         CodeBlock.Text = """
 using System;
 
-namespace TimberFlowDesktop.Domain;
+namespace WoodInventory.Domain;
 
 /// <summary>
 /// Dịch vụ nghiệp vụ trung tâm: tính thể tích gỗ (m³), giá vốn và giá trị tồn kho.
@@ -54,10 +54,10 @@ public static class WoodVolumeCalculator
 // Kiến trúc ứng dụng desktop này:
 //   Domain/           — Entities + WoodVolumeCalculator (nghiệp vụ thuần)
 //   Data/             — EF Core DbContext (SQLite) + DbSeeder + AppState
-//   Views/            — 6 màn hình WPF clone 1:1 giao diện TimberFlow web
+//   Views/            — các màn hình WPF chính (Dashboard, Phân Loại Gỗ, Nhà Cung Cấp, Lots, Quotations, Receipts, Issues)
 //   MainWindow        — Sidebar + dải tab động + breadcrumb + status bar
 //
-// Dữ liệu lưu tại: %APPDATA%\TimberFlowDesktop\timberflow.db (SQLite cục bộ)
+// Dữ liệu lưu tại: %APPDATA%\WoodInventory\woodinventory.db (SQLite cục bộ)
 // Ứng dụng chạy offline 100%%, không phụ thuộc bất kỳ thành phần web nào.
 """;
     }
