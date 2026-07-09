@@ -14,8 +14,6 @@
                         <TextBlock Text="Bảng Điều Hành Trung Tâm (Quản Lý Gỗ)" FontSize="19" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
-                    <TextBlock Text="Phân tích dòng chảy gỗ, giá trị tồn kho và tình trạng vận hành theo thời gian thực."
-                               FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="White"
                         BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="4" Padding="12,5">

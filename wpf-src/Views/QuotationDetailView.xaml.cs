@@ -55,6 +55,7 @@ public partial class QuotationDetailView : UserControl
         InitWoodTypeCombo();
         RefreshView();
         GridLayoutStore.Attach(ItemGrid, "quotation-items");
+        GridPairSync.Link(ItemGrid, ActionGrid);
     }
 
     private void InitWoodTypeCombo()
@@ -286,7 +287,7 @@ public partial class QuotationDetailView : UserControl
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({new ItemRow(it).ThicknessText})";
         FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 

@@ -28,6 +28,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string Footage = "";
         public string Quantity = "";
         public string ManualPriceUsd = "";
+        public int VolumeDecimals = AppState.Settings.DefaultVolumeDecimals;   // số chữ số thập phân làm tròn m³ riêng dòng này
+        public double VolumeAdjustment;    // điều chỉnh tay +/- cộng vào m³ sau khi làm tròn (mặc định 0)
 
         // Kết quả tính toán gần nhất
         public double Cbm;
@@ -54,12 +56,24 @@ public partial class ReceiptsView : UserControl, IModuleView
         ResetDraft();
         RefreshView();
         Helpers.GridLayoutStore.Attach(HistoryGrid, "receipts");
+        Helpers.GridPairSync.Link(HistoryGrid, ActionGrid);
     }
 
     private void InitTaxCombo()
     {
         foreach (var t in new[] { "0", "5", "8", "10" })
-            FTaxPercent.Items.Add(new ComboBoxItem { Content = $"{t}%", Tag = t, IsSelected = t == "10" });
+            FTaxPercent.Items.Add(new ComboBoxItem { Content = $"{t}%", Tag = t });
+        SelectTaxPercent(AppState.Settings.DefaultTaxPercent);
+    }
+
+    /// <summary>Chọn item khớp % thuế đã cho trong FTaxPercent; không khớp giá trị nào thì rơi về 10%.</summary>
+    private void SelectTaxPercent(decimal percent)
+    {
+        var tag = Fmt.Num((double)percent);
+        FTaxPercent.SelectedIndex = -1;
+        foreach (ComboBoxItem it in FTaxPercent.Items)
+            if ((it.Tag as string) == tag) { FTaxPercent.SelectedItem = it; break; }
+        if (FTaxPercent.SelectedIndex < 0) FTaxPercent.SelectedIndex = 3;
     }
 
     /// <summary>Tỷ giá + thuế nhập khẩu áp dụng chung cho cả phiếu — không khai báo riêng theo từng kiện.</summary>
@@ -118,7 +132,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         lot.PriceFromQuotation = quotPrice > 0;
         lot.EffectivePriceUsd = quotPrice > 0 ? quotPrice : (decimal)D(lot.ManualPriceUsd);
         lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
-            D(lot.Length), (int)D(lot.Quantity), D(lot.Footage));
+            D(lot.Length), (int)D(lot.Quantity), D(lot.Footage), lot.VolumeDecimals, lot.VolumeAdjustment);
         lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePriceUsd,
             (decimal)SelectedExchangeRate, (decimal)SelectedTaxPercent);
         lot.TotalUsd = WoodVolumeCalculator.CalculateTotalUsd(lot.EffectivePriceUsd, lot.Cbm);
@@ -148,7 +162,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         var isFootage = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 140, 110, 120, 110, -1, 50 })
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
                 ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
                 : new ColumnDefinition { Width = new GridLength(w) });
@@ -182,15 +196,18 @@ public partial class ReceiptsView : UserControl, IModuleView
         Cell(isFootage ? lot.LengthNote : lot.Length, 8, HorizontalAlignment.Center);
         Cell(isFootage ? lot.Footage : "-", 9, HorizontalAlignment.Center);
         Cell(lot.Quantity, 10, HorizontalAlignment.Center);
-        Cell(Fmt.M3(lot.Cbm), 11, HorizontalAlignment.Right);
-        Cell(lot.EffectivePriceUsd > 0 ? Fmt.Usd(lot.EffectivePriceUsd) : "Chưa xác định", 12, HorizontalAlignment.Right,
+        Cell(Fmt.M3(lot.Cbm, lot.VolumeDecimals), 11, HorizontalAlignment.Right);
+        Cell(lot.VolumeDecimals.ToString(), 12, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
+        Cell(lot.VolumeAdjustment == 0 ? "-" : (lot.VolumeAdjustment > 0 ? "+" : "") + Fmt.M3(lot.VolumeAdjustment, lot.VolumeDecimals),
+            13, HorizontalAlignment.Right, color: (Brush)FindResource(lot.VolumeAdjustment == 0 ? "Slate400" : "Amber600"));
+        Cell(lot.EffectivePriceUsd > 0 ? Fmt.Usd(lot.EffectivePriceUsd) : "Chưa xác định", 14, HorizontalAlignment.Right,
             color: (Brush)FindResource(lot.EffectivePriceUsd > 0 ? "Slate800" : "Slate400"));
-        Cell(Fmt.Usd(lot.TotalUsd), 13, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TotalVnd), 14, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TaxVnd), 15, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TotalValueVnd), 16, HorizontalAlignment.Right,
+        Cell(Fmt.Usd(lot.TotalUsd), 15, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalVnd), 16, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TaxVnd), 17, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalValueVnd), 18, HorizontalAlignment.Right,
             weight: FontWeights.SemiBold, color: (Brush)FindResource("Emerald600"), margin: new Thickness(6, 0, 12, 0));
-        // Cột 17 (Xóa): để trống — chế độ xem không cho xóa.
+        // Cột 19 (Xóa): để trống — chế độ xem không cho xóa.
 
         return new Border
         {
@@ -206,9 +223,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         Recalculate(lot);
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        // STT, MãKiện, PhiếuGiaoHàng, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, ĐơnGiáUSD,
-        // TổngTiềnUSD, TổngTiềnVND, TiềnThuếVND, TổngCộngVND(*), Xóa
-        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 140, 110, 120, 110, -1, 50 })
+        // STT, MãKiện, PhiếuGiaoHàng, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, SốTP, ĐiềuChỉnh,
+        // ĐơnGiáUSD, TổngTiềnUSD, TổngTiềnVND, TiềnThuếVND, TổngCộngVND(*), Xóa
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
                 ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
                 : new ColumnDefinition { Width = new GridLength(w) });
@@ -216,7 +233,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         // Kết quả (tạo trước để các handler cập nhật được)
         var cbmText = new TextBlock
         {
-            Text = Fmt.M3(lot.Cbm), FontFamily = (FontFamily)FindResource("FontMono"),
+            Text = Fmt.M3(lot.Cbm, lot.VolumeDecimals), FontFamily = (FontFamily)FindResource("FontMono"),
             FontWeight = FontWeights.Medium, Foreground = (Brush)FindResource("Slate600"),
             Margin = new Thickness(6, 0, 6, 0),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center
@@ -266,7 +283,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         void Update()
         {
             Recalculate(lot);
-            cbmText.Text = Fmt.M3(lot.Cbm);
+            cbmText.Text = Fmt.M3(lot.Cbm, lot.VolumeDecimals);
             totalUsdText.Text = Fmt.Usd(lot.TotalUsd);
             totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
             taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
@@ -411,14 +428,35 @@ public partial class ReceiptsView : UserControl, IModuleView
         qtyBox.Margin = new Thickness(6, 0, 6, 0);
         Grid.SetColumn(qtyBox, 10); grid.Children.Add(qtyBox);
 
-        // 11. Thể tích  12. Đơn giá USD  13-16. Tổng tiền USD/VND, Tiền thuế, Tổng cộng
+        // 11. Thể tích
         Grid.SetColumn(cbmText, 11); grid.Children.Add(cbmText);
-        Grid.SetColumn(priceBox, 12); grid.Children.Add(priceBox);
-        Grid.SetColumn(priceHint, 12); grid.Children.Add(priceHint);
-        Grid.SetColumn(totalUsdText, 13); grid.Children.Add(totalUsdText);
-        Grid.SetColumn(totalVndText, 14); grid.Children.Add(totalVndText);
-        Grid.SetColumn(taxVndText, 15); grid.Children.Add(taxVndText);
-        Grid.SetColumn(grandTotalText, 16); grid.Children.Add(grandTotalText);
+
+        // 12. Số thập phân làm tròn m³ riêng dòng (mặc định 5)
+        var decimalsBox = Cell(lot.VolumeDecimals.ToString(), s =>
+        {
+            lot.VolumeDecimals = Math.Clamp((int)D(s), 0, 15);
+            Update();
+        }, mono: true, center: true);
+        decimalsBox.ToolTip = "Số chữ số thập phân làm tròn m³ của riêng dòng này (mặc định 5)";
+        Grid.SetColumn(decimalsBox, 12); grid.Children.Add(decimalsBox);
+
+        // 13. Điều chỉnh tay +/- cộng vào m³ sau khi làm tròn
+        var adjustmentBox = Cell(lot.VolumeAdjustment == 0 ? "" : Fmt.Num(lot.VolumeAdjustment), s =>
+        {
+            lot.VolumeAdjustment = D(s);
+            Update();
+        }, mono: true);
+        adjustmentBox.TextAlignment = TextAlignment.Right;
+        adjustmentBox.ToolTip = "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002";
+        Grid.SetColumn(adjustmentBox, 13); grid.Children.Add(adjustmentBox);
+
+        // 14. Đơn giá USD  15-18. Tổng tiền USD/VND, Tiền thuế, Tổng cộng
+        Grid.SetColumn(priceBox, 14); grid.Children.Add(priceBox);
+        Grid.SetColumn(priceHint, 14); grid.Children.Add(priceHint);
+        Grid.SetColumn(totalUsdText, 15); grid.Children.Add(totalUsdText);
+        Grid.SetColumn(totalVndText, 16); grid.Children.Add(totalVndText);
+        Grid.SetColumn(taxVndText, 17); grid.Children.Add(taxVndText);
+        Grid.SetColumn(grandTotalText, 18); grid.Children.Add(grandTotalText);
 
         // Xóa
         var del = new Button
@@ -433,7 +471,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             _draftLots.Remove(lot);
             RebuildLotRows();
         };
-        Grid.SetColumn(del, 17); grid.Children.Add(del);
+        Grid.SetColumn(del, 19); grid.Children.Add(del);
 
         return new Border
         {
@@ -550,8 +588,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         FormCancelBtn.Content = "Hủy bỏ";
         FInvoice.Text = "";
         FPackingList.Text = "";
-        FExchangeRate.Text = "25400";
-        FTaxPercent.SelectedIndex = 3;
+        FExchangeRate.Text = Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
+        SelectTaxPercent(AppState.Settings.DefaultTaxPercent);
         FDate.SelectedDate = DateTime.Today;
         if (FSupplier.Items.Count > 0) FSupplier.SelectedIndex = 0;
         ResetDraft();
@@ -567,7 +605,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         BtnAddLotRow.Visibility = Visibility.Collapsed;
         FormTitle.Text = $"Chi Tiết Phiếu Nhập — {r.Id}";
         FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -598,9 +636,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (first != null)
         {
             FExchangeRate.Text = Fmt.Num((double)first.ExchangeRate);
-            var taxTag = Fmt.Num((double)first.TaxPercent);
-            foreach (ComboBoxItem it in FTaxPercent.Items)
-                if ((it.Tag as string) == taxTag) { FTaxPercent.SelectedItem = it; break; }
+            SelectTaxPercent(first.TaxPercent);
         }
 
         _draftLots.Clear();
@@ -627,7 +663,9 @@ public partial class ReceiptsView : UserControl, IModuleView
             LengthNote = l.LengthNote,
             Footage = Fmt.Num(l.Footage),
             Quantity = l.OriginalQuantity.ToString(),
-            ManualPriceUsd = Fmt.Num((double)l.PriceUsd)
+            ManualPriceUsd = Fmt.Num((double)l.PriceUsd),
+            VolumeDecimals = l.VolumeDecimals ?? 5,
+            VolumeAdjustment = l.VolumeAdjustment ?? 0
         };
     }
 
@@ -797,6 +835,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 Footage = D(d.Footage),
                 Cbm = d.Cbm,
                 RemainingCbm = d.Cbm,
+                VolumeDecimals = d.VolumeDecimals,
+                VolumeAdjustment = d.VolumeAdjustment,
                 PriceUsd = d.EffectivePriceUsd,
                 ExchangeRate = (decimal)SelectedExchangeRate,
                 TaxPercent = (decimal)SelectedTaxPercent,

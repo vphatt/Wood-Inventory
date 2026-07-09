@@ -39,6 +39,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         InitFilterCombo();
         RefreshView();
         Helpers.GridLayoutStore.Attach(Grid, "categories");
+        Helpers.GridPairSync.Link(Grid, ActionGrid);
     }
 
     private void InitFilterCombo()
@@ -208,7 +209,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Loại Gỗ — {cat.Name}";
         FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 

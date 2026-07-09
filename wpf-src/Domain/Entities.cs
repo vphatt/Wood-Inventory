@@ -116,6 +116,8 @@ public class WoodLot
     public double Footage { get; set; }            // BFT — chỉ dùng cho Gỗ Dương
     public double Cbm { get; set; }                // m³ ban đầu
     public double RemainingCbm { get; set; }       // m³ còn lại
+    public int? VolumeDecimals { get; set; }       // số chữ số thập phân làm tròn m³ riêng của kiện (null = mặc định 5)
+    public double? VolumeAdjustment { get; set; }  // điều chỉnh tay +/- cộng vào m³ sau khi làm tròn (null = 0)
     public decimal PriceUsd { get; set; }
     public decimal ExchangeRate { get; set; }
     public decimal TaxPercent { get; set; }
@@ -179,4 +181,21 @@ public class Order
     public string CustomerName { get; set; }
     public DateTime Date { get; set; }
     public string Status { get; set; }             // pending | processing | completed
+}
+
+/// <summary>
+/// Cài đặt chung của app — LUÔN đúng 1 dòng duy nhất (Id cố định "default").
+/// Thông tin công ty hiển thị ở thanh trạng thái + giá trị mặc định mồi sẵn cho form Nhập Kho.
+/// </summary>
+public class AppSettings
+{
+    public string Id { get; set; } = "default";
+    public string CompanyName { get; set; }
+    public string CompanyTaxCode { get; set; }
+    public string CompanyAddress { get; set; }
+    public string CompanyPhone { get; set; }
+    public decimal DefaultExchangeRate { get; set; }
+    public decimal DefaultTaxPercent { get; set; }
+    public int DefaultVolumeDecimals { get; set; }
+    public int LowStockThreshold { get; set; }
 }

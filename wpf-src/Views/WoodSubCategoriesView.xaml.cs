@@ -37,6 +37,7 @@ public partial class WoodSubCategoriesView : UserControl
         TitleName.Text = $"Phân loại — {category.Name}";
         Subtitle.Text = $"Nguyên tắc tính m³: {category.VolumeRuleLabel}";
         RebuildList();
+        Helpers.GridPairSync.Link(SubGrid, ActionGrid);
     }
 
     public void RefreshView() => RebuildList();
@@ -139,7 +140,7 @@ public partial class WoodSubCategoriesView : UserControl
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Phân Loại — {s.Name}";
         FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 

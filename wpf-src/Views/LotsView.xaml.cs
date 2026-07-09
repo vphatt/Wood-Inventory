@@ -30,6 +30,7 @@ public partial class LotsView : UserControl, IModuleView
         InitializeComponent();
         RefreshView();
         Helpers.GridLayoutStore.Attach(LotGrid, "lots");
+        Helpers.GridPairSync.Link(LotGrid, ActionGrid);
     }
 
     public void RefreshView()

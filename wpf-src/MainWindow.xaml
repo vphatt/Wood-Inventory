@@ -9,7 +9,7 @@
         TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="256"/>
+            <ColumnDefinition x:Name="SidebarColumnDef" Width="256"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -17,32 +17,47 @@
         <Border Grid.Column="0" Background="{StaticResource SideBg}"
                 BorderBrush="{StaticResource SideBorder}" BorderThickness="0,0,1,0">
             <DockPanel>
-                <!-- Logo & tiêu đề -->
-                <Border DockPanel.Dock="Top" Padding="24,22" BorderBrush="#991E293B" BorderThickness="0,0,0,1">
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="32" Height="32" Background="{StaticResource Blue500}" CornerRadius="4">
-                            <TextBlock Text="TF" Foreground="White" FontWeight="Bold" FontSize="13"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="Quản Lý Gỗ" Foreground="White" FontWeight="SemiBold" FontSize="15"/>
-                            <TextBlock Text="V1.0.4 - PRO EDITION" Foreground="#7A94A3B8" FontSize="9"
-                                       Margin="0,3,0,0">
-                                <TextBlock.LayoutTransform>
-                                    <ScaleTransform/>
-                                </TextBlock.LayoutTransform>
-                            </TextBlock>
+                <!-- Logo & tiêu đề + nút thu nhỏ — Height cố định để hàng này KHÔNG co lại khi ẩn logo lúc collapse
+                     (nếu không, cả NavPanel bên dưới bị đẩy lên, icon lệch vị trí so với lúc mở rộng).
+                     Padding trái đổi động theo trạng thái collapse trong code-behind (24 mở rộng / 12 thu nhỏ) —
+                     lúc thu nhỏ, 12(padding) + 12(padding trong nút) = 24, KHỚP đúng x của icon các tab bên dưới
+                     (12 ScrollViewer + 12 Border mỗi hàng nav). -->
+                <Border x:Name="SidebarHeader" DockPanel.Dock="Top" Height="76" Padding="24,0" BorderBrush="#991E293B" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <StackPanel x:Name="LogoRow" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border x:Name="LogoIcon" Width="32" Height="32" Background="{StaticResource Blue500}" CornerRadius="4">
+                                <TextBlock Text="TF" Foreground="White" FontWeight="Bold" FontSize="13"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel x:Name="LogoTextPanel" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Quản Lý Gỗ" Foreground="White" FontWeight="SemiBold" FontSize="15"/>
+                                <TextBlock Text="V1.0.4 - PRO EDITION" Foreground="#7A94A3B8" FontSize="9"
+                                           Margin="0,3,0,0">
+                                    <TextBlock.LayoutTransform>
+                                        <ScaleTransform/>
+                                    </TextBlock.LayoutTransform>
+                                </TextBlock>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                        <Border x:Name="BtnToggleSidebar" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Padding="12,8,12,8" CornerRadius="6"
+                                Background="Transparent" Cursor="Hand" MouseLeftButtonDown="BtnToggleSidebar_Click"
+                                ToolTip="Thu nhỏ / mở rộng sidebar">
+                            <TextBlock x:Name="SidebarToggleIcon" Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                       Foreground="{StaticResource Slate400}"/>
+                        </Border>
+                    </Grid>
                 </Border>
 
-                <!-- Menu điều hướng -->
+                <!-- Cài Đặt ghim riêng ở đáy sidebar (luôn hiện, không cuộn theo NavPanel) — Padding "12,0" khớp
+                     ScrollViewer bên dưới để icon thẳng cột với các mục nav khác (xem BuildNavRow). -->
+                <Border DockPanel.Dock="Bottom" BorderBrush="#991E293B" BorderThickness="0,1,0,0" Padding="12,8">
+                    <StackPanel x:Name="SettingsNavHost"/>
+                </Border>
+
+                <!-- Menu điều hướng: tiêu đề nhóm + mục menu đều được sinh trong code-behind (BuildNav) -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,0">
-                    <StackPanel x:Name="NavPanel" Margin="0,12,0,12">
-                        <TextBlock Text="PHÂN HỆ KHO &amp; MUA HÀNG" Foreground="{StaticResource Slate500}"
-                                   FontSize="10.5" FontWeight="Bold" Margin="12,16,12,8"/>
-                        <!-- Các mục menu được sinh trong code-behind -->
-                    </StackPanel>
+                    <StackPanel x:Name="NavPanel" Margin="0,12,0,12"/>
                 </ScrollViewer>
             </DockPanel>
         </Border>
@@ -92,7 +107,7 @@
             <!-- Thanh trạng thái dưới cùng -->
             <Border Grid.Row="3" Background="{StaticResource Blue600}" Padding="16,0">
                 <Grid>
-                    <TextBlock Text="CÔNG TY TNHH MTV HƯNG DIỆU" Foreground="White" FontSize="9" FontWeight="Bold"
+                    <TextBlock x:Name="FooterCompanyName" Foreground="White" FontSize="9" FontWeight="Bold"
                                HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 </Grid>
             </Border>

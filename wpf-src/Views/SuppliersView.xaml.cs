@@ -36,6 +36,7 @@ public partial class SuppliersView : UserControl, IModuleView
         InitializeComponent();
         RefreshView();
         Helpers.GridLayoutStore.Attach(Grid, "suppliers");
+        Helpers.GridPairSync.Link(Grid, ActionGrid);
     }
 
     public void RefreshView()
@@ -168,7 +169,7 @@ public partial class SuppliersView : UserControl, IModuleView
         SetReadOnly(true);
         FormTitle.Text = $"Chi Tiết Nhà Cung Cấp — {s.Name}";
         FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
     }
 

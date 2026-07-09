@@ -23,6 +23,8 @@ public static class DbSeeder
         EnsureQuotationItemColumns(context);
         EnsureWoodLotColumns(context);
         MergeQuotationsPerSupplier(context);
+        EnsureAppSettingsTable(context);
+        SeedAppSettings(context);
 
         if (context.Suppliers.Any())
             return; // Đã có dữ liệu
@@ -176,6 +178,45 @@ public static class DbSeeder
             """);
         context.Database.ExecuteSqlRaw(
             """CREATE UNIQUE INDEX IF NOT EXISTS "IX_WoodCategories_Name" ON "WoodCategories" ("Name");""");
+    }
+
+    /// <summary>Tạo bảng AppSettings (cài đặt chung, luôn đúng 1 dòng) cho DB cũ nếu chưa có.</summary>
+    private static void EnsureAppSettingsTable(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS "AppSettings" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_AppSettings" PRIMARY KEY,
+                "CompanyName" TEXT NULL,
+                "CompanyTaxCode" TEXT NULL,
+                "CompanyAddress" TEXT NULL,
+                "CompanyPhone" TEXT NULL,
+                "DefaultExchangeRate" TEXT NOT NULL,
+                "DefaultTaxPercent" TEXT NOT NULL,
+                "DefaultVolumeDecimals" INTEGER NOT NULL,
+                "LowStockThreshold" INTEGER NOT NULL
+            );
+            """);
+    }
+
+    /// <summary>Mồi đúng 1 dòng cài đặt mặc định (chỉ khi bảng rỗng) — khớp các giá trị hardcode cũ.</summary>
+    private static void SeedAppSettings(AppDbContext context)
+    {
+        if (context.Settings.Any()) return;
+
+        context.Settings.Add(new AppSettings
+        {
+            Id = "default",
+            CompanyName = "CÔNG TY TNHH MTV HƯNG DIỆU",
+            CompanyTaxCode = null,
+            CompanyAddress = null,
+            CompanyPhone = null,
+            DefaultExchangeRate = 25400,
+            DefaultTaxPercent = 10,
+            DefaultVolumeDecimals = 5,
+            LowStockThreshold = 30
+        });
+        context.SaveChanges();
     }
 
     /// <summary>Tạo bảng WoodSubCategories (phân loại con) cho DB cũ nếu chưa có.</summary>
@@ -384,6 +425,10 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "Origin" TEXT;""");
         if (existing.Count > 0 && !existing.Contains("DeliveryNote"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "DeliveryNote" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("VolumeDecimals"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "VolumeDecimals" INTEGER;""");
+        if (existing.Count > 0 && !existing.Contains("VolumeAdjustment"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "VolumeAdjustment" REAL;""");
     }
 
     /// <summary>Seed các loại gỗ mặc định (chỉ khi bảng rỗng). Gỗ Dương tính theo Footage, còn lại theo quy cách.</summary>

@@ -18,11 +18,12 @@ public static class AppState
     public static List<WarehouseReceipt> Receipts { get; private set; } = new();
     public static List<WarehouseIssue> Issues { get; private set; } = new();
     public static List<Order> Orders { get; private set; } = new();
+    public static AppSettings Settings { get; private set; } = new();
 
     /// <summary>Bắn ra sau mỗi thay đổi dữ liệu để các màn hình tự làm mới.</summary>
     public static event Action Changed;
 
-    public static int LowStockCount => Lots.Count(l => l.Quantity <= 30 && l.Quantity > 0);
+    public static int LowStockCount => Lots.Count(l => l.Quantity <= Settings.LowStockThreshold && l.Quantity > 0);
 
     public static void Initialize()
     {
@@ -45,6 +46,26 @@ public static class AppState
         Issues = db.WarehouseIssues.AsNoTracking().Include(i => i.Items)
                    .OrderByDescending(i => i.Date).ToList();
         Orders = db.Orders.AsNoTracking().OrderBy(o => o.Date).ToList();
+        Settings = db.Settings.AsNoTracking().FirstOrDefault(s => s.Id == "default") ?? new AppSettings();
+    }
+
+    /// <summary>Cập nhật cài đặt chung (luôn đúng 1 dòng "default").</summary>
+    public static void UpdateSettings(AppSettings settings)
+    {
+        using var db = new AppDbContext();
+        var existing = db.Settings.FirstOrDefault(s => s.Id == "default");
+        if (existing == null) return;
+
+        existing.CompanyName = settings.CompanyName?.Trim();
+        existing.CompanyTaxCode = settings.CompanyTaxCode?.Trim();
+        existing.CompanyAddress = settings.CompanyAddress?.Trim();
+        existing.CompanyPhone = settings.CompanyPhone?.Trim();
+        existing.DefaultExchangeRate = settings.DefaultExchangeRate;
+        existing.DefaultTaxPercent = settings.DefaultTaxPercent;
+        existing.DefaultVolumeDecimals = settings.DefaultVolumeDecimals;
+        existing.LowStockThreshold = settings.LowStockThreshold;
+        db.SaveChanges();
+        Commit();
     }
 
     private static void Commit()

@@ -14,8 +14,6 @@
                         <TextBlock Text="Phiếu Xuất Kho Gỗ Cho Đơn Hàng" FontSize="17" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
-                    <TextBlock Text="Xuất nguyên liệu gỗ phục vụ sản xuất. Truy xuất giá vốn thực tế của kiện gỗ đã chọn."
-                               FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Button Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right" VerticalAlignment="Top"
                         Click="BtnToggleAdd_Click">

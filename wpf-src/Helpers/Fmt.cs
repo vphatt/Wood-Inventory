@@ -14,6 +14,9 @@ public static class Fmt
     /// <summary>"29,6798" (4 số lẻ, dấu phẩy thập phân)</summary>
     public static string M3(double value) => value.ToString("N4", Vi);
 
+    /// <summary>M³ với số chữ số thập phân tùy chỉnh (mỗi kiện gỗ có thể làm tròn khác nhau).</summary>
+    public static string M3(double value, int decimals) => value.ToString("N" + Math.Max(0, decimals), Vi);
+
     /// <summary>"21,433" (3 số lẻ)</summary>
     public static string M3Short(double value) => value.ToString("N3", Vi);
 

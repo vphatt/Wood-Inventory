@@ -31,6 +31,7 @@ public class AppDbContext : DbContext
     public DbSet<WarehouseIssue> WarehouseIssues { get; set; }
     public DbSet<WarehouseIssueItem> WarehouseIssueItems { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<AppSettings> Settings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
@@ -114,6 +115,14 @@ public class AppDbContext : DbContext
         });
 
         modelBuilder.Entity<Order>(entity => entity.HasKey(e => e.Id));
+
+        modelBuilder.Entity<AppSettings>(entity =>
+        {
+            entity.ToTable("AppSettings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DefaultExchangeRate).HasPrecision(18, 2);
+            entity.Property(e => e.DefaultTaxPercent).HasPrecision(5, 2);
+        });
 
         modelBuilder.Entity<WarehouseIssueItem>(entity =>
         {

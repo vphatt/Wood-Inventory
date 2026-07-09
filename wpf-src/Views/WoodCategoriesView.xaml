@@ -15,8 +15,6 @@
                         <TextBlock Text="Quản Lý Phân Loại Gỗ" FontSize="17" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
-                    <TextBlock Text="Danh mục loại gỗ và nguyên tắc tính thể tích m³. Quyết định trường bắt buộc khi nhập/xuất kho."
-                               FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Button Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right" VerticalAlignment="Top"
                         Click="BtnToggleAdd_Click">

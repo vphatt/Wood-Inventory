@@ -41,6 +41,9 @@
             <SolidColorBrush x:Key="Indigo50"  Color="#EEF2FF"/>
             <SolidColorBrush x:Key="Indigo600" Color="#4F46E5"/>
 
+            <SolidColorBrush x:Key="Amber500" Color="#F59E0B"/>
+            <SolidColorBrush x:Key="Amber600" Color="#D97706"/>
+
             <SolidColorBrush x:Key="Rose50"  Color="#FFF1F2"/>
             <SolidColorBrush x:Key="Rose100" Color="#FFE4E6"/>
             <SolidColorBrush x:Key="Rose200" Color="#FECDD3"/>
@@ -187,14 +190,25 @@
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
                 <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="Height" Value="40"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <!-- MainWindow đặt TextFormattingMode="Display" (pixel-snap) toàn app cho chữ sắc nét hơn, nhưng
+                     kiểu này xung đột với các bộ gõ tiếng Việt kiểu keystroke (Unikey/EVKey — swallow phím gốc rồi
+                     SendInput lại) khiến nội dung gõ hiển thị lệch vị trí so với placeholder. Ô nhập liệu đổi
+                     riêng về "Ideal" (đo lường chính xác, không pixel-snap) để tránh lỗi này. -->
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
                             <Border x:Name="bd" Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8">
-                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                <!-- Padding phải đặt TRÊN CHÍNH ScrollViewer (không phải Margin của nó, cũng không
+                                     phải Padding của Border cha) — TextBox nội bộ dựa vào Padding của chính
+                                     PART_ContentHost để tính toán cuộn-theo-con-trỏ. Đặt sai chỗ (từng thử Margin
+                                     trên ScrollViewer, rồi Padding trên Border cha) gây lệch vị trí chữ khi gõ
+                                     bằng bộ gõ tiếng Việt kiểu keystroke (Unikey/EVKey) hoặc khi text tràn/cuộn. -->
+                                <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}"
                                               VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -567,11 +581,14 @@
                 </Setter>
             </Style>
 
-            <!-- Row: hover slate-50, chọn = xanh nhạt -->
+            <!-- Row: hover slate-50, chọn = xanh nhạt.
+                 Hover dùng helpers:RowHover (attached, đồng bộ được qua GridPairSync) THAY VÌ IsMouseOver gốc —
+                 vì nhiều bảng tách 2 DataGrid riêng (nội dung + cột thao tác ghim phải, cùng 1 ItemsSource),
+                 IsMouseOver gốc chỉ sáng ở đúng control đang có chuột, gây lệch hover giữa 2 bảng. -->
             <Style x:Key="GridRow" TargetType="DataGridRow">
                 <Setter Property="Background" Value="White"/>
                 <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger Property="helpers:RowHover.IsHovered" Value="True">
                         <Setter Property="Background" Value="{StaticResource Slate50}"/>
                     </Trigger>
                     <Trigger Property="IsSelected" Value="True">
@@ -593,6 +610,11 @@
                 <Setter Property="HeadersVisibility" Value="Column"/>
                 <Setter Property="SelectionMode" Value="Single"/>
                 <Setter Property="SelectionUnit" Value="FullRow"/>
+                <!-- Tự đấu hover + lựa chọn cho MỌI DataGrid (xem GridPairSync) — bảng nào tách thêm cột thao
+                     tác riêng thì View gọi GridPairSync.Link(...) để nối 2 bảng (KHÔNG dùng
+                     IsSynchronizedWithCurrentItem — từng gây bug tự chọn lại dòng đầu mỗi khi View gọi
+                     _view.Refresh(), xem chú thích trong GridPairSync.cs), còn lại tự hoạt động không cần gì thêm. -->
+                <Setter Property="helpers:GridPairSync.AutoHover" Value="True"/>
                 <Setter Property="GridLinesVisibility" Value="All"/>
                 <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Slate200}"/>
                 <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Slate200}"/>

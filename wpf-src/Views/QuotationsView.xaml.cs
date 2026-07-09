@@ -47,6 +47,7 @@ public partial class QuotationsView : UserControl, IModuleView
         InitializeComponent();
         RebuildList();
         GridLayoutStore.Attach(SupplierGrid, "quotation-suppliers");
+        GridPairSync.Link(SupplierGrid, ActionGrid);
     }
 
     public void RefreshView()

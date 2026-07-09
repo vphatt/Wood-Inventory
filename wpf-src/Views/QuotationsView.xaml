@@ -15,8 +15,6 @@
                         <TextBlock Text="Quản Lý Báo Giá Gỗ Nhà Cung Cấp" FontSize="17" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
-                    <TextBlock Text="Mỗi nhà cung cấp có một danh sách báo giá. Bấm Xem để quản lý các mục giá của NCC."
-                               FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <!-- Tìm kiếm -->

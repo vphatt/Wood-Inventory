@@ -13,7 +13,7 @@ namespace WoodInventory;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private sealed record NavItem(string Module, string Label, string Glyph);
+    private sealed record NavItem(string Module, string Label, string Glyph, string Group = null);
 
     private sealed class WorkTab
     {
@@ -24,25 +24,36 @@ public partial class MainWindow : Window
 
     private static readonly NavItem[] NavItems =
     {
-        new("dashboard",  "Bảng Điều Khiển",        ""),
-        new("categories", "Phân Loại Gỗ",         ""),
-        new("suppliers",  "Nhà Cung Cấp",           ""),
-        new("lots",       "Quản Lý Kiện Gỗ (Lots)", ""),
-        new("receipts",   "Nhập Kho Gỗ",            ""),
-        new("issues",     "Xuất Kho Gỗ",            ""),
+        new("dashboard",  "Bảng Điều Khiển",        ""),
+        new("suppliers",  "Nhà Cung Cấp",           "", "THÔNG TIN CHUNG"),
+        new("categories", "Phân Loại Gỗ",         "", "THÔNG TIN CHUNG"),
+        new("receipts",   "Nhập Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
+        new("lots",       "Quản Lý Kiện Gỗ (Lots)", "", "XUẤT NHẬP GỖ"),
+        new("issues",     "Xuất Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
     };
+
+    /// <summary>Ghim riêng ở đáy sidebar (ngoài NavPanel cuộn được) — luôn hiện, không thuộc nhóm nào.</summary>
+    private static readonly NavItem SettingsNavItem = new("settings", "Cài Đặt", "");
 
     private readonly List<WorkTab> _tabs = new();
     private readonly Dictionary<string, UserControl> _viewCache = new();
     private string _activeModule = "dashboard";
+    private bool _sidebarCollapsed;
+
+    private const double SidebarExpandedWidth = 256;
+    private const double SidebarCollapsedWidth = 68;
 
     public MainWindow()
     {
         InitializeComponent();
 
+        BtnToggleSidebar.MouseEnter += (_, _) => BtnToggleSidebar.Background = (Brush)FindResource("SideHover");
+        BtnToggleSidebar.MouseLeave += (_, _) => BtnToggleSidebar.Background = Brushes.Transparent;
+
         AppState.Changed += OnDataChanged;
         Unloaded += (_, _) => AppState.Changed -= OnDataChanged;
 
+        UpdateFooterCompanyName();
         OpenModule("dashboard");
 
         // Hỗ trợ mở thẳng một module khi khởi động: WoodInventory.exe --module lots
@@ -55,8 +66,15 @@ public partial class MainWindow : Window
     private void OnDataChanged()
     {
         BuildNav();
+        UpdateFooterCompanyName();
         if (_viewCache.TryGetValue(_activeModule, out var view) && view is IModuleView refreshable)
             refreshable.RefreshView();
+    }
+
+    private void UpdateFooterCompanyName()
+    {
+        var name = AppState.Settings.CompanyName;
+        FooterCompanyName.Text = string.IsNullOrWhiteSpace(name) ? "" : name.ToUpperInvariant();
     }
 
     private static string GetModuleTitle(string module) => module switch
@@ -69,6 +87,7 @@ public partial class MainWindow : Window
         "receipts" => "Nhập Kho Gỗ",
         "issues" => "Xuất Kho Gỗ",
         "dotnet" => "Mã C# .NET WPF",
+        "settings" => "Cài Đặt",
         _ => "Module"
     };
 
@@ -150,110 +169,157 @@ public partial class MainWindow : Window
         "receipts" => new ReceiptsView(),
         "issues" => new IssuesView(),
         "dotnet" => new DotNetView(),
+        "settings" => new SettingsView(),
         _ => new DashboardView()
     };
 
     // ---------------- Sidebar ----------------
 
+    /// <summary>Thu nhỏ sidebar chỉ còn icon từng tab (ẩn cả logo app) / mở rộng lại.</summary>
+    private void BtnToggleSidebar_Click(object sender, MouseButtonEventArgs e)
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
+        SidebarColumnDef.Width = new GridLength(_sidebarCollapsed ? SidebarCollapsedWidth : SidebarExpandedWidth);
+        LogoIcon.Visibility = _sidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        LogoTextPanel.Visibility = _sidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        SidebarToggleIcon.Text = _sidebarCollapsed ? "" : "";
+        // Thu nhỏ: header Padding trái đổi 24→12 + nút neo TRÁI (Padding riêng 12) = icon nút nằm đúng x=24,
+        // KHỚP x của icon các tab bên dưới (12 ScrollViewer + 12 Border mỗi hàng nav). Mở rộng: giữ góc phải như cũ.
+        SidebarHeader.Padding = new Thickness(_sidebarCollapsed ? 12 : 24, 0, _sidebarCollapsed ? 12 : 24, 0);
+        BtnToggleSidebar.HorizontalAlignment = _sidebarCollapsed ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        BuildNav();
+    }
+
     private void BuildNav()
     {
-        // Giữ lại tiêu đề nhóm (phần tử đầu), xóa các nút cũ
-        while (NavPanel.Children.Count > 1)
-            NavPanel.Children.RemoveAt(1);
+        NavPanel.Children.Clear();
 
+        string lastGroup = null;
         foreach (var item in NavItems)
         {
-            var isActive = _activeModule == item.Module;
-
-            var icon = new TextBlock
+            // Đổi nhóm → chèn tiêu đề nhóm mới trước mục đầu tiên của nhóm đó (mục không có nhóm, vd Dashboard, thì bỏ qua).
+            // Sidebar thu nhỏ vẫn phải giữ NGUYÊN khoảng không gian này (chỉ đổi chữ thành "—" căn giữa) —
+            // nếu bỏ hẳn, các mục bên dưới bị đẩy lên, icon lệch vị trí so với lúc mở rộng.
+            if (item.Group != lastGroup)
             {
-                Text = item.Glyph,
-                FontFamily = new FontFamily("Segoe MDL2 Assets"),
-                FontSize = 13,
-                VerticalAlignment = VerticalAlignment.Center,
-                Foreground = isActive
-                    ? (Brush)FindResource("Blue400")
-                    : (Brush)FindResource("Slate500")
-            };
-
-            var label = new TextBlock
-            {
-                Text = item.Label,
-                FontSize = 12,
-                Margin = new Thickness(10, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Foreground = isActive ? Brushes.White : (Brush)FindResource("Slate400"),
-                FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Medium
-            };
-
-            var left = new StackPanel { Orientation = Orientation.Horizontal };
-            left.Children.Add(icon);
-            left.Children.Add(label);
-
-            var row = new Grid();
-            row.Children.Add(left);
-
-            // Huy hiệu (badge): số kiện gỗ cho mục Lots, nhãn "Clean" cho mục .NET
-            if (item.Module == "lots" || item.Module == "dotnet")
-            {
-                var lowStock = AppState.LowStockCount > 0 && item.Module == "lots";
-                var badge = new Border
+                if (!string.IsNullOrEmpty(item.Group))
                 {
-                    CornerRadius = new CornerRadius(2),
-                    Padding = new Thickness(6, 2, 6, 2),
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Background = isActive
-                        ? new SolidColorBrush(Color.FromArgb(0x33, 0x3B, 0x82, 0xF6))
-                        : lowStock
-                            ? new SolidColorBrush(Color.FromArgb(0x33, 0xF4, 0x3F, 0x5E))
-                            : (Brush)FindResource("SideHover"),
-                    Child = new TextBlock
+                    NavPanel.Children.Add(new TextBlock
                     {
-                        Text = item.Module == "lots" ? AppState.Lots.Count.ToString() : "Clean",
-                        FontFamily = (FontFamily)FindResource("FontMono"),
-                        FontSize = 10,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = isActive
-                            ? (Brush)FindResource("Blue300")
-                            : lowStock
-                                ? (Brush)FindResource("Rose300")
-                                : (Brush)FindResource("Slate500")
-                    }
-                };
-                row.Children.Add(badge);
+                        Text = _sidebarCollapsed ? "—" : item.Group,
+                        Foreground = (Brush)FindResource("Slate500"),
+                        FontSize = 10.5, FontWeight = FontWeights.Bold,
+                        TextAlignment = _sidebarCollapsed ? TextAlignment.Center : TextAlignment.Left,
+                        Margin = new Thickness(12, lastGroup == null ? 8 : 16, 12, 8)
+                    });
+                }
+                lastGroup = item.Group;
             }
 
-            var border = new Border
-            {
-                Background = isActive ? (Brush)FindResource("SideHover") : Brushes.Transparent,
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(12, 8, 12, 8),
-                Margin = new Thickness(0, 2, 0, 2),
-                Cursor = Cursors.Hand,
-                Child = row,
-                Tag = item.Module
-            };
-
-            border.MouseLeftButtonDown += (_, _) => OpenModule(item.Module);
-            if (!isActive)
-            {
-                border.MouseEnter += (_, _) =>
-                {
-                    border.Background = (Brush)FindResource("SideHover");
-                    label.Foreground = Brushes.White;
-                    icon.Foreground = (Brush)FindResource("Slate300");
-                };
-                border.MouseLeave += (_, _) =>
-                {
-                    border.Background = Brushes.Transparent;
-                    label.Foreground = (Brush)FindResource("Slate400");
-                    icon.Foreground = (Brush)FindResource("Slate500");
-                };
-            }
-
-            NavPanel.Children.Add(border);
+            NavPanel.Children.Add(BuildNavRow(item));
         }
+
+        // Cài Đặt ghim riêng ở đáy sidebar (ngoài NavPanel cuộn được, xem SettingsNavHost trong XAML) —
+        // dùng CHUNG BuildNavRow nên icon vẫn thẳng cột với các mục bên trên dù nằm ở vùng khác.
+        SettingsNavHost.Children.Clear();
+        SettingsNavHost.Children.Add(BuildNavRow(SettingsNavItem));
+    }
+
+    private Border BuildNavRow(NavItem item)
+    {
+        var isActive = _activeModule == item.Module;
+
+        var icon = new TextBlock
+        {
+            Text = item.Glyph,
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 13,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = isActive
+                ? (Brush)FindResource("Blue400")
+                : (Brush)FindResource("Slate500")
+        };
+
+        var label = new TextBlock
+        {
+            Text = item.Label,
+            FontSize = 12,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = isActive ? Brushes.White : (Brush)FindResource("Slate400"),
+            FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Medium,
+            Visibility = _sidebarCollapsed ? Visibility.Collapsed : Visibility.Visible
+        };
+
+        // Luôn neo trái (không center khi thu nhỏ) để icon đứng yên 1 chỗ, không "nhảy" vị trí lúc thu nhỏ/mở rộng.
+        var left = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
+        left.Children.Add(icon);
+        left.Children.Add(label);
+
+        var row = new Grid();
+        row.Children.Add(left);
+
+        // Huy hiệu (badge): số kiện gỗ cho mục Lots, nhãn "Clean" cho mục .NET — ẩn khi sidebar thu nhỏ (không đủ chỗ).
+        if (!_sidebarCollapsed && (item.Module == "lots" || item.Module == "dotnet"))
+        {
+            var lowStock = AppState.LowStockCount > 0 && item.Module == "lots";
+            var badge = new Border
+            {
+                CornerRadius = new CornerRadius(2),
+                Padding = new Thickness(6, 2, 6, 2),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Background = isActive
+                    ? new SolidColorBrush(Color.FromArgb(0x33, 0x3B, 0x82, 0xF6))
+                    : lowStock
+                        ? new SolidColorBrush(Color.FromArgb(0x33, 0xF4, 0x3F, 0x5E))
+                        : (Brush)FindResource("SideHover"),
+                Child = new TextBlock
+                {
+                    Text = item.Module == "lots" ? AppState.Lots.Count.ToString() : "Clean",
+                    FontFamily = (FontFamily)FindResource("FontMono"),
+                    FontSize = 10,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = isActive
+                        ? (Brush)FindResource("Blue300")
+                        : lowStock
+                            ? (Brush)FindResource("Rose300")
+                            : (Brush)FindResource("Slate500")
+                }
+            };
+            row.Children.Add(badge);
+        }
+
+        var border = new Border
+        {
+            Background = isActive ? (Brush)FindResource("SideHover") : Brushes.Transparent,
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12, 8, 12, 8), // giữ cố định cả 2 trạng thái để icon không đổi vị trí
+            Margin = new Thickness(0, 2, 0, 2),
+            Cursor = Cursors.Hand,
+            Child = row,
+            Tag = item.Module,
+            ToolTip = _sidebarCollapsed ? item.Label : null
+        };
+
+        border.MouseLeftButtonDown += (_, _) => OpenModule(item.Module);
+        if (!isActive)
+        {
+            border.MouseEnter += (_, _) =>
+            {
+                border.Background = (Brush)FindResource("SideHover");
+                label.Foreground = Brushes.White;
+                icon.Foreground = (Brush)FindResource("Slate300");
+            };
+            border.MouseLeave += (_, _) =>
+            {
+                border.Background = Brushes.Transparent;
+                label.Foreground = (Brush)FindResource("Slate400");
+                icon.Foreground = (Brush)FindResource("Slate500");
+            };
+        }
+
+        return border;
     }
 
     // ---------------- Dải tab ----------------

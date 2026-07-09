@@ -39,17 +39,21 @@ public static class WoodVolumeCalculator
     /// Tính thể tích m³ theo chủng loại gỗ.
     ///  - Gỗ Dương (Poplar):  m³ = (Footage / 1000) * 2.36
     ///  - Loại khác:          m³ = Dài * Rộng * Dày * Số lượng / 1.000.000.000
+    /// Làm tròn theo <paramref name="decimals"/> (mặc định 5 số lẻ, khai báo riêng theo từng kiện gỗ vì
+    /// mỗi phiếu giao hàng của NCC có thể làm tròn khác nhau), rồi cộng thêm <paramref name="adjustment"/>
+    /// (điều chỉnh tay +/- một lượng nhỏ, áp dụng SAU khi làm tròn để không bị phép Round nuốt mất).
     /// </summary>
     public static double CalculateVolume(string woodType, double thicknessMm, double widthMm,
-        double lengthMm, int quantity, double footage)
+        double lengthMm, int quantity, double footage, int decimals = 5, double adjustment = 0)
     {
         var normalized = (woodType ?? "").Trim().ToLowerInvariant();
         var isPoplar = normalized.Contains("dương") || normalized.Contains("duong") || normalized.Contains("poplar");
 
-        if (isPoplar)
-            return Math.Round((footage / 1000.0) * 2.36, 4);
+        var raw = isPoplar
+            ? (footage / 1000.0) * 2.36
+            : (lengthMm * widthMm * thicknessMm * quantity) / 1_000_000_000.0;
 
-        return Math.Round((lengthMm * widthMm * thicknessMm * quantity) / 1_000_000_000.0, 4);
+        return Math.Round(raw, decimals) + adjustment;
     }
 
     /// <summary>Giá vốn VND/m³ = Giá USD * Tỷ giá * (1 + Thuế%/100), làm tròn đến đồng.</summary>
