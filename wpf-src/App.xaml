@@ -521,6 +521,7 @@
                                 <Border Background="{TemplateBinding Background}"
                                         BorderBrush="{StaticResource Slate300}"
                                         BorderThickness="0,0,1,1"
+                                        SnapsToDevicePixels="True"
                                         Padding="{TemplateBinding Padding}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -600,6 +601,10 @@
             <Style x:Key="DataTable" TargetType="DataGrid">
                 <Setter Property="AutoGenerateColumns" Value="False"/>
                 <Setter Property="AlternationCount" Value="100000"/>
+                <!-- Làm tròn độ rộng cột về pixel nguyên để border 1px của header/cell không bị nuốt mất
+                     ở một số cột (lỗi render sub-pixel). Áp cho MỌI DataTable trong app. -->
+                <Setter Property="UseLayoutRounding" Value="True"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
                 <Setter Property="CanUserAddRows" Value="False"/>
                 <Setter Property="CanUserDeleteRows" Value="False"/>
                 <Setter Property="CanUserReorderColumns" Value="False"/>

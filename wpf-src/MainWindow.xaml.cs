@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         new("suppliers",  "Nhà Cung Cấp",           "", "THÔNG TIN CHUNG"),
         new("categories", "Phân Loại Gỗ",         "", "THÔNG TIN CHUNG"),
         new("receipts",   "Nhập Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
-        new("lots",       "Quản Lý Kiện Gỗ (Lots)", "", "XUẤT NHẬP GỖ"),
+        new("lots",       "Tồn Kho", "", "XUẤT NHẬP GỖ"),
         new("issues",     "Xuất Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
     };
 
@@ -82,7 +82,7 @@ public partial class MainWindow : Window
         "dashboard" => "Bảng Điều Khiển",
         "categories" => "Phân Loại Gỗ",
         "suppliers" => "Nhà Cung Cấp",
-        "lots" => "Kiện Gỗ (Lots)",
+        "lots" => "Tồn Kho",
         "quotations" => "Báo Giá Gỗ",
         "receipts" => "Nhập Kho Gỗ",
         "issues" => "Xuất Kho Gỗ",

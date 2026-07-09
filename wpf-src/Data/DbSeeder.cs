@@ -425,6 +425,8 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "Origin" TEXT;""");
         if (existing.Count > 0 && !existing.Contains("DeliveryNote"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "DeliveryNote" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("ForestList"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "ForestList" TEXT;""");
         if (existing.Count > 0 && !existing.Contains("VolumeDecimals"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "VolumeDecimals" INTEGER;""");
         if (existing.Count > 0 && !existing.Contains("VolumeAdjustment"))

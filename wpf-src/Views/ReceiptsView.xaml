@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="Segoe UI" FontSize="12">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
+    <Grid Background="{StaticResource Slate50}">
+      <ScrollViewer x:Name="ListRoot" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + nút -->
@@ -15,13 +16,20 @@
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <Button Style="{StaticResource BtnPrimary}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Click="BtnToggleAdd_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                        <TextBlock Text="Lập phiếu nhập mới"/>
-                    </StackPanel>
-                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Button Style="{StaticResource BtnGhost}" Click="BtnOpenReport_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                            <TextBlock Text="Bảng tổng chi tiết nhập kho"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BtnPrimary}" Margin="8,0,0,0" Click="BtnToggleAdd_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                            <TextBlock Text="Lập phiếu nhập mới"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- ===== Form lập phiếu nhập ===== -->
@@ -46,6 +54,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition/>
                             <RowDefinition Height="14"/>
                             <RowDefinition/>
@@ -74,6 +84,10 @@
                         <StackPanel Grid.Row="2" Grid.Column="4">
                             <TextBlock Text="THUẾ VAT (%)" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FTaxPercent" Style="{StaticResource Select}" SelectionChanged="FRate_Changed"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <TextBlock Text="BẢNG KÊ LÂM SẢN" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FForestList" Style="{StaticResource Input}"/>
                         </StackPanel>
                     </Grid>
 
@@ -345,5 +359,7 @@
             </Border>
 
         </StackPanel>
-    </ScrollViewer>
+      </ScrollViewer>
+      <ContentControl x:Name="DetailHost" Visibility="Collapsed"/>
+    </Grid>
 </UserControl>

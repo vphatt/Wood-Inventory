@@ -48,6 +48,9 @@ public partial class ReceiptsView : UserControl, IModuleView
     private string _editingReceiptId;          // id phiếu đang xem/sửa
     private bool ReadOnly => _mode == "view";
 
+    private ReceiptReportView _reportView;     // != null khi đang ở trang Bảng tổng chi tiết nhập kho
+    private MainWindow Main => Window.GetWindow(this) as MainWindow;
+
     public ReceiptsView()
     {
         InitializeComponent();
@@ -89,6 +92,14 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     public void RefreshView()
     {
+        // Đang ở trang Bảng tổng chi tiết nhập kho → cập nhật nó + giữ breadcrumb
+        if (_reportView != null)
+        {
+            _reportView.RefreshView();
+            Main?.SetBreadcrumbDetail("Bảng tổng chi tiết nhập kho", BackToReceipts);
+            return;
+        }
+
         var current = (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         FSupplier.Items.Clear();
         FSupplier.Items.Add(new ComboBoxItem { Content = "-- Chọn Nhà Cung Cấp --", Tag = "" });
@@ -539,6 +550,30 @@ public partial class ReceiptsView : UserControl, IModuleView
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
+    // ---------------- Trang Bảng tổng chi tiết nhập kho (drill-down trong cùng tab) ----------------
+
+    private void BtnOpenReport_Click(object sender, RoutedEventArgs e)
+    {
+        AddFormPanel.Visibility = Visibility.Collapsed;   // đóng form lập phiếu nếu đang mở
+        EnterAddMode();
+
+        _reportView = new ReceiptReportView(BackToReceipts);
+        DetailHost.Content = _reportView;
+        ListRoot.Visibility = Visibility.Collapsed;
+        DetailHost.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail("Bảng tổng chi tiết nhập kho", BackToReceipts);
+    }
+
+    private void BackToReceipts()
+    {
+        _reportView = null;
+        DetailHost.Content = null;
+        DetailHost.Visibility = Visibility.Collapsed;
+        ListRoot.Visibility = Visibility.Visible;
+        Main?.SetBreadcrumbDetail(null);
+        RefreshView();
+    }
+
     private void BtnCancelAdd_Click(object sender, RoutedEventArgs e)
     {
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
@@ -567,7 +602,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     /// <summary>Bật/tắt chỉ-đọc cho các ô ở phần header chứng từ.</summary>
     private void SetHeaderReadOnly(bool ro)
     {
-        foreach (var box in new[] { FInvoice, FPackingList, FExchangeRate })
+        foreach (var box in new[] { FInvoice, FPackingList, FForestList, FExchangeRate })
         {
             box.IsReadOnly = ro;
             box.Background = ro ? (Brush)FindResource("Slate50") : Brushes.White;
@@ -588,6 +623,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         FormCancelBtn.Content = "Hủy bỏ";
         FInvoice.Text = "";
         FPackingList.Text = "";
+        FForestList.Text = "";
         FExchangeRate.Text = Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
         SelectTaxPercent(AppState.Settings.DefaultTaxPercent);
         FDate.SelectedDate = DateTime.Today;
@@ -633,6 +669,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         FPackingList.Text = r.PackingList;
 
         var first = r.Lots.FirstOrDefault();
+        FForestList.Text = first?.ForestList ?? "";
         if (first != null)
         {
             FExchangeRate.Text = Fmt.Num((double)first.ExchangeRate);
@@ -707,6 +744,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         var supplierId = SelectedSupplierId;
         var invoice = (FInvoice.Text ?? "").Trim();
         var packingList = (FPackingList.Text ?? "").Trim();
+        var forestList = (FForestList.Text ?? "").Trim();
 
         if (supplierId.Length == 0 || invoice.Length == 0)
         {
@@ -821,6 +859,7 @@ public partial class ReceiptsView : UserControl, IModuleView
                 Invoice = invoice,
                 PackingList = packingList,
                 DeliveryNote = Blank2Null(d.DeliveryNote),
+                ForestList = Blank2Null(forestList),
                 WoodType = d.WoodType,
                 WoodSubType = d.WoodSubType,
                 WoodName = string.Join(" ", new[] { d.WoodType + subPart, Blank2Null(d.Origin), thicknessLabel }

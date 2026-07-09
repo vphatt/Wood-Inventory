@@ -91,25 +91,36 @@ public partial class LotsView : UserControl, IModuleView
     public sealed class LotRow
     {
         public WoodLot Lot { get; }
-        public string Id => Lot.Id;
-        public string WoodName => Lot.WoodName;
-        public string InvoiceLabel => $"Invoice: {Lot.Invoice}";
-        public double Thickness => Lot.ThicknessMm;
-        public string ThicknessText => Fmt.Num(Lot.ThicknessMm);
-        public bool IsPoplar => AppState.GetVolumeRule(Lot.WoodType) == VolumeRule.ByFootage;
-        public string DimText => IsPoplar
-            ? (string.IsNullOrWhiteSpace(Lot.LengthNote) ? "Đo theo Footage" : $"Đo theo Footage ({Lot.LengthNote})")
-            : $"{Fmt.Num(Lot.WidthMm)} x {Fmt.Num(Lot.LengthMm)}";
-        public int Quantity => Lot.Quantity;
-        public bool IsLow => Lot.Quantity <= 30;
-        public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} thanh";
-        public double RemainingCbm => Lot.RemainingCbm;
-        public string VolText => $"{Fmt.M3(Lot.RemainingCbm)} m³";
-        public decimal CostPriceVnd => Lot.CostPriceVnd;
-        public string CostText => Fmt.Vnd(Lot.CostPriceVnd);
-        public decimal TotalValueVnd => Lot.TotalValueVnd;
-        public string ValText => Fmt.Vnd(Lot.TotalValueVnd);
         public LotRow(WoodLot l) => Lot = l;
+
+        public string Id => Lot.Id;
+
+        // Chứng từ / nguồn gốc
+        public string SupplierName => AppState.FindSupplier(Lot.SupplierId)?.Name ?? Lot.Supplier?.Name ?? "—";
+        public string InvoiceText => string.IsNullOrWhiteSpace(Lot.Invoice) ? "—" : Lot.Invoice;
+        public string ImportDateText => Fmt.Date(Lot.ImportDate);
+        public string DeliveryNoteText => string.IsNullOrWhiteSpace(Lot.DeliveryNote) ? "—" : Lot.DeliveryNote;
+
+        // Loại gỗ
+        public string WoodTypeText => Lot.WoodType;
+        public string SubTypeText => string.IsNullOrWhiteSpace(Lot.WoodSubType) ? "—" : Lot.WoodSubType;
+
+        // Kích thước — gỗ footage: Dày/Dài dùng ký hiệu inch, Rộng vô nghĩa (—); gỗ quy cách: mm.
+        public bool IsFootage => AppState.GetVolumeRule(Lot.WoodType) == VolumeRule.ByFootage;
+        public string DayText => IsFootage
+            ? (string.IsNullOrWhiteSpace(Lot.ThicknessNote) ? Fmt.Num(Lot.ThicknessMm) : Lot.ThicknessNote)
+            : Fmt.Num(Lot.ThicknessMm);
+        public string WidthText => IsFootage ? "—" : Fmt.Num(Lot.WidthMm);
+        public string LengthText => IsFootage
+            ? (string.IsNullOrWhiteSpace(Lot.LengthNote) ? "—" : Lot.LengthNote)
+            : Fmt.Num(Lot.LengthMm);
+        public string FootageText => IsFootage ? Fmt.Num(Lot.Footage) : "—";
+
+        // Tồn kho
+        public int Quantity => Lot.Quantity;
+        public bool IsLow => Lot.Quantity <= AppState.Settings.LowStockThreshold && Lot.Quantity > 0;
+        public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} thanh";
+        public string VolText => $"{Fmt.M3(Lot.RemainingCbm)} m³";
     }
 
     private readonly List<LotRow> _rows = new();
@@ -159,15 +170,13 @@ public partial class LotsView : UserControl, IModuleView
         EmptyRow.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void LotGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        _selectedLotId = (LotGrid.SelectedItem as LotRow)?.Lot.Id;
-        RefreshDetail();
-    }
-
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is LotRow r) LotGrid.SelectedItem = r;
+        // Chỉ bấm icon "Xem" mới mở panel chi tiết bên phải (không mở khi chỉ click chọn dòng).
+        if ((sender as FrameworkElement)?.DataContext is not LotRow r) return;
+        _selectedLotId = r.Lot.Id;
+        LotGrid.SelectedItem = r;
+        RefreshDetail();
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
@@ -215,7 +224,7 @@ public partial class LotsView : UserControl, IModuleView
         DWoodType.Text = string.IsNullOrWhiteSpace(lot.WoodSubType)
             ? lot.WoodType
             : $"{lot.WoodType} · {lot.WoodSubType}";
-        DGrade.Text = lot.Grade;
+        DOrigin.Text = string.IsNullOrWhiteSpace(lot.Origin) ? "—" : lot.Origin;
         var isPoplarLot = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
         // Gỗ footage: quy cách chỉ có độ dày (ưu tiên ký hiệu inch); loại khác: Dày x Rộng x Dài.
         DSpec.Text = isPoplarLot
@@ -231,10 +240,23 @@ public partial class LotsView : UserControl, IModuleView
         DPriceUsd.Text = $"${Fmt.Num((double)lot.PriceUsd)} / m³";
         DExchangeRate.Text = Fmt.N0(lot.ExchangeRate);
         DTax.Text = $"{Fmt.Num((double)lot.TaxPercent)}%";
-        DCost.Text = Fmt.Vnd(lot.CostPriceVnd);
-        DInvoice.Text = lot.Invoice;
-        DPackingList.Text = lot.PackingList;
-        DReceiptId.Text = lot.ReceiptId;
+
+        // 3 dòng tiền tính theo LƯỢNG NHẬP BAN ĐẦU (Cbm gốc), không theo tồn hiện tại.
+        var totalUsd = WoodVolumeCalculator.CalculateTotalUsd(lot.PriceUsd, lot.Cbm);
+        var subtotal = WoodVolumeCalculator.ConvertUsdToVnd(totalUsd, lot.ExchangeRate);
+        var vat = WoodVolumeCalculator.CalculateTaxAmountVnd(subtotal, lot.TaxPercent);
+        DSubtotal.Text = Fmt.Vnd(subtotal);
+        DVat.Text = Fmt.Vnd(vat);
+        DTotal.Text = Fmt.Vnd(subtotal + vat);
+        // Giá trị vốn đã bị trừ khi xuất kho = (m³ đã xuất) × giá vốn/m³ (đã gồm thuế).
+        var consumedCbm = Math.Max(0, lot.Cbm - lot.RemainingCbm);
+        DUsed.Text = Fmt.Vnd((decimal)consumedCbm * lot.CostPriceVnd);
+
+        DSupplier.Text = AppState.FindSupplier(lot.SupplierId)?.Name ?? lot.Supplier?.Name ?? "—";
+        DInvoice.Text = string.IsNullOrWhiteSpace(lot.Invoice) ? "—" : lot.Invoice;
+        DForestList.Text = string.IsNullOrWhiteSpace(lot.ForestList) ? "—" : lot.ForestList;
+        DPackingList.Text = string.IsNullOrWhiteSpace(lot.PackingList) ? "—" : lot.PackingList;
+        DDeliveryNote.Text = string.IsNullOrWhiteSpace(lot.DeliveryNote) ? "—" : lot.DeliveryNote;
 
         var history = new List<HistoryRow>();
         foreach (var issue in AppState.Issues)

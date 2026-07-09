@@ -13,7 +13,7 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="24,20,24,0">
             <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="16"
                        Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-            <TextBlock Text="Quản Lý Kiện Gỗ" FontSize="17" FontWeight="Bold"
+            <TextBlock Text="Tồn Kho" FontSize="17" FontWeight="Bold"
                        Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
         </StackPanel>
 
@@ -77,8 +77,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56"
-                                          SelectionChanged="LotGrid_SelectionChanged">
+                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -90,30 +89,28 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110" MinWidth="100">
+                                        <DataGridTextColumn Header="NHÀ CUNG CẤP" Binding="{Binding SupplierName}" Width="240" MinWidth="240">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
-                                                    <Setter Property="FontWeight" Value="Bold"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource Slate900}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="HÓA ĐƠN" Binding="{Binding InvoiceText}" Width="130" MinWidth="110">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="LOẠI GỖ / TÊN KIỆN" SortMemberPath="WoodName" Width="*" MinWidth="220">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding WoodName}" FontWeight="Medium"
-                                                                   Foreground="{StaticResource Slate800}" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding InvoiceLabel}" FontSize="10"
-                                                                   Foreground="{StaticResource Slate400}" Margin="0,2,0,0"/>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-
-                                        <DataGridTextColumn Header="DÀY (MM)" Binding="{Binding ThicknessText}" Width="72" MinWidth="64" SortMemberPath="Thickness">
+                                        <DataGridTextColumn Header="NGÀY NHẬP KHO" Binding="{Binding ImportDateText}" Width="136" MinWidth="126">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -124,17 +121,93 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="RỘNG X DÀI (MM)" Width="130" MinWidth="120" CanUserSort="False">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding DimText}" FontFamily="{StaticResource FontMono}"
-                                                               Foreground="{StaticResource Slate600}"
-                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="PHIẾU GIAO HÀNG" Binding="{Binding DeliveryNoteText}" Width="140" MinWidth="130">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="S.LƯỢNG TỒN" Width="140" MinWidth="120" SortMemberPath="Quantity">
+                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110" MinWidth="100">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate900}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="TÊN GỖ" Binding="{Binding WoodTypeText}" Width="130" MinWidth="120">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="PHÂN LOẠI GỖ" Binding="{Binding SubTypeText}" Width="120" MinWidth="110">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="DÀY" Binding="{Binding DayText}" Width="76" MinWidth="66">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="RỘNG" Binding="{Binding WidthText}" Width="76" MinWidth="66">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="DÀI" Binding="{Binding LengthText}" Width="112" MinWidth="96">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="FOOTAGE" Binding="{Binding FootageText}" Width="92" MinWidth="80">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTemplateColumn Header="SỐ LƯỢNG TỒN" Width="140" MinWidth="120">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border x:Name="pill" CornerRadius="999" Padding="8,2" Background="{StaticResource Slate100}"
@@ -153,35 +226,12 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
+                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-
-                                        <DataGridTextColumn Header="GIÁ VỐN VND/M³" Binding="{Binding CostText}" Width="120" MinWidth="110" SortMemberPath="CostPriceVnd">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-
-                                        <DataGridTextColumn Header="GIÁ TRỊ TỒN" Binding="{Binding ValText}" Width="125" MinWidth="110" SortMemberPath="TotalValueVnd">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
-                                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource Emerald600}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                 </Style>
@@ -241,14 +291,14 @@
                         <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
                                 BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Thông tin kỹ thuật" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <TextBlock Text="Thông tin chung" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
                                     <TextBlock Text="Loại gỗ:" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DWoodType" FontWeight="Medium" Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Chất lượng:" Foreground="{StaticResource Slate500}"/>
-                                    <TextBlock x:Name="DGrade" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                    <TextBlock Text="Xuất xứ:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DOrigin" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
@@ -304,15 +354,31 @@
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="Thuế nhập khẩu:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="Thuế VAT:" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DTax" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Border Height="1" Background="{StaticResource Slate200}" Margin="0,0,0,8"/>
-                                <Grid>
-                                    <TextBlock Text="Giá vốn VND/m³:" FontWeight="SemiBold" Foreground="{StaticResource Slate700}"/>
-                                    <TextBlock x:Name="DCost" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Tổng tiền chưa thuế:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DSubtotal" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Tiền thuế VAT:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DVat" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="Tổng tiền sau thuế:" FontWeight="SemiBold" Foreground="{StaticResource Slate700}"/>
+                                    <TextBlock x:Name="DTotal" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource Slate200}" Margin="0,0,0,8"/>
+                                <Grid>
+                                    <TextBlock Text="Giá trị đã sử dụng:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DUsed" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Rose500}" HorizontalAlignment="Right"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -323,9 +389,21 @@
                             <StackPanel>
                                 <TextBlock Text="Chứng từ nguồn gốc" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Nhà cung cấp:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DSupplier" FontWeight="Medium" Foreground="{StaticResource Slate800}"
+                                               HorizontalAlignment="Right" TextAlignment="Right"
+                                               TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
                                     <TextBlock Text="Hóa đơn (Invoice):" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DInvoice" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Bảng kê lâm sản:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DForestList" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"
+                                               TextAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
                                     <TextBlock Text="Packing List:" Foreground="{StaticResource Slate500}"/>
@@ -333,9 +411,9 @@
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid>
-                                    <TextBlock Text="Phiếu nhập gốc:" Foreground="{StaticResource Slate500}"/>
-                                    <TextBlock x:Name="DReceiptId" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
-                                               Foreground="{StaticResource Blue500}" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Phiếu giao hàng:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock x:Name="DDeliveryNote" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
