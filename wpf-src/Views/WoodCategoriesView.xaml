@@ -133,7 +133,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}">
+                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" CanUserSortColumns="True">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">

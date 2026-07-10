@@ -183,6 +183,34 @@ public static class AppState
         Commit();
     }
 
+    /// <summary>
+    /// Xóa CƯỠNG BỨC nhà cung cấp KÈM toàn bộ kiện gỗ + phiếu nhập + báo giá của nó (một giao dịch).
+    /// Chặn nếu có kiện đã phát sinh xuất kho (giữ truy xuất nguồn gốc) — báo lỗi liệt kê các kiện đó.
+    /// </summary>
+    public static void ForceDeleteSupplier(string id)
+    {
+        using var db = new AppDbContext();
+        var s = db.Suppliers.Find(id);
+        if (s == null) return;
+
+        // Chặn nếu bất kỳ kiện nào của NCC đã có lịch sử xuất kho.
+        var lotIds = db.WoodLots.Where(l => l.SupplierId == id).Select(l => l.Id).ToList();
+        var issued = db.WarehouseIssueItems.Where(i => lotIds.Contains(i.WoodLotId))
+                       .Select(i => i.WoodLotId).Distinct().ToList();
+        if (issued.Count > 0)
+            throw new InvalidOperationException(
+                $"Không thể xóa: nhà cung cấp \"{s.Name}\" có kiện đã phát sinh xuất kho " +
+                $"({string.Join(", ", issued)}). Hãy xóa các phiếu xuất liên quan trước.");
+
+        // Xóa theo thứ tự phụ thuộc: kiện gỗ → phiếu nhập → báo giá (+ mục giá cascade) → NCC.
+        db.WoodLots.RemoveRange(db.WoodLots.Where(l => l.SupplierId == id).ToList());
+        db.WarehouseReceipts.RemoveRange(db.WarehouseReceipts.Where(r => r.SupplierId == id).ToList());
+        db.WoodQuotations.RemoveRange(db.WoodQuotations.Include(q => q.Items).Where(q => q.SupplierId == id).ToList());
+        db.Suppliers.Remove(s);
+        db.SaveChanges();
+        Commit();
+    }
+
     // ---------------- Nghiệp vụ: Phân loại gỗ ----------------
 
     /// <summary>Thêm loại gỗ mới. Chặn trùng tên (không phân biệt hoa thường).</summary>

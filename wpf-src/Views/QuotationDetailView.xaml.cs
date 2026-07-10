@@ -28,6 +28,10 @@ public partial class QuotationDetailView : UserControl
             : Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
         public string WidthText => Fmt.Range(Item.WidthMin, Item.WidthMax);
         public string LengthText => Fmt.Range(Item.LengthMin, Item.LengthMax);
+        // Khóa sắp xếp cho cột kích thước (số thật, không theo chuỗi range hiển thị)
+        public double? ThicknessMin => Item.ThicknessMin;
+        public double? WidthMin => Item.WidthMin;
+        public double? LengthMin => Item.LengthMin;
         public string Origin => Item.Origin;
         public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? "Bất kỳ" : Item.Origin;
         public string Specification => Item.Specification;

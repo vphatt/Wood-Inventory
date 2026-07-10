@@ -106,6 +106,7 @@ public partial class LotsView : UserControl, IModuleView
         // Chứng từ / nguồn gốc
         public string SupplierName => AppState.FindSupplier(Lot.SupplierId)?.Name ?? Lot.Supplier?.Name ?? "—";
         public string InvoiceText => string.IsNullOrWhiteSpace(Lot.Invoice) ? "—" : Lot.Invoice;
+        public DateTime ImportDate => Lot.ImportDate;
         public string ImportDateText => Fmt.Date(Lot.ImportDate);
         public string DeliveryNoteText => string.IsNullOrWhiteSpace(Lot.DeliveryNote) ? "—" : Lot.DeliveryNote;
 
@@ -129,6 +130,13 @@ public partial class LotsView : UserControl, IModuleView
         public bool IsLow => Lot.Quantity <= AppState.Settings.LowStockThreshold && Lot.Quantity > 0;
         public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} thanh";
         public string VolText => $"{Fmt.M3(Lot.RemainingCbm)} m³";
+
+        // Khóa sắp xếp (số thật, không theo chuỗi hiển thị)
+        public double ThicknessMm => Lot.ThicknessMm;
+        public double WidthMm => Lot.WidthMm;
+        public double LengthMm => Lot.LengthMm;
+        public double Footage => Lot.Footage;
+        public double RemainingCbm => Lot.RemainingCbm;
     }
 
     private readonly List<LotRow> _rows = new();
@@ -143,8 +151,11 @@ public partial class LotsView : UserControl, IModuleView
         {
             _view = CollectionViewSource.GetDefaultView(_rows);
             _view.Filter = FilterPredicate;
+            // Mặc định sắp xếp theo ngày nhập kho tăng dần
+            _view.SortDescriptions.Add(new SortDescription(nameof(LotRow.ImportDate), ListSortDirection.Ascending));
             LotGrid.ItemsSource = _view;
             ActionGrid.ItemsSource = _view;   // cột thao tác tách riêng, cùng nguồn
+            ColLotDate.SortDirection = ListSortDirection.Ascending;   // hiện mũi tên sort mặc định
         }
         _view.Refresh();
         UpdateTotalsAndEmpty();

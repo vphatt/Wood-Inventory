@@ -312,18 +312,52 @@ public partial class SuppliersView : UserControl, IModuleView
 
     private void DeleteSupplier(Supplier s)
     {
-        var confirm = MessageBox.Show($"Bạn có chắc muốn xóa nhà cung cấp \"{s.Name}\"?",
-            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes) return;
+        var lotCount = AppState.Lots.Count(l => l.SupplierId == s.Id);
+        var receiptCount = AppState.Receipts.Count(r => r.SupplierId == s.Id);
+        var hasQuote = AppState.FindQuotation(s.Id) != null;
 
+        // Không còn tham chiếu → xóa thường
+        if (lotCount == 0 && receiptCount == 0 && !hasQuote)
+        {
+            if (MessageBox.Show($"Bạn có chắc muốn xóa nhà cung cấp \"{s.Name}\"?",
+                    "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            try
+            {
+                AppState.DeleteSupplier(s.Id);
+                AfterSupplierDeleted(s);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            return;
+        }
+
+        // Còn tham chiếu → đề nghị xóa cưỡng bức (kèm toàn bộ dữ liệu liên quan)
+        var parts = new List<string>();
+        if (receiptCount > 0) parts.Add($"{receiptCount} phiếu nhập");
+        if (lotCount > 0) parts.Add($"{lotCount} kiện gỗ");
+        if (hasQuote) parts.Add("bảng báo giá");
+        var msg = $"Nhà cung cấp \"{s.Name}\" đang gắn với {string.Join(", ", parts)}.\n\n" +
+                  "Xóa nhà cung cấp này sẽ xóa KÈM toàn bộ dữ liệu trên. Hành động KHÔNG THỂ hoàn tác.\n\n" +
+                  "Tiếp tục?";
+        if (MessageBox.Show(msg, "Xóa nhà cung cấp",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try
         {
-            AppState.DeleteSupplier(s.Id);
-            if (_editingId == s.Id) { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
+            AppState.ForceDeleteSupplier(s.Id);
+            AfterSupplierDeleted(s);
         }
         catch (Exception ex)
         {
+            // Vd: có kiện đã xuất kho → chặn (giữ truy xuất nguồn gốc)
             MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    /// <summary>Sau khi xóa NCC thành công: nếu đang xem/sửa NCC đó thì đóng form về add mode.</summary>
+    private void AfterSupplierDeleted(Supplier s)
+    {
+        if (_editingId == s.Id) { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
     }
 }

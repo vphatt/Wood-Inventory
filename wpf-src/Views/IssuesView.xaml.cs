@@ -576,6 +576,7 @@ public partial class IssuesView : UserControl, IModuleView
         public string Id => Issue.Id;
         public string OrderId => Issue.OrderId;
         public string CustomerName { get; }
+        public DateTime Date => Issue.Date;
         public string DateText => Fmt.Date(Issue.Date);
         public List<string> LotIds { get; }
         public int Qty { get; }
@@ -620,8 +621,11 @@ public partial class IssuesView : UserControl, IModuleView
         {
             _issView = CollectionViewSource.GetDefaultView(_issRows);
             _issView.Filter = HistoryFilter;
+            // Mặc định sắp xếp theo ngày xuất kho tăng dần
+            _issView.SortDescriptions.Add(new SortDescription(nameof(IssRow.Date), ListSortDirection.Ascending));
             HistoryGrid.ItemsSource = _issView;
             ActionGrid.ItemsSource = _issView;   // cột thao tác tách riêng, cùng nguồn
+            ColIssDate.SortDirection = ListSortDirection.Ascending;   // hiện mũi tên sort mặc định
         }
         _issView.Refresh();
         UpdateEmpty();

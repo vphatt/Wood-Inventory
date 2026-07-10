@@ -2,7 +2,9 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using WoodInventory.Data;
 using WoodInventory.Domain;
@@ -362,11 +364,18 @@ public partial class ReceiptsView : UserControl, IModuleView
         deliveryNoteBox.Margin = new Thickness(6, 0, 6, 0);
         Grid.SetColumn(deliveryNoteBox, 2); grid.Children.Add(deliveryNoteBox);
 
-        // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³)
-        var widthBox = Cell(lot.Width, s => { lot.Width = s; Update(); }, mono: true, center: true);
-        widthBox.Margin = new Thickness(6, 0, 6, 0);
-        var lengthBox = Cell(lot.Length, s => { lot.Length = s; Update(); }, mono: true, center: true);
-        lengthBox.Margin = new Thickness(6, 0, 6, 0);
+        // Gợi ý (tối đa 3) lấy từ báo giá NCC khớp loại gỗ cha + phân loại con của kiện.
+        bool Footage() => AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
+        List<string> Suggest(Func<QuotationItem, string> pick) => DistinctSuggest(MatchingQuotationItems(lot).Select(pick));
+        List<string> OriginSuggest() => Suggest(i => i.Origin);
+        List<string> ThickSuggest() => Suggest(i => Footage()
+            ? i.ThicknessMinNote : (i.ThicknessMin.HasValue ? Fmt.Num(i.ThicknessMin.Value) : null));
+        List<string> WidthSuggest() => Suggest(i => i.WidthMin.HasValue ? Fmt.Num(i.WidthMin.Value) : null);
+        List<string> LengthSuggest() => Suggest(i => i.LengthMin.HasValue ? Fmt.Num(i.LengthMin.Value) : null);
+
+        // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³) — Rộng/Dài có dropdown gợi ý.
+        var widthBox = BuildSuggestCell(lot.Width, s => { lot.Width = s; Update(); }, WidthSuggest, center: true);
+        var lengthBox = BuildSuggestCell(lot.Length, s => { lot.Length = s; Update(); }, LengthSuggest, center: true);
         var lengthNoteBox = Cell(lot.LengthNote ?? "", s => { lot.LengthNote = s; }, mono: true, center: true);
         lengthNoteBox.Margin = new Thickness(6, 0, 6, 0);
         lengthNoteBox.ToolTip = "Độ dài dạng inch, vd 96\"108\"120\" (chỉ mô tả, không tính m³)";
@@ -432,15 +441,13 @@ public partial class ReceiptsView : UserControl, IModuleView
         Grid.SetColumn(typeCombo, 3); grid.Children.Add(typeCombo);
         Grid.SetColumn(subCombo, 4); grid.Children.Add(subCombo);
 
-        // 5. Xuất xứ
-        var originBox = Cell(lot.Origin, s => { lot.Origin = s; Update(); }, mono: true, center: true);
-        originBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(originBox, 5); grid.Children.Add(originBox);
+        // 5. Xuất xứ — ô nhập kèm dropdown gợi ý (tối đa 3) theo xuất xứ trong báo giá NCC khớp loại/phân loại con
+        var originCell = BuildSuggestCell(lot.Origin, s => { lot.Origin = s; Update(); }, OriginSuggest, center: true);
+        Grid.SetColumn(originCell, 5); grid.Children.Add(originCell);
 
-        // 6. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...)
-        var thickBox = Cell(lot.Thickness, s => { lot.Thickness = s; Update(); }, mono: true, center: true);
-        thickBox.Margin = new Thickness(6, 0, 6, 0);
-        thickBox.ToolTip = "Số mm; gỗ nhóm Footage có thể nhập dạng inch: 1\", 4/4\", 5/4\"";
+        // 6. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...) — có dropdown gợi ý theo báo giá
+        var thickBox = BuildSuggestCell(lot.Thickness, s => { lot.Thickness = s; Update(); }, ThickSuggest, center: true,
+            tooltip: "Số mm; gỗ nhóm Footage có thể nhập dạng inch: 1\", 4/4\", 5/4\"");
         Grid.SetColumn(thickBox, 6); grid.Children.Add(thickBox);
 
         // 7. Rộng (ẩn nếu gỗ footage)
@@ -526,6 +533,125 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (bold) box.FontWeight = FontWeights.SemiBold;
         box.TextChanged += (_, _) => onChange(box.Text);
         return box;
+    }
+
+    /// <summary>Các dòng giá của NCC khớp loại gỗ cha + phân loại con của kiện (dòng cấp cha — sub trống — cũng tính).</summary>
+    private List<QuotationItem> MatchingQuotationItems(DraftLot lot)
+    {
+        var supId = SelectedSupplierId;
+        if (string.IsNullOrEmpty(supId) || string.IsNullOrWhiteSpace(lot.WoodType)) return new();
+        var quotation = AppState.FindQuotation(supId);
+        if (quotation == null) return new();
+        return quotation.Items
+            .Where(i => string.Equals(i.WoodType, lot.WoodType, StringComparison.OrdinalIgnoreCase)
+                        && (string.IsNullOrWhiteSpace(i.WoodSubType)
+                            || string.Equals(i.WoodSubType, lot.WoodSubType, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    /// <summary>Chuẩn hóa danh sách gợi ý: bỏ rỗng, bỏ trùng (không phân biệt hoa thường), sắp xếp.</summary>
+    private static List<string> DistinctSuggest(IEnumerable<string> values) =>
+        values.Select(v => (v ?? "").Trim()).Where(v => v.Length > 0)
+              .Distinct(StringComparer.OrdinalIgnoreCase)
+              .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    /// <summary>
+    /// Ô nhập kèm dropdown gợi ý (tối đa 3) + cho phép gõ để lọc; TỰ BUNG khi focus (kể cả chưa gõ).
+    /// Trả về Grid bọc TextBox + Popup (Popup nổi, không ảnh hưởng layout ô).
+    /// </summary>
+    private FrameworkElement BuildSuggestCell(string initial, Action<string> onChange, Func<List<string>> suggest,
+        bool center = false, string tooltip = null)
+    {
+        var box = new TextBox
+        {
+            Style = (Style)FindResource("CellInputMono"),
+            Text = initial,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(6, 0, 6, 0),
+            IsReadOnly = ReadOnly
+        };
+        if (center) box.TextAlignment = TextAlignment.Center;
+        if (tooltip != null) box.ToolTip = tooltip;
+        if (ReadOnly) box.Background = (Brush)FindResource("Slate50");
+
+        var list = new ListBox { BorderThickness = new Thickness(0), MaxHeight = 132, FontSize = 12 };
+        var popup = new Popup
+        {
+            PlacementTarget = box,
+            Placement = PlacementMode.Bottom,
+            StaysOpen = false,
+            AllowsTransparency = true,
+            Child = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = (Brush)FindResource("Slate200"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                MinWidth = 150,
+                Margin = new Thickness(0, 2, 0, 8),
+                Child = list
+            }
+        };
+
+        var suppress = false;
+
+        void Refresh()
+        {
+            if (ReadOnly) { popup.IsOpen = false; return; }
+            var typed = (box.Text ?? "").Trim();
+            var sugg = suggest()
+                .Where(o => typed.Length == 0 || o.IndexOf(typed, StringComparison.OrdinalIgnoreCase) >= 0)
+                .Take(3).ToList();
+            // Không mở nếu không có gợi ý, hoặc gợi ý duy nhất trùng khít text đang gõ.
+            if (sugg.Count == 0 || (sugg.Count == 1 && string.Equals(sugg[0], typed, StringComparison.OrdinalIgnoreCase)))
+            {
+                popup.IsOpen = false;
+                return;
+            }
+            list.ItemsSource = sugg;
+            popup.IsOpen = box.IsKeyboardFocused || box.IsKeyboardFocusWithin;
+        }
+
+        void Pick(string s)
+        {
+            suppress = true;
+            box.Text = s;
+            box.CaretIndex = s.Length;
+            suppress = false;
+            popup.IsOpen = false;
+            box.Focus();
+        }
+
+        // Bung khi focus: defer qua Dispatcher để không bị chính cú click focus đóng popup ngay (StaysOpen=false).
+        box.GotKeyboardFocus += (_, _) =>
+            box.Dispatcher.BeginInvoke(new Action(Refresh), System.Windows.Threading.DispatcherPriority.Input);
+        box.TextChanged += (_, _) => { onChange(box.Text); if (!suppress) Refresh(); };
+        box.LostKeyboardFocus += (_, _) => { if (!list.IsKeyboardFocusWithin) popup.IsOpen = false; };
+        box.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Down && popup.IsOpen && list.Items.Count > 0)
+            {
+                list.SelectedIndex = 0;
+                (list.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem)?.Focus();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape && popup.IsOpen) { popup.IsOpen = false; e.Handled = true; }
+        };
+        list.PreviewMouseLeftButtonUp += (_, e) =>
+        {
+            if (ItemsControl.ContainerFromElement(list, e.OriginalSource as DependencyObject) is ListBoxItem { Content: string s })
+                Pick(s);
+        };
+        list.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter && list.SelectedItem is string s) { Pick(s); e.Handled = true; }
+            else if (e.Key == Key.Escape) { popup.IsOpen = false; box.Focus(); e.Handled = true; }
+        };
+
+        var host = new Grid();
+        host.Children.Add(box);
+        host.Children.Add(popup);
+        return host;
     }
 
     private void UpdateTotals()
@@ -929,8 +1055,11 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string SupplierId => Receipt.SupplierId;
         public string Id => Receipt.Id;
         public string SupplierName { get; }
+        public DateTime Date => Receipt.Date;
         public string DateText => Fmt.Date(Receipt.Date);
+        public string Invoice => Receipt.Invoice ?? "";
         public string InvoiceText => string.IsNullOrWhiteSpace(Receipt.Invoice) ? "—" : Receipt.Invoice;
+        public int LotCount => Receipt.Lots.Count;
         public string LotCountText => $"{Receipt.Lots.Count} kiện";
         public double Vol { get; }
         public string VolText => $"{Fmt.M3(Vol)} m³";
@@ -984,8 +1113,11 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             _recView = CollectionViewSource.GetDefaultView(_recRows);
             _recView.Filter = HistoryFilter;
+            // Mặc định sắp xếp theo ngày nhập tăng dần
+            _recView.SortDescriptions.Add(new SortDescription(nameof(RecRow.Date), ListSortDirection.Ascending));
             HistoryGrid.ItemsSource = _recView;
             ActionGrid.ItemsSource = _recView;   // cột thao tác tách riêng, cùng nguồn
+            ColRecDate.SortDirection = ListSortDirection.Ascending;   // hiện mũi tên sort mặc định trên header
         }
         _recView.Refresh();
         UpdateEmpty();

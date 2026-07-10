@@ -143,7 +143,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56">
+                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" CanUserSortColumns="True">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -176,7 +176,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="NGÀY NHẬP KHO" Binding="{Binding ImportDateText}" Width="136" MinWidth="126">
+                                        <DataGridTextColumn x:Name="ColLotDate" Header="NGÀY NHẬP KHO" Binding="{Binding ImportDateText}" Width="136" MinWidth="126" SortMemberPath="ImportDate">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -229,7 +229,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="DÀY" Binding="{Binding DayText}" Width="76" MinWidth="66">
+                                        <DataGridTextColumn Header="DÀY" Binding="{Binding DayText}" Width="76" MinWidth="66" SortMemberPath="ThicknessMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -240,7 +240,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="RỘNG" Binding="{Binding WidthText}" Width="76" MinWidth="66">
+                                        <DataGridTextColumn Header="RỘNG" Binding="{Binding WidthText}" Width="76" MinWidth="66" SortMemberPath="WidthMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -251,7 +251,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="DÀI" Binding="{Binding LengthText}" Width="112" MinWidth="96">
+                                        <DataGridTextColumn Header="DÀI" Binding="{Binding LengthText}" Width="112" MinWidth="96" SortMemberPath="LengthMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -262,7 +262,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="FOOTAGE" Binding="{Binding FootageText}" Width="92" MinWidth="80">
+                                        <DataGridTextColumn Header="FOOTAGE" Binding="{Binding FootageText}" Width="92" MinWidth="80" SortMemberPath="Footage">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -273,7 +273,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="SỐ LƯỢNG TỒN" Width="140" MinWidth="120">
+                                        <DataGridTemplateColumn Header="SỐ LƯỢNG TỒN" Width="140" MinWidth="120" SortMemberPath="Quantity">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border x:Name="pill" CornerRadius="999" Padding="8,2" Background="{StaticResource Slate100}"
@@ -292,7 +292,7 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110">
+                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
