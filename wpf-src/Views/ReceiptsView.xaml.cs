@@ -27,15 +27,15 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string LengthNote;    // độ dài dạng inch cho gỗ footage, vd 96"108"120"
         public string Footage = "";
         public string Quantity = "";
-        public string ManualPriceUsd = "";
+        public string ManualPriceText = "";
         public int VolumeDecimals = AppState.Settings.DefaultVolumeDecimals;   // số chữ số thập phân làm tròn m³ riêng dòng này
         public double VolumeAdjustment;    // điều chỉnh tay +/- cộng vào m³ sau khi làm tròn (mặc định 0)
 
         // Kết quả tính toán gần nhất
         public double Cbm;
-        public decimal EffectivePriceUsd;
+        public decimal EffectivePrice;
         public decimal CostPriceVnd;
-        public decimal TotalUsd;
+        public decimal TotalPrice;
         public decimal TotalVnd;
         public decimal TaxVnd;
         public decimal TotalValueVnd;
@@ -55,6 +55,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         InitializeComponent();
         FDate.SelectedDate = DateTime.Today;
+        FCurrency.SelectedIndex = 0;
         InitTaxCombo();
         ResetDraft();
         RefreshView();
@@ -79,9 +80,24 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (FTaxPercent.SelectedIndex < 0) FTaxPercent.SelectedIndex = 3;
     }
 
-    /// <summary>Tỷ giá + thuế nhập khẩu áp dụng chung cho cả phiếu — không khai báo riêng theo từng kiện.</summary>
+    /// <summary>Đơn vị tiền tệ + Tỷ giá + thuế nhập khẩu áp dụng chung cho cả phiếu — không khai báo riêng theo từng kiện.</summary>
     private double SelectedExchangeRate => D(FExchangeRate.Text);
     private double SelectedTaxPercent => D((FTaxPercent.SelectedItem as ComboBoxItem)?.Tag as string ?? "10");
+    private string SelectedCurrency => (FCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "USD";
+
+    /// <summary>
+    /// Chọn VND → khóa Tỷ giá về 1 (đơn giá kiện là VND rồi, nhân 1 là no-op nhưng công thức chung
+    /// vẫn nhân Tỷ giá như cũ, không cần nhánh riêng theo đơn vị). Chọn lại USD → mở khóa, trả về Tỷ giá mặc định.
+    /// </summary>
+    private void FCurrency_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        var vnd = SelectedCurrency == "VND";
+        FExchangeRate.IsReadOnly = vnd;
+        FExchangeRate.Background = vnd ? (Brush)FindResource("Slate50") : Brushes.White;
+        FExchangeRate.Text = vnd ? "1" : Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
+        if (!IsLoaded) return;
+        foreach (var update in _rowUpdaters.ToList()) update();
+    }
 
     private void ResetDraft()
     {
@@ -124,30 +140,31 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     private string SelectedSupplierId => (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
 
-    /// <summary>Tra đơn giá USD từ báo giá của NCC — khớp dòng giá cụ thể nhất theo loại gỗ + kích thước + grade.</summary>
-    private static decimal LookupQuotationPrice(string supplierId, string woodType, string woodSubType,
+    /// <summary>Tra dòng giá từ báo giá của NCC — khớp dòng giá cụ thể nhất theo loại gỗ + kích thước + grade.</summary>
+    private static QuotationItem LookupQuotationItem(string supplierId, string woodType, string woodSubType,
         double thickness, double width, double length, string origin)
     {
-        if (string.IsNullOrEmpty(supplierId)) return 0;
+        if (string.IsNullOrEmpty(supplierId)) return null;
         var quotation = AppState.Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
-        if (quotation == null) return 0;
-        var item = QuotationPriceMatcher.FindBestMatch(quotation.Items, woodType,
+        if (quotation == null) return null;
+        return QuotationPriceMatcher.FindBestMatch(quotation.Items, woodType,
             thickness: thickness, width: width, length: length, origin: origin, woodSubType: woodSubType);
-        return item?.PriceUsd ?? 0;
     }
 
     private void Recalculate(DraftLot lot)
     {
         var thickness = ParseThickness(lot);
-        var quotPrice = LookupQuotationPrice(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin);
-        lot.PriceFromQuotation = quotPrice > 0;
-        lot.EffectivePriceUsd = quotPrice > 0 ? quotPrice : (decimal)D(lot.ManualPriceUsd);
+        var matched = LookupQuotationItem(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin);
+        lot.PriceFromQuotation = matched != null && matched.Price > 0;
+        // Đơn giản hóa: không quan tâm báo giá NCC ghi theo USD hay VND, chỉ lấy con số — đơn vị tiền tệ
+        // do người dùng chọn ở header phiếu (FCurrency) quyết định, Tỷ giá luôn nhân như cũ (VND thì Tỷ giá đã bị khóa = 1).
+        lot.EffectivePrice = lot.PriceFromQuotation ? matched.Price : (decimal)D(lot.ManualPriceText);
         lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
             D(lot.Length), (int)D(lot.Quantity), D(lot.Footage), lot.VolumeDecimals, lot.VolumeAdjustment);
-        lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePriceUsd,
+        lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePrice,
             (decimal)SelectedExchangeRate, (decimal)SelectedTaxPercent);
-        lot.TotalUsd = WoodVolumeCalculator.CalculateTotalUsd(lot.EffectivePriceUsd, lot.Cbm);
-        lot.TotalVnd = WoodVolumeCalculator.ConvertUsdToVnd(lot.TotalUsd, (decimal)SelectedExchangeRate);
+        lot.TotalPrice = WoodVolumeCalculator.CalculateTotalPrice(lot.EffectivePrice, lot.Cbm);
+        lot.TotalVnd = WoodVolumeCalculator.ConvertToVnd(lot.TotalPrice, (decimal)SelectedExchangeRate);
         lot.TaxVnd = WoodVolumeCalculator.CalculateTaxAmountVnd(lot.TotalVnd, (decimal)SelectedTaxPercent);
         lot.TotalValueVnd = lot.TotalVnd + lot.TaxVnd;
     }
@@ -211,9 +228,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         Cell(lot.VolumeDecimals.ToString(), 12, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
         Cell(lot.VolumeAdjustment == 0 ? "-" : (lot.VolumeAdjustment > 0 ? "+" : "") + Fmt.M3(lot.VolumeAdjustment, lot.VolumeDecimals),
             13, HorizontalAlignment.Right, color: (Brush)FindResource(lot.VolumeAdjustment == 0 ? "Slate400" : "Amber600"));
-        Cell(lot.EffectivePriceUsd > 0 ? Fmt.Usd(lot.EffectivePriceUsd) : "Chưa xác định", 14, HorizontalAlignment.Right,
-            color: (Brush)FindResource(lot.EffectivePriceUsd > 0 ? "Slate800" : "Slate400"));
-        Cell(Fmt.Usd(lot.TotalUsd), 15, HorizontalAlignment.Right);
+        Cell(lot.EffectivePrice > 0 ? Fmt.Money(lot.EffectivePrice, SelectedCurrency) : "Chưa xác định", 14, HorizontalAlignment.Right,
+            color: (Brush)FindResource(lot.EffectivePrice > 0 ? "Slate800" : "Slate400"));
+        Cell(Fmt.Money(lot.TotalPrice, SelectedCurrency), 15, HorizontalAlignment.Right);
         Cell(Fmt.Vnd(lot.TotalVnd), 16, HorizontalAlignment.Right);
         Cell(Fmt.Vnd(lot.TaxVnd), 17, HorizontalAlignment.Right);
         Cell(Fmt.Vnd(lot.TotalValueVnd), 18, HorizontalAlignment.Right,
@@ -262,14 +279,14 @@ public partial class ReceiptsView : UserControl, IModuleView
         var taxVndText = MoneyText();
         var grandTotalText = MoneyText(bold: true, color: (Brush)FindResource("Emerald600"));
         grandTotalText.Margin = new Thickness(6, 0, 12, 0);
-        totalUsdText.Text = Fmt.Usd(lot.TotalUsd);
+        totalUsdText.Text = Fmt.Money(lot.TotalPrice, SelectedCurrency);
         totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
         taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
         grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
         var priceBox = new TextBox
         {
             Style = (Style)FindResource("CellInputMono"),
-            Text = lot.PriceFromQuotation ? Fmt.Num((double)lot.EffectivePriceUsd) : lot.ManualPriceUsd,
+            Text = lot.PriceFromQuotation ? Fmt.Num((double)lot.EffectivePrice) : lot.ManualPriceText,
             TextAlignment = TextAlignment.Right,
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
             IsReadOnly = ReadOnly || lot.PriceFromQuotation,
@@ -287,7 +304,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Foreground = (Brush)FindResource("Slate400"),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(6, 0, 12, 0), IsHitTestVisible = false,
-            Visibility = !lot.PriceFromQuotation && string.IsNullOrWhiteSpace(lot.ManualPriceUsd)
+            Visibility = !lot.PriceFromQuotation && string.IsNullOrWhiteSpace(lot.ManualPriceText)
                 ? Visibility.Visible : Visibility.Collapsed
         };
 
@@ -295,7 +312,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             Recalculate(lot);
             cbmText.Text = Fmt.M3(lot.Cbm, lot.VolumeDecimals);
-            totalUsdText.Text = Fmt.Usd(lot.TotalUsd);
+            totalUsdText.Text = Fmt.Money(lot.TotalPrice, SelectedCurrency);
             totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
             taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
             grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
@@ -304,7 +321,7 @@ public partial class ReceiptsView : UserControl, IModuleView
                 priceBox.IsReadOnly = true;
                 priceBox.Foreground = (Brush)FindResource("Emerald600");
                 priceBox.FontWeight = FontWeights.SemiBold;
-                var autoText = Fmt.Num((double)lot.EffectivePriceUsd);
+                var autoText = Fmt.Num((double)lot.EffectivePrice);
                 if (priceBox.Text != autoText) priceBox.Text = autoText;
                 priceHint.Visibility = Visibility.Collapsed;
             }
@@ -314,8 +331,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 priceBox.Foreground = (Brush)FindResource("Slate700");
                 priceBox.FontWeight = FontWeights.Normal;
                 // Reset lại text nếu trước đó đang hiện giá tự động (vd đổi độ dày làm mất khớp báo giá)
-                if (priceBox.Text != lot.ManualPriceUsd) priceBox.Text = lot.ManualPriceUsd;
-                priceHint.Visibility = string.IsNullOrWhiteSpace(lot.ManualPriceUsd)
+                if (priceBox.Text != lot.ManualPriceText) priceBox.Text = lot.ManualPriceText;
+                priceHint.Visibility = string.IsNullOrWhiteSpace(lot.ManualPriceText)
                     ? Visibility.Visible : Visibility.Collapsed;
             }
             UpdateTotals();
@@ -324,7 +341,7 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         priceBox.TextChanged += (_, _) =>
         {
-            if (!lot.PriceFromQuotation) { lot.ManualPriceUsd = priceBox.Text; Update(); }
+            if (!lot.PriceFromQuotation) { lot.ManualPriceText = priceBox.Text; Update(); }
         };
 
         // STT (không sửa được, chỉ hiển thị thứ tự)
@@ -461,7 +478,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         adjustmentBox.ToolTip = "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002";
         Grid.SetColumn(adjustmentBox, 13); grid.Children.Add(adjustmentBox);
 
-        // 14. Đơn giá USD  15-18. Tổng tiền USD/VND, Tiền thuế, Tổng cộng
+        // 14. Đơn giá  15-18. Tổng tiền gốc/VND, Tiền thuế, Tổng cộng
         Grid.SetColumn(priceBox, 14); grid.Children.Add(priceBox);
         Grid.SetColumn(priceHint, 14); grid.Children.Add(priceHint);
         Grid.SetColumn(totalUsdText, 15); grid.Children.Add(totalUsdText);
@@ -624,6 +641,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         FInvoice.Text = "";
         FPackingList.Text = "";
         FForestList.Text = "";
+        FCurrency.SelectedIndex = 0;   // mặc định USD
+        FExchangeRate.IsReadOnly = false;
+        FExchangeRate.Background = Brushes.White;
         FExchangeRate.Text = Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
         SelectTaxPercent(AppState.Settings.DefaultTaxPercent);
         FDate.SelectedDate = DateTime.Today;
@@ -672,7 +692,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         FForestList.Text = first?.ForestList ?? "";
         if (first != null)
         {
-            FExchangeRate.Text = Fmt.Num((double)first.ExchangeRate);
+            FCurrency.SelectedIndex = string.Equals(first.PriceCurrency, "VND", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+            FExchangeRate.Text = Fmt.Num((double)first.ExchangeRate);   // ghi đè giá trị mặc định mà FCurrency_Changed vừa set
             SelectTaxPercent(first.TaxPercent);
         }
 
@@ -700,7 +721,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             LengthNote = l.LengthNote,
             Footage = Fmt.Num(l.Footage),
             Quantity = l.OriginalQuantity.ToString(),
-            ManualPriceUsd = Fmt.Num((double)l.PriceUsd),
+            ManualPriceText = Fmt.Num((double)l.Price),
             VolumeDecimals = l.VolumeDecimals ?? 5,
             VolumeAdjustment = l.VolumeAdjustment ?? 0
         };
@@ -876,7 +897,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 RemainingCbm = d.Cbm,
                 VolumeDecimals = d.VolumeDecimals,
                 VolumeAdjustment = d.VolumeAdjustment,
-                PriceUsd = d.EffectivePriceUsd,
+                Price = d.EffectivePrice,
+                PriceCurrency = SelectedCurrency,
                 ExchangeRate = (decimal)SelectedExchangeRate,
                 TaxPercent = (decimal)SelectedTaxPercent,
                 CostPriceVnd = d.CostPriceVnd,
@@ -934,7 +956,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         /// hiển thị lại phiếu (luôn dựng lại từ OriginalQuantity).
         /// </summary>
         private static decimal LotVnd(WoodLot l) =>
-            WoodVolumeCalculator.ConvertUsdToVnd(WoodVolumeCalculator.CalculateTotalUsd(l.PriceUsd, l.Cbm), l.ExchangeRate);
+            WoodVolumeCalculator.ConvertToVnd(WoodVolumeCalculator.CalculateTotalPrice(l.Price, l.Cbm), l.ExchangeRate);
     }
 
     private readonly List<RecRow> _recRows = new();
@@ -976,17 +998,61 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (sup != "ALL" && r.SupplierId != sup) return false;
 
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
-        if (term.Length == 0) return true;
-        return r.Id.ToLowerInvariant().Contains(term)
+        var matchSearch = term.Length == 0
+            || r.Id.ToLowerInvariant().Contains(term)
             || (r.Receipt.Invoice ?? "").ToLowerInvariant().Contains(term)
             || (r.Receipt.PackingList ?? "").ToLowerInvariant().Contains(term)
             || r.SupplierName.ToLowerInvariant().Contains(term);
+        if (!matchSearch) return false;
+
+        bool Contains(string cellText, string filterBox) =>
+            string.IsNullOrWhiteSpace(filterBox) ||
+            (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
+
+        var matchDate = FDateFilter.SelectedDate == null || r.Receipt.Date.Date == FDateFilter.SelectedDate.Value.Date;
+
+        return matchDate &&
+            Contains(r.Id, FIdFilter.Text) &&
+            Contains(r.InvoiceText, FInvoiceFilter.Text) &&
+            Contains(r.LotCountText, FLotCountFilter.Text) &&
+            Contains(r.VolText, FVolFilter.Text) &&
+            Contains(r.VndText, FVndFilter.Text) &&
+            Contains(r.TaxText, FTaxFilter.Text) &&
+            Contains(r.ValText, FValFilter.Text);
     }
 
     private void Filter_Changed(object sender, RoutedEventArgs e)
     {
         if (_recView == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
+        _recView.Refresh();
+        UpdateEmpty();
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        !string.IsNullOrWhiteSpace(FIdFilter.Text) || !string.IsNullOrWhiteSpace(FInvoiceFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FLotCountFilter.Text) || !string.IsNullOrWhiteSpace(FVolFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FVndFilter.Text) || !string.IsNullOrWhiteSpace(FTaxFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FValFilter.Text) || FDateFilter.SelectedDate != null ||
+        ((FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL";
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var box in new[] { FIdFilter, FInvoiceFilter, FLotCountFilter, FVolFilter, FVndFilter, FTaxFilter, FValFilter })
+            box.Text = "";
+        FDateFilter.SelectedDate = null;
+        FilterSupplier.SelectedIndex = 0;
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _recView.Refresh();
         UpdateEmpty();
     }

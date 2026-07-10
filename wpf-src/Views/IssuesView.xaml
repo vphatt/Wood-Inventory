@@ -28,6 +28,13 @@
             <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24"
                     Visibility="Collapsed">
                 <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="FormTitle" Text="Tạo Phiếu Xuất Kho Mới" FontSize="13" FontWeight="Bold"
+                                   Foreground="{StaticResource Slate800}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
                     <!-- Banner truy xuất -->
                     <Border Background="{StaticResource Blue50}" BorderBrush="{StaticResource Blue100}"
                             BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,20">
@@ -64,7 +71,7 @@
                     <Grid Margin="0,0,0,8">
                         <TextBlock Text="CHI TIẾT CÁC KIỆN GỖ XUẤT" FontSize="11" FontWeight="Bold"
                                    Foreground="{StaticResource Slate700}" VerticalAlignment="Center"/>
-                        <Button Style="{StaticResource BtnLink}" HorizontalAlignment="Right" Click="BtnAddRow_Click">
+                        <Button x:Name="BtnAddRow" Style="{StaticResource BtnLink}" HorizontalAlignment="Right" Click="BtnAddRow_Click">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="0,2,4,0"/>
                                 <TextBlock Text="Thêm kiện gỗ xuất"/>
@@ -128,8 +135,8 @@
                                            Margin="6,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
-                                <Button Style="{StaticResource BtnPrimary}" Content="Xác nhận xuất kho sản xuất"
+                                <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
+                                <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Xác nhận xuất kho sản xuất"
                                         Margin="8,0,0,0" Click="BtnSaveIssue_Click"/>
                             </StackPanel>
                         </Grid>
@@ -149,14 +156,62 @@
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
-                <ComboBox x:Name="FilterOrder" Style="{StaticResource Select}" MinWidth="260" MaxWidth="360"
-                          Margin="12,0,0,0" SelectionChanged="Filter_Changed"/>
+                <Button x:Name="BtnToggleColumnFilters" Style="{StaticResource BtnGhost}" Margin="12,0,0,0"
+                        Click="BtnToggleColumnFilters_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
+                        Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
             </StackPanel>
+
+            <!-- Bộ lọc theo từng cột (thu gọn mặc định) -->
+            <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
+                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
+                    Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
+                <UniformGrid Columns="4" Rows="2">
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="SỐ PHIẾU XUẤT" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FIdFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="LỆNH / ĐƠN HÀNG SẢN XUẤT" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="FilterOrder" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="NGÀY XUẤT" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="FDateFilter" Style="{StaticResource DatePickerField}" SelectedDateChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="KIỆN GỖ NGUỒN" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FLotIdFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="TỔNG THANH XUẤT" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FQtyFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="TỔNG THỂ TÍCH M³" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FVolFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="HẠCH TOÁN GIÁ VỐN" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FValFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
 
             <!-- ===== Lịch sử phiếu xuất (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
                 <Grid>
-                    <DataGrid x:Name="HistoryGrid" Style="{StaticResource DataTable}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <DataGrid x:Name="HistoryGrid" Grid.Column="0" Style="{StaticResource DataTable}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                 Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -178,7 +233,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="*" MinWidth="220">
+                            <DataGridTemplateColumn Header="LỆNH / ĐƠN HÀNG SẢN XUẤT" SortMemberPath="OrderId" Width="220" MinWidth="220">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">
@@ -261,7 +316,35 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <TextBlock x:Name="EmptyRow" Text="Không có phiếu xuất nào khớp bộ lọc."
+                    <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
+                              BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="THAO TÁC" Width="130" MinWidth="130"
+                                                    CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
+                                                <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                            </Button>
+                                            <Button Style="{StaticResource BtnIcon}" ToolTip="Chỉnh sửa"
+                                                    Margin="8,0,0,0" Click="EditRow_Click">
+                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                            </Button>
+                                            <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa phiếu xuất"
+                                                    Margin="8,0,0,0" Click="DeleteRow_Click">
+                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Không có phiếu xuất nào khớp bộ lọc."
                                Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                 </Grid>

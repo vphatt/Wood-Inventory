@@ -37,6 +37,7 @@ public partial class WoodSubCategoriesView : UserControl
         TitleName.Text = $"Phân loại — {category.Name}";
         Subtitle.Text = $"Nguyên tắc tính m³: {category.VolumeRuleLabel}";
         RebuildList();
+        Helpers.GridLayoutStore.Attach(SubGrid, "wood-subcategories");
         Helpers.GridPairSync.Link(SubGrid, ActionGrid);
     }
 

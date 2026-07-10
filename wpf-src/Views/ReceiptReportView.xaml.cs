@@ -49,12 +49,13 @@ public partial class ReceiptReportView : UserControl
         public string VolText => $"{Fmt.M3(Lot.Cbm)} m³";
 
         // Tài chính nhập kho (tính theo Cbm gốc)
-        public string PriceUsdText => $"${Fmt.Num((double)Lot.PriceUsd)}";
+        public string PriceText => Fmt.Money(Lot.Price, Lot.PriceCurrency);
+        public string CurrencyText => Lot.PriceCurrency;
         public string ExRateText => Fmt.N0(Lot.ExchangeRate);
         public string TaxText => $"{Fmt.Num((double)Lot.TaxPercent)}%";
 
-        public decimal SubtotalV => WoodVolumeCalculator.ConvertUsdToVnd(
-            WoodVolumeCalculator.CalculateTotalUsd(Lot.PriceUsd, Lot.Cbm), Lot.ExchangeRate);
+        public decimal SubtotalV => WoodVolumeCalculator.ConvertToVnd(
+            WoodVolumeCalculator.CalculateTotalPrice(Lot.Price, Lot.Cbm), Lot.ExchangeRate);
         public decimal VatV => WoodVolumeCalculator.CalculateTaxAmountVnd(SubtotalV, Lot.TaxPercent);
         public string SubtotalText => Fmt.Vnd(SubtotalV);
         public string VatText => Fmt.Vnd(VatV);
@@ -73,6 +74,7 @@ public partial class ReceiptReportView : UserControl
         InitializeComponent();
         _back = back;
         RefreshView();
+        Helpers.GridLayoutStore.Attach(ReportGrid, "receipt-report");
     }
 
     public void RefreshView()
@@ -111,23 +113,88 @@ public partial class ReceiptReportView : UserControl
 
     private bool FilterPredicate(object o)
     {
-        var l = ((Row)o).Lot;
+        var r = (Row)o;
+        var l = r.Lot;
         var sup = (FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         if (sup != "ALL" && l.SupplierId != sup) return false;
 
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
-        if (term.Length == 0) return true;
-        return (l.Id ?? "").ToLowerInvariant().Contains(term)
+        var matchSearch = term.Length == 0
+            || (l.Id ?? "").ToLowerInvariant().Contains(term)
             || (l.ReceiptId ?? "").ToLowerInvariant().Contains(term)
             || (l.Invoice ?? "").ToLowerInvariant().Contains(term)
             || (l.WoodType ?? "").ToLowerInvariant().Contains(term)
             || (l.Origin ?? "").ToLowerInvariant().Contains(term);
+        if (!matchSearch) return false;
+
+        bool Contains(string cellText, string filterBox) =>
+            string.IsNullOrWhiteSpace(filterBox) ||
+            (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
+
+        var matchDate = FImportDateFilter.SelectedDate == null || l.ImportDate.Date == FImportDateFilter.SelectedDate.Value.Date;
+
+        return matchDate
+            && Contains(r.ReceiptId, FReceiptIdFilter.Text) && Contains(r.InvoiceText, FInvoiceFilter.Text)
+            && Contains(r.ForestListText, FForestListFilter.Text) && Contains(r.PackingListText, FPackingListFilter.Text)
+            && Contains(r.Id, FIdFilter.Text) && Contains(r.DeliveryNoteText, FDeliveryNoteFilter.Text)
+            && Contains(r.WoodTypeText, FWoodTypeFilter.Text) && Contains(r.SubTypeText, FSubTypeFilter.Text)
+            && Contains(r.OriginText, FOriginFilter.Text) && Contains(r.DayText, FDayFilter.Text)
+            && Contains(r.WidthText, FWidthFilter.Text) && Contains(r.LengthText, FLengthFilter.Text)
+            && Contains(r.FootageText, FFootageFilter.Text) && Contains(r.QtyText, FQtyFilter.Text)
+            && Contains(r.VolText, FVolFilter.Text) && Contains(r.PriceText, FPriceFilter.Text)
+            && Contains(r.CurrencyText, FCurrencyFilter.Text)
+            && Contains(r.ExRateText, FExRateFilter.Text) && Contains(r.TaxText, FTaxFilter.Text)
+            && Contains(r.SubtotalText, FSubtotalFilter.Text) && Contains(r.VatText, FVatFilter.Text)
+            && Contains(r.TotalText, FTotalFilter.Text);
     }
 
     private void Filter_Changed(object sender, RoutedEventArgs e)
     {
         if (_view == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
+        _view.Refresh();
+        UpdateTotals();
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        ((FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        FImportDateFilter.SelectedDate != null ||
+        !string.IsNullOrWhiteSpace(FReceiptIdFilter.Text) || !string.IsNullOrWhiteSpace(FInvoiceFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FForestListFilter.Text) || !string.IsNullOrWhiteSpace(FPackingListFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FIdFilter.Text) || !string.IsNullOrWhiteSpace(FDeliveryNoteFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FWoodTypeFilter.Text) || !string.IsNullOrWhiteSpace(FSubTypeFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FOriginFilter.Text) || !string.IsNullOrWhiteSpace(FDayFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FWidthFilter.Text) || !string.IsNullOrWhiteSpace(FLengthFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FFootageFilter.Text) || !string.IsNullOrWhiteSpace(FQtyFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FVolFilter.Text) || !string.IsNullOrWhiteSpace(FPriceFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FCurrencyFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FExRateFilter.Text) || !string.IsNullOrWhiteSpace(FTaxFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FSubtotalFilter.Text) || !string.IsNullOrWhiteSpace(FVatFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FTotalFilter.Text);
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        FilterSupplier.SelectedIndex = 0;
+        FImportDateFilter.SelectedDate = null;
+        foreach (var box in new[]
+                 {
+                     FReceiptIdFilter, FInvoiceFilter, FForestListFilter, FPackingListFilter, FIdFilter,
+                     FDeliveryNoteFilter, FWoodTypeFilter, FSubTypeFilter, FOriginFilter, FDayFilter,
+                     FWidthFilter, FLengthFilter, FFootageFilter, FQtyFilter, FVolFilter, FPriceFilter,
+                     FCurrencyFilter, FExRateFilter, FTaxFilter, FSubtotalFilter, FVatFilter, FTotalFilter
+                 })
+            box.Text = "";
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _view.Refresh();
         UpdateTotals();
     }

@@ -109,7 +109,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="TÊN PHÂN LOẠI" Binding="{Binding Name}" Width="*" MinWidth="200">
+                                <DataGridTextColumn Header="TÊN PHÂN LOẠI" Binding="{Binding Name}" Width="200" MinWidth="200">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>

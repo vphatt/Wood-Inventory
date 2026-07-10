@@ -67,17 +67,52 @@ public partial class SuppliersView : UserControl, IModuleView
     {
         var r = (SupRow)o;
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
-        if (term.Length == 0) return true;
-        return (r.Supplier.Name ?? "").ToLowerInvariant().Contains(term)
+        var matchSearch = term.Length == 0
+            || (r.Supplier.Name ?? "").ToLowerInvariant().Contains(term)
             || (r.Supplier.Code ?? "").ToLowerInvariant().Contains(term)
             || (r.Supplier.TaxCode ?? "").ToLowerInvariant().Contains(term)
             || (r.Supplier.Address ?? "").ToLowerInvariant().Contains(term);
+
+        bool Contains(string cellText, string filterBox) =>
+            string.IsNullOrWhiteSpace(filterBox) ||
+            (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
+
+        var matchColumns =
+            Contains(r.Name, FNameFilter.Text) &&
+            Contains(r.TaxCode, FTaxCodeFilter.Text) &&
+            Contains(r.Address, FAddressFilter.Text);
+
+        return matchSearch && matchColumns;
     }
 
     private void Filter_Changed(object sender, RoutedEventArgs e)
     {
         if (_view == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
+        _view.Refresh();
+        UpdateCountAndEmpty();
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        !string.IsNullOrWhiteSpace(FNameFilter.Text) || !string.IsNullOrWhiteSpace(FTaxCodeFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FAddressFilter.Text);
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        FNameFilter.Text = "";
+        FTaxCodeFilter.Text = "";
+        FAddressFilter.Text = "";
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _view.Refresh();
         UpdateCountAndEmpty();
     }

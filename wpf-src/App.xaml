@@ -607,7 +607,9 @@
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
                 <Setter Property="CanUserAddRows" Value="False"/>
                 <Setter Property="CanUserDeleteRows" Value="False"/>
-                <Setter Property="CanUserReorderColumns" Value="False"/>
+                <!-- Cho phép kéo đổi THỨ TỰ cột (lưu lại qua GridLayoutStore), nhưng KHÔNG cho đổi độ rộng —
+                     độ rộng mỗi cột đã tuned cố định, đừng bật CanUserResizeColumns lại. -->
+                <Setter Property="CanUserReorderColumns" Value="True"/>
                 <Setter Property="CanUserResizeColumns" Value="False"/>
                 <Setter Property="CanUserResizeRows" Value="False"/>
                 <Setter Property="CanUserSortColumns" Value="False"/>
@@ -628,7 +630,9 @@
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="MinRowHeight" Value="46"/>
                 <Setter Property="ColumnHeaderHeight" Value="38"/>
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+                <!-- Visible (không phải Auto) — thanh cuộn ngang luôn hiện trên viewport để người dùng biết
+                     bảng còn cột tràn ngoài tầm nhìn, kể cả khi chưa cuộn/hover tới. -->
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible"/>
                 <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
                 <Setter Property="ColumnHeaderStyle" Value="{StaticResource GridHeader}"/>
                 <Setter Property="CellStyle" Value="{StaticResource GridCell}"/>

@@ -249,10 +249,6 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="12"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" x:Name="QuickReceipts" Style="{StaticResource Card}"
@@ -281,38 +277,6 @@
                                                Foreground="{StaticResource Slate400}" Margin="0,3,0,0"/>
                                 </StackPanel>
                                 <TextBlock Text="↗" FontSize="15" Foreground="{StaticResource Slate400}"
-                                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Column="4" x:Name="QuickQuotations" Style="{StaticResource Card}"
-                                CornerRadius="8" Padding="12" Cursor="Hand"
-                                MouseLeftButtonDown="QuickQuotations_Click">
-                            <Grid>
-                                <StackPanel Margin="0,0,22,0">
-                                    <TextBlock Text="Cập Nhật Báo Giá Gỗ" FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{StaticResource Slate700}"/>
-                                    <TextBlock Text="Thay đổi giá mua nguyên liệu của NCC" FontSize="10"
-                                               Foreground="{StaticResource Slate400}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"
-                                           Foreground="{StaticResource Slate400}"
-                                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Column="6" x:Name="QuickDotnet" Style="{StaticResource Card}"
-                                CornerRadius="8" Padding="12" Cursor="Hand"
-                                MouseLeftButtonDown="QuickDotnet_Click">
-                            <Grid>
-                                <StackPanel Margin="0,0,22,0">
-                                    <TextBlock Text="Mã C# .NET Clean Architecture" FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{StaticResource Slate700}"/>
-                                    <TextBlock Text="Xem mã nguồn nghiệp vụ của hệ thống" FontSize="10"
-                                               Foreground="{StaticResource Slate400}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"
-                                           Foreground="{StaticResource Slate400}"
                                            HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>

@@ -89,6 +89,4 @@ public partial class DashboardView : UserControl, IModuleView
     private void BtnGoLots_Click(object sender, RoutedEventArgs e) => Main.OpenModule("lots");
     private void QuickReceipts_Click(object sender, MouseButtonEventArgs e) => Main.OpenModule("receipts");
     private void QuickIssues_Click(object sender, MouseButtonEventArgs e) => Main.OpenModule("issues");
-    private void QuickQuotations_Click(object sender, MouseButtonEventArgs e) => Main.OpenModule("quotations");
-    private void QuickDotnet_Click(object sender, MouseButtonEventArgs e) => Main.OpenModule("dotnet");
 }

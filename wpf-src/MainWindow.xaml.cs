@@ -83,10 +83,8 @@ public partial class MainWindow : Window
         "categories" => "Phân Loại Gỗ",
         "suppliers" => "Nhà Cung Cấp",
         "lots" => "Tồn Kho",
-        "quotations" => "Báo Giá Gỗ",
         "receipts" => "Nhập Kho Gỗ",
         "issues" => "Xuất Kho Gỗ",
-        "dotnet" => "Mã C# .NET WPF",
         "settings" => "Cài Đặt",
         _ => "Module"
     };
@@ -165,10 +163,8 @@ public partial class MainWindow : Window
         "categories" => new WoodCategoriesView(),
         "suppliers" => new SuppliersView(),
         "lots" => new LotsView(),
-        "quotations" => new QuotationsView(),
         "receipts" => new ReceiptsView(),
         "issues" => new IssuesView(),
-        "dotnet" => new DotNetView(),
         "settings" => new SettingsView(),
         _ => new DashboardView()
     };
@@ -259,10 +255,10 @@ public partial class MainWindow : Window
         var row = new Grid();
         row.Children.Add(left);
 
-        // Huy hiệu (badge): số kiện gỗ cho mục Lots, nhãn "Clean" cho mục .NET — ẩn khi sidebar thu nhỏ (không đủ chỗ).
-        if (!_sidebarCollapsed && (item.Module == "lots" || item.Module == "dotnet"))
+        // Huy hiệu (badge): số kiện gỗ cho mục Lots — ẩn khi sidebar thu nhỏ (không đủ chỗ).
+        if (!_sidebarCollapsed && item.Module == "lots")
         {
-            var lowStock = AppState.LowStockCount > 0 && item.Module == "lots";
+            var lowStock = AppState.LowStockCount > 0;
             var badge = new Border
             {
                 CornerRadius = new CornerRadius(2),
@@ -276,7 +272,7 @@ public partial class MainWindow : Window
                         : (Brush)FindResource("SideHover"),
                 Child = new TextBlock
                 {
-                    Text = item.Module == "lots" ? AppState.Lots.Count.ToString() : "Clean",
+                    Text = AppState.Lots.Count.ToString(),
                     FontFamily = (FontFamily)FindResource("FontMono"),
                     FontSize = 10,
                     FontWeight = FontWeights.Bold,

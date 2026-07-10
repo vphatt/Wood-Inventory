@@ -56,24 +56,28 @@ public static class WoodVolumeCalculator
         return Math.Round(raw, decimals) + adjustment;
     }
 
-    /// <summary>Giá vốn VND/m³ = Giá USD * Tỷ giá * (1 + Thuế%/100), làm tròn đến đồng.</summary>
-    public static decimal CalculateCostPricePerM3(decimal priceUsd, decimal exchangeRate, decimal taxPercent)
+    /// <summary>
+    /// Giá vốn VND/m³ = Giá * Tỷ giá * (1 + Thuế%/100), làm tròn đến đồng. Phiếu nhập chọn đơn vị VND
+    /// ở header thì Tỷ giá luôn = 1 (ép tại UI, xem <c>ReceiptsView</c>) nên phép nhân này tự nhiên
+    /// thành no-op — không cần nhánh riêng theo đơn vị tiền tệ ở đây.
+    /// </summary>
+    public static decimal CalculateCostPricePerM3(decimal price, decimal exchangeRate, decimal taxPercent)
     {
-        var raw = priceUsd * exchangeRate;
-        return Math.Round(raw + raw * (taxPercent / 100m), 0);
+        var vnd = price * exchangeRate;
+        return Math.Round(vnd + vnd * (taxPercent / 100m), 0);
     }
 
     /// <summary>Tổng giá trị VND = Giá vốn/m³ * m³.</summary>
     public static decimal CalculateTotalValue(decimal costPriceVnd, double cbm)
         => Math.Round(costPriceVnd * (decimal)cbm, 0);
 
-    /// <summary>Tổng tiền USD = Đơn giá USD/m³ * Thể tích m³.</summary>
-    public static decimal CalculateTotalUsd(decimal priceUsd, double cbm)
-        => Math.Round(priceUsd * (decimal)cbm, 2);
+    /// <summary>Tổng tiền theo đơn vị GỐC của báo giá (USD hoặc VND) = Đơn giá/m³ * Thể tích m³.</summary>
+    public static decimal CalculateTotalPrice(decimal price, double cbm)
+        => Math.Round(price * (decimal)cbm, 2);
 
-    /// <summary>Quy đổi một khoản USD sang VND theo tỷ giá, làm tròn đến đồng.</summary>
-    public static decimal ConvertUsdToVnd(decimal amountUsd, decimal exchangeRate)
-        => Math.Round(amountUsd * exchangeRate, 0);
+    /// <summary>Quy đổi một khoản tiền sang VND theo Tỷ giá (VND thì Tỷ giá = 1, ép tại UI nên vẫn đúng).</summary>
+    public static decimal ConvertToVnd(decimal amount, decimal exchangeRate)
+        => Math.Round(amount * exchangeRate, 0);
 
     /// <summary>Tiền thuế VND = Tổng tiền VND * Thuế% / 100, làm tròn đến đồng.</summary>
     public static decimal CalculateTaxAmountVnd(decimal totalVnd, decimal taxPercent)

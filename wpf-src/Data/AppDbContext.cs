@@ -70,7 +70,8 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.WoodType);
             entity.HasIndex(e => e.SupplierId);
             entity.HasIndex(e => e.ReceiptId);
-            entity.Property(e => e.PriceUsd).HasPrecision(18, 2);
+            entity.Property(e => e.Price).HasPrecision(18, 2);
+            entity.Property(e => e.PriceCurrency).HasMaxLength(3);
             entity.Property(e => e.ExchangeRate).HasPrecision(18, 2);
             entity.Property(e => e.TaxPercent).HasPrecision(5, 2);
             entity.Property(e => e.CostPriceVnd).HasPrecision(18, 2);
@@ -98,6 +99,12 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.SupplierId, e.Version }).IsUnique();
             entity.HasMany(e => e.Items).WithOne()
                   .HasForeignKey(e => e.QuotationId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuotationItem>(entity =>
+        {
+            entity.Property(e => e.Price).HasPrecision(18, 2);
+            entity.Property(e => e.PriceCurrency).HasMaxLength(3);
         });
 
         modelBuilder.Entity<WarehouseReceipt>(entity =>

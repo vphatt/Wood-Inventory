@@ -31,8 +31,9 @@ public partial class QuotationDetailView : UserControl
         public string Origin => Item.Origin;
         public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? "Bất kỳ" : Item.Origin;
         public string Specification => Item.Specification;
-        public decimal Price => Item.PriceUsd;
-        public string PriceText => Fmt.Usd(Item.PriceUsd);
+        public decimal Price => Item.Price;
+        public string PriceCurrency => Item.PriceCurrency;
+        public string PriceText => Fmt.Money(Item.Price, Item.PriceCurrency);
         public DateTime? Updated => Item.UpdatedAt;
         public string UpdatedAtText => Item.UpdatedAt.HasValue
             ? Item.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")
@@ -99,6 +100,15 @@ public partial class QuotationDetailView : UserControl
             FilterWoodType.Items.Add(new ComboBoxItem { Content = t, Tag = t });
         SelectByTag(FilterWoodType, currentType);
 
+        // Bộ lọc đơn vị tiền tệ
+        if (FilterCurrency.Items.Count == 0)
+        {
+            FilterCurrency.Items.Add(new ComboBoxItem { Content = "Tất cả đơn vị", Tag = "ALL" });
+            FilterCurrency.Items.Add(new ComboBoxItem { Content = "USD", Tag = "USD" });
+            FilterCurrency.Items.Add(new ComboBoxItem { Content = "VND", Tag = "VND" });
+            FilterCurrency.SelectedIndex = 0;
+        }
+
         if (_view == null)
         {
             _view = CollectionViewSource.GetDefaultView(_rows);
@@ -124,17 +134,31 @@ public partial class QuotationDetailView : UserControl
         if (type != "ALL" && r.WoodType != type) return false;
 
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
-        if (term.Length == 0) return true;
-        return (r.WoodType ?? "").ToLowerInvariant().Contains(term)
+        var matchSearch = term.Length == 0
+            || (r.WoodType ?? "").ToLowerInvariant().Contains(term)
             || (r.Grade ?? "").ToLowerInvariant().Contains(term)
             || (r.Origin ?? "").ToLowerInvariant().Contains(term)
             || (r.Specification ?? "").ToLowerInvariant().Contains(term);
+        if (!matchSearch) return false;
+
+        var currency = (FilterCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        if (currency != "ALL" && !string.Equals(r.PriceCurrency, currency, StringComparison.OrdinalIgnoreCase)) return false;
+
+        bool Contains(string cellText, string filterBox) =>
+            string.IsNullOrWhiteSpace(filterBox) ||
+            (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
+
+        return Contains(r.ThicknessText, FThicknessFilter.Text) && Contains(r.WidthText, FWidthColFilter.Text)
+            && Contains(r.LengthText, FLengthColFilter.Text) && Contains(r.OriginText, FOriginFilter.Text)
+            && Contains(r.Specification, FSpecFilter.Text) && Contains(r.PriceText, FPriceFilter.Text)
+            && Contains(r.UpdatedAtText, FUpdatedFilter.Text);
     }
 
     private void Filter_Changed(object sender, RoutedEventArgs e)
     {
         if (_view == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
         _view.Refresh();
         UpdateCountAndEmpty();
     }
@@ -144,6 +168,39 @@ public partial class QuotationDetailView : UserControl
         var n = _view.Cast<object>().Count();
         TotalCount.Text = n.ToString();
         EmptyRow.Visibility = n == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        ((FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        ((FilterCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        !string.IsNullOrWhiteSpace(FThicknessFilter.Text) || !string.IsNullOrWhiteSpace(FWidthColFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FLengthColFilter.Text) || !string.IsNullOrWhiteSpace(FOriginFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FSpecFilter.Text) || !string.IsNullOrWhiteSpace(FPriceFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FUpdatedFilter.Text);
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        FilterWoodType.SelectedIndex = 0;
+        FilterCurrency.SelectedIndex = 0;
+        FThicknessFilter.Text = "";
+        FWidthColFilter.Text = "";
+        FLengthColFilter.Text = "";
+        FOriginFilter.Text = "";
+        FSpecFilter.Text = "";
+        FPriceFilter.Text = "";
+        FUpdatedFilter.Text = "";
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
+        _view.Refresh();
+        UpdateCountAndEmpty();
     }
 
     // ---------------- Cảnh báo inline ----------------
@@ -239,10 +296,18 @@ public partial class QuotationDetailView : UserControl
         FOrigin.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
         FThickMin.IsReadOnly = FThickMax.IsReadOnly = FWidthMin.IsReadOnly = FWidthMax.IsReadOnly = FLengthMin.IsReadOnly = FLengthMax.IsReadOnly = ro;
         var bg = ro ? (Brush)FindResource("Slate50") : Brushes.White;
-        FOrigin.Background = FSpec.Background = FPrice.Background = bg;
+        FOrigin.Background = FSpec.Background = bg;
         FThickMin.Background = FThickMax.Background = FWidthMin.Background = FWidthMax.Background = FLengthMin.Background = FLengthMax.Background = bg;
+        PriceInputBorder.Background = bg;
+        FPriceCurrency.IsEnabled = !ro;
         FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
     }
+
+    private void PriceInput_GotFocus(object sender, RoutedEventArgs e) =>
+        PriceInputBorder.BorderBrush = (Brush)FindResource("Blue500");
+
+    private void PriceInput_LostFocus(object sender, RoutedEventArgs e) =>
+        PriceInputBorder.BorderBrush = (Brush)FindResource("Slate200");
 
     private void EnterAddMode()
     {
@@ -258,6 +323,7 @@ public partial class QuotationDetailView : UserControl
         UpdateThicknessLabel();
         FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
+        FPriceCurrency.SelectedIndex = 0;   // mặc định USD
     }
 
     private static string NumOrBlank(double? v) => v.HasValue ? Fmt.Num(v.Value) : "";
@@ -275,7 +341,8 @@ public partial class QuotationDetailView : UserControl
         FLengthMin.Text = NumOrBlank(it.LengthMin);
         FLengthMax.Text = NumOrBlank(it.LengthMax);
         FSpec.Text = it.Specification;
-        FPrice.Text = Fmt.Num((double)it.PriceUsd);
+        FPrice.Text = Fmt.Num((double)it.Price);
+        FPriceCurrency.SelectedIndex = string.Equals(it.PriceCurrency, "VND", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
     }
 
     private void EnterViewMode(QuotationItem it)
@@ -377,7 +444,8 @@ public partial class QuotationDetailView : UserControl
             LengthMax = lengthMax,
             Origin = NullIfBlank(FOrigin.Text),
             Specification = NullIfBlank(FSpec.Text),
-            PriceUsd = (decimal)D(FPrice.Text)
+            Price = (decimal)D(FPrice.Text),
+            PriceCurrency = (FPriceCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "USD"
         };
 
         try

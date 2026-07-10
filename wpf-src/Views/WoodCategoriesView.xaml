@@ -85,9 +85,32 @@
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
-                <ComboBox x:Name="FilterRule" Style="{StaticResource Select}" MinWidth="220"
-                          Margin="12,0,0,0" SelectionChanged="Filter_Changed"/>
+                <Button x:Name="BtnToggleColumnFilters" Style="{StaticResource BtnGhost}" Margin="12,0,0,0"
+                        Click="BtnToggleColumnFilters_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
+                        Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
             </StackPanel>
+
+            <!-- Bộ lọc theo từng cột (thu gọn mặc định) -->
+            <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
+                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
+                    Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
+                <UniformGrid Columns="3">
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="TÊN LOẠI GỖ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FNameFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="NGUYÊN TẮC TÍNH M³" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="FilterRule" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
 
             <!-- ===== Bảng danh mục loại gỗ (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
@@ -122,7 +145,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="TÊN LOẠI GỖ" Binding="{Binding Name}" Width="*" MinWidth="180">
+                                <DataGridTextColumn Header="TÊN LOẠI GỖ" Binding="{Binding Name}" Width="180" MinWidth="180">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>

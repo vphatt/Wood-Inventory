@@ -49,12 +49,12 @@ public static class DbSeeder
                 Items =
                 {
                     // Gỗ Dương: chỉ cần Grade + Thickness là biết giá — không giới hạn Rộng/Dài/Xuất xứ.
-                    new QuotationItem { Id = "QI-101", WoodType = "Gỗ Dương", ThicknessMin = 25, ThicknessMax = 25, Grade = "FAS", PriceUsd = 680 },
+                    new QuotationItem { Id = "QI-101", WoodType = "Gỗ Dương", ThicknessMin = 25, ThicknessMax = 25, Grade = "FAS", Price = 680, PriceCurrency = "USD" },
                     // Gỗ Sồi: đủ Dày (giá trị đơn) + Rộng từ 150mm trở lên (range mở, không giới hạn trên).
-                    new QuotationItem { Id = "QI-102", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 150, Grade = "FAS", PriceUsd = 1150 },
-                    new QuotationItem { Id = "QI-103", WoodType = "Gỗ Sồi", ThicknessMin = 38, ThicknessMax = 38, WidthMin = 150, Grade = "FAS", PriceUsd = 1250 },
+                    new QuotationItem { Id = "QI-102", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 150, Grade = "FAS", Price = 1150, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "QI-103", WoodType = "Gỗ Sồi", ThicknessMin = 38, ThicknessMax = 38, WidthMin = 150, Grade = "FAS", Price = 1250, PriceCurrency = "USD" },
                     // Gỗ Tần Bì: cần thêm Xuất xứ để phân biệt giá.
-                    new QuotationItem { Id = "QI-104", WoodType = "Gỗ Tần Bì", ThicknessMin = 32, ThicknessMax = 32, WidthMin = 120, Grade = "1C", Origin = "Mỹ", PriceUsd = 850 }
+                    new QuotationItem { Id = "QI-104", WoodType = "Gỗ Tần Bì", ThicknessMin = 32, ThicknessMax = 32, WidthMin = 120, Grade = "1C", Origin = "Mỹ", Price = 850, PriceCurrency = "USD" }
                 }
             },
             new()
@@ -63,10 +63,11 @@ public static class DbSeeder
                 Version = "", IsActive = true,
                 Items =
                 {
-                    new QuotationItem { Id = "QI-201", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 120, Grade = "AB", PriceUsd = 1000 },
+                    new QuotationItem { Id = "QI-201", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 120, Grade = "AB", Price = 1000, PriceCurrency = "USD" },
                     // Gỗ Thông: chỉ cần độ dày — không set Grade/Rộng/Dài/Xuất xứ.
-                    new QuotationItem { Id = "QI-202", WoodType = "Gỗ Thông", ThicknessMin = 20, ThicknessMax = 20, PriceUsd = 420 },
-                    new QuotationItem { Id = "QI-203", WoodType = "Gỗ Cao Su", ThicknessMin = 18, ThicknessMax = 18, Grade = "AA", Specification = "Standard Joint", PriceUsd = 380 }
+                    new QuotationItem { Id = "QI-202", WoodType = "Gỗ Thông", ThicknessMin = 20, ThicknessMax = 20, Price = 420, PriceCurrency = "USD" },
+                    // Gỗ Cao Su: báo giá theo VND (NCC nội địa) — minh hoạ đơn vị tiền tệ khác USD trong báo giá.
+                    new QuotationItem { Id = "QI-203", WoodType = "Gỗ Cao Su", ThicknessMin = 18, ThicknessMax = 18, Grade = "AA", Specification = "Standard Joint", Price = 9_600_000, PriceCurrency = "VND" }
                 }
             }
         };
@@ -95,7 +96,7 @@ public static class DbSeeder
         {
             lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, lot.ThicknessMm, lot.WidthMm, lot.LengthMm, lot.OriginalQuantity, lot.Footage);
             lot.RemainingCbm = lot.Cbm;
-            lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.PriceUsd, lot.ExchangeRate, lot.TaxPercent);
+            lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.Price, lot.ExchangeRate, lot.TaxPercent);
             lot.TotalValueVnd = WoodVolumeCalculator.CalculateTotalValue(lot.CostPriceVnd, lot.Cbm);
             return lot;
         }
@@ -107,7 +108,7 @@ public static class DbSeeder
             WoodType = "Gỗ Sồi", WoodName = "Gỗ Sồi Mỹ FAS 26mm (Red Oak)",
             ThicknessMm = 26, WidthMm = 150, LengthMm = 2400,
             OriginalQuantity = 180, Quantity = 180, Footage = 0,
-            PriceUsd = 1150, ExchangeRate = 25450, TaxPercent = 10, Grade = "FAS"
+            Price = 1150, PriceCurrency = "USD", ExchangeRate = 25450, TaxPercent = 10, Grade = "FAS"
         });
         var lot3 = Configure(new WoodLot
         {
@@ -116,7 +117,7 @@ public static class DbSeeder
             WoodType = "Gỗ Sồi", WoodName = "Gỗ Sồi AB 26mm",
             ThicknessMm = 26, WidthMm = 120, LengthMm = 2000,
             OriginalQuantity = 300, Quantity = 300, Footage = 0,
-            PriceUsd = 1000, ExchangeRate = 25400, TaxPercent = 5, Grade = "AB"
+            Price = 1000, PriceCurrency = "USD", ExchangeRate = 25400, TaxPercent = 5, Grade = "AB"
         });
 
         context.WoodLots.AddRange(
@@ -127,7 +128,7 @@ public static class DbSeeder
                 WoodType = "Gỗ Dương", WoodName = "Gỗ Dương FAS 25mm (Poplar)",
                 ThicknessMm = 25, WidthMm = 0, LengthMm = 0, LengthNote = "96\"108\"120\"",
                 OriginalQuantity = 120, Quantity = 120, Footage = 2450,
-                PriceUsd = 680, ExchangeRate = 25450, TaxPercent = 10, Grade = "FAS"
+                Price = 680, PriceCurrency = "USD", ExchangeRate = 25450, TaxPercent = 10, Grade = "FAS"
             }),
             lot2, lot3,
             Configure(new WoodLot
@@ -137,7 +138,7 @@ public static class DbSeeder
                 WoodType = "Gỗ Tràm", WoodName = "Gỗ Tràm ghép thanh 18mm",
                 ThicknessMm = 18, WidthMm = 1220, LengthMm = 2440,
                 OriginalQuantity = 400, Quantity = 400, Footage = 0,
-                PriceUsd = 350, ExchangeRate = 25420, TaxPercent = 10, Grade = "AA"
+                Price = 8_900_000, PriceCurrency = "VND", ExchangeRate = 1, TaxPercent = 10, Grade = "AA"
             }));
         context.SaveChanges();
 
@@ -395,6 +396,22 @@ public static class DbSeeder
             try { context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" DROP COLUMN "Thickness";"""); }
             catch { /* DB quá cũ không hỗ trợ DROP COLUMN — bỏ qua, khôi phục thủ công nếu cần */ }
         }
+
+        // Bổ sung đơn vị tiền tệ báo giá (USD/VND) — đổi tên "PriceUsd" (luôn ngầm định USD) thành "Price"
+        // trung lập đơn vị + cột "PriceCurrency" riêng. Dòng cũ backfill "USD" (hành vi trước đây).
+        if (!existing.Contains("Price"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "Price" TEXT;""");
+        if (!existing.Contains("PriceCurrency"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "PriceCurrency" TEXT;""");
+        if (existing.Contains("PriceUsd"))
+        {
+            context.Database.ExecuteSqlRaw(
+                """UPDATE "QuotationItems" SET "Price" = "PriceUsd", "PriceCurrency" = 'USD' WHERE "Price" IS NULL;""");
+            try { context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" DROP COLUMN "PriceUsd";"""); }
+            catch { /* DB quá cũ không hỗ trợ DROP COLUMN — bỏ qua, khôi phục thủ công nếu cần */ }
+        }
+        context.Database.ExecuteSqlRaw(
+            """UPDATE "QuotationItems" SET "PriceCurrency" = 'USD' WHERE "PriceCurrency" IS NULL;""");
     }
 
     /// <summary>Thêm cột LengthNote vào bảng WoodLots cũ nếu thiếu (SQLite không có ADD COLUMN IF NOT EXISTS).</summary>
@@ -431,6 +448,22 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "VolumeDecimals" INTEGER;""");
         if (existing.Count > 0 && !existing.Contains("VolumeAdjustment"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "VolumeAdjustment" REAL;""");
+
+        // Bổ sung đơn vị tiền tệ (USD/VND) — đổi tên "PriceUsd" thành "Price" trung lập đơn vị +
+        // cột "PriceCurrency" riêng. Kiện cũ backfill "USD" (hành vi trước đây, luôn nhân Tỷ giá).
+        if (existing.Count > 0 && !existing.Contains("Price"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "Price" TEXT;""");
+        if (existing.Count > 0 && !existing.Contains("PriceCurrency"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" ADD COLUMN "PriceCurrency" TEXT;""");
+        if (existing.Contains("PriceUsd"))
+        {
+            context.Database.ExecuteSqlRaw(
+                """UPDATE "WoodLots" SET "Price" = "PriceUsd", "PriceCurrency" = 'USD' WHERE "Price" IS NULL;""");
+            try { context.Database.ExecuteSqlRaw("""ALTER TABLE "WoodLots" DROP COLUMN "PriceUsd";"""); }
+            catch { /* DB quá cũ không hỗ trợ DROP COLUMN — bỏ qua, khôi phục thủ công nếu cần */ }
+        }
+        if (existing.Count > 0)
+            context.Database.ExecuteSqlRaw("""UPDATE "WoodLots" SET "PriceCurrency" = 'USD' WHERE "PriceCurrency" IS NULL;""");
     }
 
     /// <summary>Seed các loại gỗ mặc định (chỉ khi bảng rỗng). Gỗ Dương tính theo Footage, còn lại theo quy cách.</summary>

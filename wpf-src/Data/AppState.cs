@@ -389,7 +389,8 @@ public static class AppState
         existing.LengthMax = item.LengthMax;
         existing.Origin = item.Origin;
         existing.Specification = item.Specification;
-        existing.PriceUsd = item.PriceUsd;
+        existing.Price = item.Price;
+        existing.PriceCurrency = item.PriceCurrency;
         existing.UpdatedAt = DateTime.Now;   // ghi lại thời điểm chỉnh sửa gần nhất
         var q = db.WoodQuotations.Find(existing.QuotationId);
         if (q != null) q.EffectiveDate = DateTime.Today;
@@ -502,6 +503,52 @@ public static class AppState
             lot.IssueInventory(item.Quantity, item.Cbm);
         }
         db.WarehouseIssues.Add(issue);
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>
+    /// Sửa phiếu xuất: hoàn trả tồn kho các dòng cũ trước (nghịch đảo <see cref="WoodLot.IssueInventory"/>),
+    /// rồi áp danh sách mới (khấu trừ lại) — giống tinh thần "xóa cũ rồi thêm lại" của <see cref="UpdateReceipt"/>,
+    /// nhưng ở đây kiện gỗ không thuộc sở hữu của phiếu xuất nên phải HOÀN TRẢ thay vì xóa/tạo lại.
+    /// </summary>
+    public static void UpdateIssue(WarehouseIssue updated)
+    {
+        using var db = new AppDbContext();
+        var existing = db.WarehouseIssues.Include(i => i.Items).FirstOrDefault(i => i.Id == updated.Id)
+            ?? throw new InvalidOperationException("Không tìm thấy phiếu xuất cần cập nhật.");
+
+        foreach (var item in existing.Items)
+            db.WoodLots.Find(item.WoodLotId)?.ReturnInventory(item.Quantity, item.Cbm);
+        db.SaveChanges();
+
+        db.WarehouseIssueItems.RemoveRange(existing.Items);
+        existing.OrderId = updated.OrderId;
+        existing.Date = updated.Date;
+        db.SaveChanges();
+
+        foreach (var item in updated.Items)
+        {
+            var lot = db.WoodLots.Find(item.WoodLotId)
+                ?? throw new InvalidOperationException($"Không tìm thấy kiện {item.WoodLotId}.");
+            lot.IssueInventory(item.Quantity, item.Cbm);
+            item.WarehouseIssueId = existing.Id;
+            db.WarehouseIssueItems.Add(item);
+        }
+        db.SaveChanges();
+        Commit();
+    }
+
+    /// <summary>Xóa phiếu xuất, hoàn trả tồn kho các kiện tương ứng.</summary>
+    public static void DeleteIssue(string id)
+    {
+        using var db = new AppDbContext();
+        var issue = db.WarehouseIssues.Include(i => i.Items).FirstOrDefault(i => i.Id == id);
+        if (issue == null) return;
+
+        foreach (var item in issue.Items)
+            db.WoodLots.Find(item.WoodLotId)?.ReturnInventory(item.Quantity, item.Cbm);
+        db.WarehouseIssues.Remove(issue);   // cascade xóa Items
         db.SaveChanges();
         Commit();
     }

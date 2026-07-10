@@ -116,6 +116,11 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         var rule = (FilterRule.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         if (rule == "SPEC" && row.IsFootage) return false;
         if (rule == "FOOT" && !row.IsFootage) return false;
+
+        if (!string.IsNullOrWhiteSpace(FNameFilter.Text) &&
+            !row.Name.ToLowerInvariant().Contains(FNameFilter.Text.Trim().ToLowerInvariant()))
+            return false;
+
         return true;
     }
 
@@ -123,6 +128,29 @@ public partial class WoodCategoriesView : UserControl, IModuleView
     {
         if (_view == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
+        _view.Refresh();
+        UpdateCountAndEmpty();
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        !string.IsNullOrWhiteSpace(FNameFilter.Text) ||
+        ((FilterRule.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL";
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        FNameFilter.Text = "";
+        FilterRule.SelectedIndex = 0;
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _view.Refresh();
         UpdateCountAndEmpty();
     }

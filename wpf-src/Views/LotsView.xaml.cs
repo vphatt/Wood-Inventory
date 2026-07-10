@@ -53,6 +53,14 @@ public partial class LotsView : UserControl, IModuleView
             FilterSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         SelectByTag(FilterSupplier, currentSup);
 
+        // Bộ lọc phân loại gỗ (con) — gộp mọi phân loại con đang tồn tại trong Tồn Kho
+        var currentSubType = (FilterSubType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        FilterSubType.Items.Clear();
+        FilterSubType.Items.Add(new ComboBoxItem { Content = "Tất cả phân loại", Tag = "ALL" });
+        foreach (var s in AppState.Lots.Select(l => l.WoodSubType).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct())
+            FilterSubType.Items.Add(new ComboBoxItem { Content = s, Tag = s });
+        SelectByTag(FilterSubType, currentSubType);
+
         _loading = false;
 
         RebuildRows();
@@ -147,18 +155,41 @@ public partial class LotsView : UserControl, IModuleView
 
     private bool FilterPredicate(object o)
     {
-        var l = ((LotRow)o).Lot;
+        var row = (LotRow)o;
+        var l = row.Lot;
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
         var type = (FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         var sup = (FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        var subType = (FilterSubType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
 
         var matchSearch = term.Length == 0
             || l.Id.ToLowerInvariant().Contains(term)
             || (l.WoodName ?? "").ToLowerInvariant().Contains(term)
-            || (l.Invoice ?? "").ToLowerInvariant().Contains(term);
+            || (l.Invoice ?? "").ToLowerInvariant().Contains(term)
+            || row.SupplierName.ToLowerInvariant().Contains(term);
         var matchType = type == "ALL" || l.WoodType == type;
         var matchSup = sup == "ALL" || l.SupplierId == sup;
-        return matchSearch && matchType && matchSup;
+        var matchSubType = subType == "ALL" || l.WoodSubType == subType;
+
+        // Bộ lọc theo từng cột (mỗi ô trống = bỏ qua, không trống = so khớp "chứa" trên đúng text hiển thị ở cột đó).
+        bool Contains(string cellText, string filterBox) =>
+            string.IsNullOrWhiteSpace(filterBox) ||
+            (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
+
+        var matchImportDate = FImportDateFilter.SelectedDate == null || l.ImportDate.Date == FImportDateFilter.SelectedDate.Value.Date;
+
+        var matchColumns = matchImportDate &&
+            Contains(row.InvoiceText, FInvoiceFilter.Text) &&
+            Contains(row.DeliveryNoteText, FDeliveryNoteFilter.Text) &&
+            Contains(row.Id, FIdFilter.Text) &&
+            Contains(row.DayText, FDayFilter.Text) &&
+            Contains(row.WidthText, FWidthFilter.Text) &&
+            Contains(row.LengthText, FLengthFilter.Text) &&
+            Contains(row.FootageText, FFootageFilter.Text) &&
+            Contains(row.QtyText, FQtyFilter.Text) &&
+            Contains(row.VolText, FVolFilter.Text);
+
+        return matchSearch && matchType && matchSup && matchSubType && matchColumns;
     }
 
     private void UpdateTotalsAndEmpty()
@@ -237,13 +268,13 @@ public partial class LotsView : UserControl, IModuleView
         DFormula.Text = isPoplarLot
             ? $"({Fmt.Num(lot.Footage)} / 1000) * 2.36 = {Fmt.Num(lot.Cbm)} m³"
             : $"({Fmt.Num(lot.ThicknessMm)} * {Fmt.Num(lot.WidthMm)} * {Fmt.Num(lot.LengthMm)} * {lot.OriginalQuantity}) / 1,000,000,000 = {Fmt.Num(lot.Cbm)} m³";
-        DPriceUsd.Text = $"${Fmt.Num((double)lot.PriceUsd)} / m³";
+        DPriceUsd.Text = $"{Fmt.Money(lot.Price, lot.PriceCurrency)} / m³";
         DExchangeRate.Text = Fmt.N0(lot.ExchangeRate);
         DTax.Text = $"{Fmt.Num((double)lot.TaxPercent)}%";
 
         // 3 dòng tiền tính theo LƯỢNG NHẬP BAN ĐẦU (Cbm gốc), không theo tồn hiện tại.
-        var totalUsd = WoodVolumeCalculator.CalculateTotalUsd(lot.PriceUsd, lot.Cbm);
-        var subtotal = WoodVolumeCalculator.ConvertUsdToVnd(totalUsd, lot.ExchangeRate);
+        var totalPrice = WoodVolumeCalculator.CalculateTotalPrice(lot.Price, lot.Cbm);
+        var subtotal = WoodVolumeCalculator.ConvertToVnd(totalPrice, lot.ExchangeRate);
         var vat = WoodVolumeCalculator.CalculateTaxAmountVnd(subtotal, lot.TaxPercent);
         DSubtotal.Text = Fmt.Vnd(subtotal);
         DVat.Text = Fmt.Vnd(vat);
@@ -287,6 +318,43 @@ public partial class LotsView : UserControl, IModuleView
     {
         if (_loading || !IsLoaded || _view == null) return;
         SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
+        _view.Refresh();
+        UpdateTotalsAndEmpty();
+    }
+
+    // ---------------- Bộ lọc theo từng cột ----------------
+
+    private bool AnyColumnFilterActive() =>
+        !string.IsNullOrWhiteSpace(FInvoiceFilter.Text) || FImportDateFilter.SelectedDate != null ||
+        !string.IsNullOrWhiteSpace(FDeliveryNoteFilter.Text) || !string.IsNullOrWhiteSpace(FIdFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FDayFilter.Text) || !string.IsNullOrWhiteSpace(FWidthFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FLengthFilter.Text) || !string.IsNullOrWhiteSpace(FFootageFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FQtyFilter.Text) || !string.IsNullOrWhiteSpace(FVolFilter.Text) ||
+        ((FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        ((FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        ((FilterSubType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL";
+
+    private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
+        ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+    }
+
+    private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
+    {
+        _loading = true;
+        foreach (var box in new[] { FInvoiceFilter, FDeliveryNoteFilter, FIdFilter,
+            FDayFilter, FWidthFilter, FLengthFilter, FFootageFilter, FQtyFilter, FVolFilter })
+            box.Text = "";
+        FImportDateFilter.SelectedDate = null;
+        FilterSupplier.SelectedIndex = 0;
+        FilterWoodType.SelectedIndex = 0;
+        FilterSubType.SelectedIndex = 0;
+        _loading = false;
+
+        BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _view.Refresh();
         UpdateTotalsAndEmpty();
     }

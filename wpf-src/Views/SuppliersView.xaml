@@ -104,7 +104,36 @@
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
+                <Button x:Name="BtnToggleColumnFilters" Style="{StaticResource BtnGhost}" Margin="12,0,0,0"
+                        Click="BtnToggleColumnFilters_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
+                        Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
             </StackPanel>
+
+            <!-- Bộ lọc theo từng cột (thu gọn mặc định) -->
+            <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
+                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
+                    Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
+                <UniformGrid Columns="3">
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="TÊN NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FNameFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="MÃ SỐ THUẾ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FTaxCodeFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="ĐỊA CHỈ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FAddressFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
 
             <!-- ===== Bảng danh sách nhà cung cấp (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
@@ -161,7 +190,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="*" MinWidth="240">
+                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="240" MinWidth="240">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>

@@ -2,6 +2,65 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="Segoe UI" FontSize="12">
+    <UserControl.Resources>
+        <!-- Ô số bên trong khung "đơn giá + đơn vị tiền tệ" ghép — không viền/nền riêng, khung ngoài (Border) lo phần đó -->
+        <Style x:Key="MoneyGroupBox" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}"
+                                      Background="{TemplateBinding Background}" VerticalAlignment="Center"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Dropdown chọn đơn vị (USD/VND) gắn ở cuối ô đơn giá — cùng khung ngoài, không viền/nền riêng -->
+        <Style x:Key="MoneyGroupCombo" TargetType="ComboBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource SelectItem}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="toggle" Focusable="False" ClickMode="Press" Background="Transparent"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter Margin="10,0,22,0" IsHitTestVisible="False"
+                                              VerticalAlignment="Center" HorizontalAlignment="Left"
+                                              Content="{TemplateBinding SelectionBoxItem}"/>
+                            <Path Data="M 0 0 L 4 4 L 8 0" Stroke="{StaticResource Slate400}" StrokeThickness="1.4"
+                                  HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,1,10,0" IsHitTestVisible="False"/>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                   AllowsTransparency="True" PopupAnimation="Fade" Focusable="False">
+                                <Border Background="White" BorderBrush="{StaticResource Slate200}"
+                                        BorderThickness="1" CornerRadius="8" Margin="0,4,0,8" MinWidth="76">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.12" Color="#0F172A"/>
+                                    </Border.Effect>
+                                    <StackPanel IsItemsHost="True"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
         <StackPanel Margin="24">
 
@@ -135,9 +194,25 @@
                             <TextBox x:Name="FSpec" Style="{StaticResource Input}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
-                            <TextBlock Text="ĐƠN GIÁ USD/M³ *" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FPrice" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
-                                     Tag="{Binding ElementName=WPrice}" TextChanged="Field_Changed"/>
+                            <TextBlock Text="ĐƠN GIÁ / M³ *" Style="{StaticResource FieldLabel}"/>
+                            <Border x:Name="PriceInputBorder" BorderBrush="{StaticResource Slate200}" BorderThickness="1"
+                                    CornerRadius="8" Background="White" Height="40">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="FPrice" Grid.Column="0" Style="{StaticResource MoneyGroupBox}"
+                                             Tag="{Binding ElementName=WPrice}" TextChanged="Field_Changed"
+                                             GotFocus="PriceInput_GotFocus" LostFocus="PriceInput_LostFocus"/>
+                                    <Border Grid.Column="1" Width="1" Margin="0,8" Background="{StaticResource Slate200}"/>
+                                    <ComboBox x:Name="FPriceCurrency" Grid.Column="1" Width="80" Margin="1,0,0,0"
+                                              Style="{StaticResource MoneyGroupCombo}" SelectedIndex="0">
+                                        <ComboBoxItem Content="USD" Tag="USD"/>
+                                        <ComboBoxItem Content="VND" Tag="VND"/>
+                                    </ComboBox>
+                                </Grid>
+                            </Border>
                             <TextBlock x:Name="WPrice" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                     </Grid>
@@ -162,9 +237,60 @@
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
-                <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" MinWidth="180"
-                          Margin="12,0,0,0" SelectionChanged="Filter_Changed"/>
+                <Button x:Name="BtnToggleColumnFilters" Style="{StaticResource BtnGhost}" Margin="12,0,0,0"
+                        Click="BtnToggleColumnFilters_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
+                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
+                        Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
             </StackPanel>
+
+            <!-- Bộ lọc theo từng cột (thu gọn mặc định) -->
+            <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
+                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
+                    Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
+                <UniformGrid Columns="5" Rows="2">
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="LOẠI GỖ" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="ĐỘ DÀY (MM)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FThicknessFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="RỘNG (MM)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FWidthColFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="DÀI (MM)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FLengthColFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="XUẤT XỨ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FOriginFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="GHI CHÚ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FSpecFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="ĐƠN GIÁ" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FPriceFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="ĐƠN VỊ" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="FilterCurrency" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="CHỈNH SỬA LẦN CUỐI" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FUpdatedFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
 
             <!-- ===== Bảng mục giá (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
@@ -250,7 +376,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="*" MinWidth="160">
+                                <DataGridTextColumn Header="GHI CHÚ" Binding="{Binding Specification}" Width="160" MinWidth="160">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
@@ -260,13 +386,24 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐƠN GIÁ USD/M³" Binding="{Binding PriceText}" Width="150" MinWidth="130" SortMemberPath="Price">
+                                <DataGridTextColumn Header="ĐƠN GIÁ / M³" Binding="{Binding PriceText}" Width="150" MinWidth="130" SortMemberPath="Price">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
                                             <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="ĐƠN VỊ" Binding="{Binding PriceCurrency}" Width="90" MinWidth="90" SortMemberPath="PriceCurrency">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>

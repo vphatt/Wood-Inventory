@@ -74,7 +74,8 @@ public class QuotationItem
     public double? LengthMax { get; set; }
     public string Origin { get; set; }         // null = mọi xuất xứ
     public string Specification { get; set; }  // ghi chú tự do, không dùng để khớp giá
-    public decimal PriceUsd { get; set; }
+    public decimal Price { get; set; }
+    public string PriceCurrency { get; set; } = "USD";  // "USD" | "VND" — VND thì nhập kho không nhân tỷ giá
     public DateTime? UpdatedAt { get; set; }    // thời điểm chỉnh sửa gần nhất (ban đầu = lúc tạo dòng)
 }
 
@@ -119,7 +120,8 @@ public class WoodLot
     public double RemainingCbm { get; set; }       // m³ còn lại
     public int? VolumeDecimals { get; set; }       // số chữ số thập phân làm tròn m³ riêng của kiện (null = mặc định 5)
     public double? VolumeAdjustment { get; set; }  // điều chỉnh tay +/- cộng vào m³ sau khi làm tròn (null = 0)
-    public decimal PriceUsd { get; set; }
+    public decimal Price { get; set; }
+    public string PriceCurrency { get; set; } = "USD";  // "USD" | "VND" — theo báo giá NCC tại thời điểm nhập
     public decimal ExchangeRate { get; set; }
     public decimal TaxPercent { get; set; }
     public decimal CostPriceVnd { get; set; }      // Giá vốn VND/m³ (đã gồm thuế)
@@ -137,6 +139,14 @@ public class WoodLot
 
         Quantity -= issueQty;
         RemainingCbm = Math.Round(Math.Max(0, RemainingCbm - issueCbm), 4);
+        TotalValueVnd = Math.Round(CostPriceVnd * (decimal)RemainingCbm, 0);
+    }
+
+    /// <summary>Hoàn trả tồn kho khi sửa/xóa một dòng đã xuất trước đó (nghịch đảo <see cref="IssueInventory"/>).</summary>
+    public void ReturnInventory(int returnQty, double returnCbm)
+    {
+        Quantity += returnQty;
+        RemainingCbm = Math.Round(Math.Min(Cbm, RemainingCbm + returnCbm), 4);
         TotalValueVnd = Math.Round(CostPriceVnd * (decimal)RemainingCbm, 0);
     }
 }

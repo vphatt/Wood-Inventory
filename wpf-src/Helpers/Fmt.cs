@@ -23,6 +23,10 @@ public static class Fmt
     /// <summary>"$1.150"</summary>
     public static string Usd(decimal value) => "$" + value.ToString("N0", Vi);
 
+    /// <summary>Tiền theo đơn vị báo giá — "VND" dùng format ₫ (Vnd), còn lại (mặc định USD) dùng $ (Usd).</summary>
+    public static string Money(decimal value, string currency) =>
+        string.Equals(currency, "VND", StringComparison.OrdinalIgnoreCase) ? Vnd(value) : Usd(value);
+
     /// <summary>"25.450"</summary>
     public static string N0(decimal value) => value.ToString("N0", Vi);
     public static string N0(double value) => value.ToString("N0", Vi);
