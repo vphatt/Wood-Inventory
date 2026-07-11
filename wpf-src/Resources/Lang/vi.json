@@ -5,6 +5,8 @@
   "App.Breadcrumb.Home": "Home",
   "App.Breadcrumb.Org": "Quản Lý Gỗ",
   "App.ToggleSidebar": "Thu nhỏ / mở rộng sidebar",
+  "App.RefreshButton": "Làm mới",
+  "App.RefreshTooltip": "Làm mới dữ liệu trang hiện tại (không mất dữ liệu đang nhập)",
 
   "Nav.Group.General": "THÔNG TIN CHUNG",
   "Nav.Group.Inventory": "XUẤT NHẬP GỖ",

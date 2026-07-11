@@ -71,9 +71,17 @@ public partial class MainWindow : Window
     {
         BuildNav();
         UpdateFooterCompanyName();
+        RefreshActiveView();
+    }
+
+    private void RefreshActiveView()
+    {
         if (_viewCache.TryGetValue(_activeModule, out var view) && view is IModuleView refreshable)
             refreshable.RefreshView();
     }
+
+    /// <summary>Nút làm mới chung trên breadcrumb — làm mới trang đang xem theo yêu cầu, không cần đóng/mở lại tab.</summary>
+    private void BtnGlobalRefresh_Click(object sender, RoutedEventArgs e) => RefreshActiveView();
 
     /// <summary>
     /// Hot-swap ngôn ngữ: phần XAML tĩnh (Text="{helpers:Loc ...}") tự cập nhật qua binding, nhưng phần

@@ -128,6 +128,13 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (FSupplier.SelectedItem == null) FSupplier.SelectedIndex = 0;
 
         RebuildHistory();
+
+        // Tính lại giá/thành tiền các dòng kiện đang khai báo theo báo giá NCC mới nhất (vd người dùng vừa
+        // sửa báo giá ở tab khác) — KHÔNG đụng vào dữ liệu đã gõ. Đang add/edit: chỉ update giá trị hiển thị
+        // qua _rowUpdaters (giữ nguyên control, không mất focus). Đang view: rows là TextBlock tĩnh nên rebuild
+        // thẳng cho đơn giản (không có gì để mất).
+        if (_mode == "view") RebuildLotRows();
+        else foreach (var update in _rowUpdaters.ToList()) update();
     }
 
     private static double D(string s) => Fmt.ParseNum(s);

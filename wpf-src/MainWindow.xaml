@@ -97,6 +97,14 @@
                         <TextBlock x:Name="BreadcrumbDetail" Foreground="{StaticResource Slate900}"
                                    FontSize="13" FontWeight="SemiBold" Visibility="Collapsed"/>
                     </StackPanel>
+                    <Button x:Name="BtnGlobalRefresh" Style="{StaticResource BtnGhost}"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Click="BtnGlobalRefresh_Click" ToolTip="{helpers:Loc App.RefreshTooltip}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,6,0"/>
+                            <TextBlock Text="{helpers:Loc App.RefreshButton}"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
 
