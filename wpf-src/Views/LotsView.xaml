@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="WoodInventory.Views.LotsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:WoodInventory.Helpers"
              FontFamily="Segoe UI" FontSize="12">
     <Grid Background="{StaticResource Slate50}">
         <Grid.RowDefinitions>
@@ -14,7 +15,7 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="24,20,24,0">
             <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="16"
                        Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-            <TextBlock Text="Tồn Kho" FontSize="17" FontWeight="Bold"
+            <TextBlock Text="{helpers:Loc Nav.Lots}" FontSize="17" FontWeight="Bold"
                        Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
         </StackPanel>
 
@@ -29,7 +30,7 @@
                         <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                    Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
-                        <TextBlock x:Name="SearchHint" Text="Tìm mã kiện, invoice, nhà cung cấp..." FontSize="12"
+                        <TextBlock x:Name="SearchHint" Text="{helpers:Loc Lots.SearchHint}" FontSize="12"
                                    Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
                     </Grid>
@@ -37,11 +38,11 @@
                             Click="BtnToggleColumnFilters_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                            <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                            <TextBlock x:Name="ToggleColumnFiltersLabel" Text="{helpers:Loc Common.FilterByColumn}"/>
                         </StackPanel>
                     </Button>
                     <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
-                            Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
+                            Content="{helpers:Loc Common.ClearColumnFilter}" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -52,55 +53,55 @@
                 Visibility="Collapsed">
             <UniformGrid Columns="5" Rows="3">
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Field.Supplier}" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="FilterSupplier" Style="{StaticResource Select}" SelectionChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="HÓA ĐƠN" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Invoice}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FInvoiceFilter" Style="{StaticResource Input}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="NGÀY NHẬP KHO" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Field.Date}" Style="{StaticResource FieldLabel}"/>
                     <DatePicker x:Name="FImportDateFilter" Style="{StaticResource DatePickerField}" SelectedDateChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="PHIẾU GIAO HÀNG" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.DeliveryNote}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FDeliveryNoteFilter" Style="{StaticResource Input}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="MÃ KIỆN" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.LotId}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FIdFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="TÊN GỖ" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc ReceiptReport.Filter.WoodType}" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" SelectionChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="PHÂN LOẠI GỖ" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc ReceiptReport.Filter.SubType}" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="FilterSubType" Style="{StaticResource Select}" SelectionChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="DÀY" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.Thickness}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FDayFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="RỘNG" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.Width}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FWidthFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="DÀI" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.Length}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FLengthFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="FOOTAGE" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Receipts.Column.Footage}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FFootageFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="SỐ LƯỢNG TỒN" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc Lots.Filter.Qty}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FQtyFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
-                    <TextBlock Text="THỂ TÍCH M³" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Vol}" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="FVolFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filters_Changed"/>
                 </StackPanel>
             </UniformGrid>
@@ -124,13 +125,13 @@
                                     BorderThickness="0,1,0,0" Padding="24,10">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Tổng số lượng:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{helpers:Loc Lots.Totals.Qty}" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="TotalQty" Text="0 thanh" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Tổng thể tích:" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{helpers:Loc Lots.Totals.Vol}" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="TotalVol" Text="0.0000 m³" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource Blue600}" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Tổng giá trị tồn:" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{helpers:Loc Lots.Totals.Val}" Foreground="{StaticResource Slate500}" Margin="24,0,0,0" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="TotalVal" Text="0 ₫" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource Emerald600}" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -145,7 +146,7 @@
 
                                 <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" CanUserSortColumns="True">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                        <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
@@ -155,7 +156,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="NHÀ CUNG CẤP" Binding="{Binding SupplierName}" Width="240" MinWidth="240">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Field.Supplier}" Binding="{Binding SupplierName}" Width="240" MinWidth="240">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -166,7 +167,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="HÓA ĐƠN" Binding="{Binding InvoiceText}" Width="130" MinWidth="110">
+                                        <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.Invoice}" Binding="{Binding InvoiceText}" Width="130" MinWidth="110">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -176,7 +177,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn x:Name="ColLotDate" Header="NGÀY NHẬP KHO" Binding="{Binding ImportDateText}" Width="136" MinWidth="126" SortMemberPath="ImportDate">
+                                        <DataGridTextColumn x:Name="ColLotDate" Header="{helpers:Loc Receipts.Field.Date}" Binding="{Binding ImportDateText}" Width="136" MinWidth="126" SortMemberPath="ImportDate">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -187,7 +188,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="PHIẾU GIAO HÀNG" Binding="{Binding DeliveryNoteText}" Width="140" MinWidth="130">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.DeliveryNote}" Binding="{Binding DeliveryNoteText}" Width="140" MinWidth="130">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -198,7 +199,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="MÃ KIỆN" Binding="{Binding Id}" Width="110" MinWidth="100">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.LotId}" Binding="{Binding Id}" Width="110" MinWidth="100">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="Bold"/>
@@ -208,7 +209,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="TÊN GỖ" Binding="{Binding WoodTypeText}" Width="130" MinWidth="120">
+                                        <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.WoodType}" Binding="{Binding WoodTypeText}" Width="130" MinWidth="120">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -219,7 +220,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="PHÂN LOẠI GỖ" Binding="{Binding SubTypeText}" Width="120" MinWidth="110">
+                                        <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.SubType}" Binding="{Binding SubTypeText}" Width="120" MinWidth="110">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
@@ -229,7 +230,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="DÀY" Binding="{Binding DayText}" Width="76" MinWidth="66" SortMemberPath="ThicknessMm">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Thickness}" Binding="{Binding DayText}" Width="76" MinWidth="66" SortMemberPath="ThicknessMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -240,7 +241,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="RỘNG" Binding="{Binding WidthText}" Width="76" MinWidth="66" SortMemberPath="WidthMm">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Width}" Binding="{Binding WidthText}" Width="76" MinWidth="66" SortMemberPath="WidthMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -251,7 +252,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="DÀI" Binding="{Binding LengthText}" Width="112" MinWidth="96" SortMemberPath="LengthMm">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Length}" Binding="{Binding LengthText}" Width="112" MinWidth="96" SortMemberPath="LengthMm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -262,7 +263,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTextColumn Header="FOOTAGE" Binding="{Binding FootageText}" Width="92" MinWidth="80" SortMemberPath="Footage">
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Footage}" Binding="{Binding FootageText}" Width="92" MinWidth="80" SortMemberPath="Footage">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -273,7 +274,7 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
-                                        <DataGridTemplateColumn Header="SỐ LƯỢNG TỒN" Width="140" MinWidth="120" SortMemberPath="Quantity">
+                                        <DataGridTemplateColumn Header="{helpers:Loc Lots.Filter.Qty}" Width="140" MinWidth="120" SortMemberPath="Quantity">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border x:Name="pill" CornerRadius="999" Padding="8,2" Background="{StaticResource Slate100}"
@@ -292,7 +293,7 @@
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
 
-                                        <DataGridTextColumn Header="THỂ TÍCH M³" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
+                                        <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.Vol}" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -313,14 +314,14 @@
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           ScrollViewer.VerticalScrollBarVisibility="Disabled">
                                     <DataGrid.Columns>
-                                        <DataGridTemplateColumn Header="THAO TÁC" Width="100" MinWidth="100" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
+                                        <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="100" MinWidth="100" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                        <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
+                                                        <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Common.Tooltip.View}" Click="ViewRow_Click">
                                                             <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                         </Button>
-                                                        <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa" Margin="6,0,0,0" Click="DeleteRow_Click">
+                                                        <Button Style="{StaticResource BtnIconDanger}" ToolTip="{helpers:Loc Lots.Tooltip.Delete}" Margin="6,0,0,0" Click="DeleteRow_Click">
                                                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                         </Button>
                                                     </StackPanel>
@@ -330,7 +331,7 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Không tìm thấy kiện gỗ nào khớp bộ lọc."
+                                <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="{helpers:Loc Lots.Empty}"
                                            Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                            VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                             </Grid>
@@ -348,7 +349,7 @@
                         <Grid Margin="0,0,0,12">
                             <TextBlock x:Name="DetailTitle" Text="Truy xuất kiện:" FontSize="13" FontWeight="Bold"
                                        Foreground="{StaticResource Slate800}"/>
-                            <Button Style="{StaticResource BtnLink}" Content="Đóng" HorizontalAlignment="Right"
+                            <Button Style="{StaticResource BtnLink}" Content="{helpers:Loc Common.Close}" HorizontalAlignment="Right"
                                     Foreground="{StaticResource Slate400}" Click="BtnCloseDetail_Click"/>
                         </Grid>
                         <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
@@ -357,28 +358,28 @@
                         <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
                                 BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Thông tin chung" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{helpers:Loc Lots.Detail.GeneralInfo}" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Loại gỗ:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.WoodType}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DWoodType" FontWeight="Medium" Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Xuất xứ:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Origin}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DOrigin" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Quy cách (mm):" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Spec}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DSpec" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid x:Name="DFootageRow" Visibility="Collapsed" Margin="0,0,0,6">
-                                    <TextBlock Text="Footage:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Footage}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DFootage" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid x:Name="DLengthNoteRow" Visibility="Collapsed">
-                                    <TextBlock Text="Chiều dài:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Length}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DLengthNote" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
@@ -392,7 +393,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                                Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Công thức tính thể tích" FontWeight="SemiBold"
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.FormulaTitle}" FontWeight="SemiBold"
                                                Foreground="{StaticResource Slate700}" Margin="6,0,0,0"/>
                                 </StackPanel>
                                 <Border Background="White" BorderBrush="{StaticResource Slate100}" BorderThickness="1"
@@ -408,41 +409,41 @@
                         <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
                                 BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Tài chính &amp; Thuế" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{helpers:Loc Lots.Detail.FinanceTitle}" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Giá mua:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Price}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DPriceUsd" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Tỷ giá VND/USD:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.ExchangeRate}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DExchangeRate" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="Thuế VAT:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Tax}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DTax" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Border Height="1" Background="{StaticResource Slate200}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Tổng tiền chưa thuế:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Subtotal}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DSubtotal" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Tiền thuế VAT:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Vat}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DVat" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="Tổng tiền sau thuế:" FontWeight="SemiBold" Foreground="{StaticResource Slate700}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Total}" FontWeight="SemiBold" Foreground="{StaticResource Slate700}"/>
                                     <TextBlock x:Name="DTotal" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Blue600}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Border Height="1" Background="{StaticResource Slate200}" Margin="0,0,0,8"/>
                                 <Grid>
-                                    <TextBlock Text="Giá trị đã sử dụng:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Used}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DUsed" FontWeight="SemiBold" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Rose500}" HorizontalAlignment="Right"/>
                                 </Grid>
@@ -453,31 +454,31 @@
                         <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate150}"
                                 BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Chứng từ nguồn gốc" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{helpers:Loc Lots.Detail.DocsTitle}" FontWeight="SemiBold" Foreground="{StaticResource Slate700}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Nhà cung cấp:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Supplier}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DSupplier" FontWeight="Medium" Foreground="{StaticResource Slate800}"
                                                HorizontalAlignment="Right" TextAlignment="Right"
                                                TextTrimming="CharacterEllipsis" MaxWidth="200"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Hóa đơn (Invoice):" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.Invoice}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DInvoice" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Bảng kê lâm sản:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.ForestList}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DForestList" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"
                                                TextAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
                                 </Grid>
                                 <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="Packing List:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.PackingList}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DPackingList" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Grid>
-                                    <TextBlock Text="Phiếu giao hàng:" Foreground="{StaticResource Slate500}"/>
+                                    <TextBlock Text="{helpers:Loc Lots.Detail.DeliveryNote}" Foreground="{StaticResource Slate500}"/>
                                     <TextBlock x:Name="DDeliveryNote" FontWeight="Medium" FontFamily="{StaticResource FontMono}"
                                                Foreground="{StaticResource Slate800}" HorizontalAlignment="Right"/>
                                 </Grid>
@@ -485,9 +486,9 @@
                         </Border>
 
                         <!-- Lịch sử xuất kho -->
-                        <TextBlock Text="LỊCH SỬ XUẤT KHO (TRACEABILITY)" FontSize="10.5" FontWeight="Bold"
+                        <TextBlock Text="{helpers:Loc Lots.Detail.HistoryTitle}" FontSize="10.5" FontWeight="Bold"
                                    Foreground="{StaticResource Slate500}" Margin="0,0,0,8"/>
-                        <TextBlock x:Name="DHistoryEmpty" Text="Kiện gỗ chưa từng bị xuất kho. Tồn kho nguyên vẹn."
+                        <TextBlock x:Name="DHistoryEmpty" Text="{helpers:Loc Lots.Detail.HistoryEmpty}"
                                    FontSize="11" FontStyle="Italic" Foreground="{StaticResource Slate400}"
                                    TextWrapping="Wrap"/>
                         <ItemsControl x:Name="DHistoryList">

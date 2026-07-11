@@ -40,7 +40,7 @@ public partial class LotsView : UserControl, IModuleView
         // Bộ lọc loại gỗ
         var currentType = (FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterWoodType.Items.Clear();
-        FilterWoodType.Items.Add(new ComboBoxItem { Content = "Tất cả loại gỗ", Tag = "ALL" });
+        FilterWoodType.Items.Add(new ComboBoxItem { Content = Lang.T("Lots.Filter.AllTypes"), Tag = "ALL" });
         foreach (var t in AppState.Lots.Select(l => l.WoodType).Distinct())
             FilterWoodType.Items.Add(new ComboBoxItem { Content = t, Tag = t });
         SelectByTag(FilterWoodType, currentType);
@@ -48,7 +48,7 @@ public partial class LotsView : UserControl, IModuleView
         // Bộ lọc NCC
         var currentSup = (FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterSupplier.Items.Clear();
-        FilterSupplier.Items.Add(new ComboBoxItem { Content = "Tất cả nhà cung cấp", Tag = "ALL" });
+        FilterSupplier.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.Filter.AllSuppliers"), Tag = "ALL" });
         foreach (var s in AppState.Suppliers)
             FilterSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         SelectByTag(FilterSupplier, currentSup);
@@ -56,7 +56,7 @@ public partial class LotsView : UserControl, IModuleView
         // Bộ lọc phân loại gỗ (con) — gộp mọi phân loại con đang tồn tại trong Tồn Kho
         var currentSubType = (FilterSubType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterSubType.Items.Clear();
-        FilterSubType.Items.Add(new ComboBoxItem { Content = "Tất cả phân loại", Tag = "ALL" });
+        FilterSubType.Items.Add(new ComboBoxItem { Content = Lang.T("Lots.Filter.AllSubTypes"), Tag = "ALL" });
         foreach (var s in AppState.Lots.Select(l => l.WoodSubType).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct())
             FilterSubType.Items.Add(new ComboBoxItem { Content = s, Tag = s });
         SelectByTag(FilterSubType, currentSubType);
@@ -128,7 +128,7 @@ public partial class LotsView : UserControl, IModuleView
         // Tồn kho
         public int Quantity => Lot.Quantity;
         public bool IsLow => Lot.Quantity <= AppState.Settings.LowStockThreshold && Lot.Quantity > 0;
-        public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} thanh";
+        public string QtyText => $"{Lot.Quantity} / {Lot.OriginalQuantity} {Lang.T("Common.Unit.Bar")}";
         public string VolText => $"{Fmt.M3(Lot.RemainingCbm)} m³";
 
         // Khóa sắp xếp (số thật, không theo chuỗi hiển thị)
@@ -206,7 +206,7 @@ public partial class LotsView : UserControl, IModuleView
     private void UpdateTotalsAndEmpty()
     {
         var rows = _view.Cast<LotRow>().ToList();
-        TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Lot.Quantity))} thanh";
+        TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Lot.Quantity))} {Lang.T("Common.Unit.Bar")}";
         TotalVol.Text = $"{Fmt.M3(rows.Sum(r => r.Lot.RemainingCbm))} m³";
         TotalVal.Text = Fmt.Vnd(rows.Sum(r => r.Lot.TotalValueVnd));
         EmptyRow.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -228,8 +228,8 @@ public partial class LotsView : UserControl, IModuleView
 
     private void DeleteLot(WoodLot lot)
     {
-        var confirm = MessageBox.Show($"Bạn có chắc muốn xóa Kiện gỗ {lot.Id} khỏi hệ thống?",
-            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show(Lang.T("Lots.Confirm.Delete", lot.Id),
+            Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         try
@@ -239,7 +239,7 @@ public partial class LotsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -262,7 +262,7 @@ public partial class LotsView : UserControl, IModuleView
         }
 
         DetailPanel.Visibility = Visibility.Visible;
-        DetailTitle.Text = $"Truy xuất kiện: {lot.Id}";
+        DetailTitle.Text = Lang.T("Lots.Detail.Title", lot.Id);
         DWoodType.Text = string.IsNullOrWhiteSpace(lot.WoodSubType)
             ? lot.WoodType
             : $"{lot.WoodType} · {lot.WoodSubType}";
@@ -270,7 +270,7 @@ public partial class LotsView : UserControl, IModuleView
         var isPoplarLot = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
         // Gỗ footage: quy cách chỉ có độ dày (ưu tiên ký hiệu inch); loại khác: Dày x Rộng x Dài.
         DSpec.Text = isPoplarLot
-            ? "Dày " + (string.IsNullOrWhiteSpace(lot.ThicknessNote) ? $"{Fmt.Num(lot.ThicknessMm)}mm" : lot.ThicknessNote)
+            ? Lang.T("Lots.Detail.SpecPrefix") + (string.IsNullOrWhiteSpace(lot.ThicknessNote) ? $"{Fmt.Num(lot.ThicknessMm)}mm" : lot.ThicknessNote)
             : $"{Fmt.Num(lot.ThicknessMm)} x {Fmt.Num(lot.WidthMm)} x {Fmt.Num(lot.LengthMm)}";
         DFootageRow.Visibility = isPoplarLot ? Visibility.Visible : Visibility.Collapsed;
         DFootage.Text = $"{Fmt.Num(lot.Footage)} BFT";
@@ -307,11 +307,11 @@ public partial class LotsView : UserControl, IModuleView
             if (item == null) continue;
             history.Add(new HistoryRow
             {
-                IssueText = $"Phiếu xuất: {issue.Id}",
-                QtyText = $"-{item.Quantity} thanh",
-                OrderText = $"Đơn hàng: {issue.OrderId}",
+                IssueText = Lang.T("Lots.Detail.HistoryIssue", issue.Id),
+                QtyText = Lang.T("Lots.Detail.HistoryQty", item.Quantity, Lang.T("Common.Unit.Bar")),
+                OrderText = Lang.T("Lots.Detail.HistoryOrder", issue.OrderId),
                 CbmText = $"{Fmt.M3(item.Cbm)} m³",
-                DateText = $"Ngày xuất: {Fmt.Date(issue.Date)}"
+                DateText = Lang.T("Lots.Detail.HistoryDate", Fmt.Date(issue.Date))
             });
         }
         DHistoryEmpty.Visibility = history.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -350,7 +350,7 @@ public partial class LotsView : UserControl, IModuleView
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = expand ? Lang.T("Common.HideColumnFilter") : Lang.T("Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
