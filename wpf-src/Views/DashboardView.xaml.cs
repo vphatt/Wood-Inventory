@@ -79,8 +79,8 @@ public partial class DashboardView : UserControl, IModuleView
         {
             Id = l.Id,
             Meta = $"{l.WoodType}{(string.IsNullOrWhiteSpace(l.WoodSubType) ? "" : " · " + l.WoodSubType)} - {l.Grade} - {Fmt.Num(l.ThicknessMm)}mm",
-            QtyText = $"{l.Quantity} thanh",
-            CbmText = $"{Fmt.M3Short(l.RemainingCbm)} m³ còn lại"
+            QtyText = $"{l.Quantity} {Lang.T("Common.Unit.Bar")}",
+            CbmText = Lang.T("Dashboard.LowStockPanel.Remaining", Fmt.M3Short(l.RemainingCbm))
         }).ToList();
     }
 

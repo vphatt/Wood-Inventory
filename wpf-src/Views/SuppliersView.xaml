@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="WoodInventory.Views.SuppliersView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:WoodInventory.Helpers"
              FontFamily="Segoe UI" FontSize="12">
     <Grid>
         <ScrollViewer x:Name="ListRoot" VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
@@ -12,7 +13,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="16"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock Text="Quản Lý Nhà Cung Cấp" FontSize="17" FontWeight="Bold"
+                        <TextBlock Text="{helpers:Loc Suppliers.Title}" FontSize="17" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -20,7 +21,7 @@
                         Click="BtnToggleAdd_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                        <TextBlock Text="Thêm nhà cung cấp"/>
+                        <TextBlock Text="{helpers:Loc Suppliers.AddButton}"/>
                     </StackPanel>
                 </Button>
             </Grid>
@@ -32,7 +33,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="FormTitle" Text="Khai Báo Nhà Cung Cấp Mới" FontSize="13" FontWeight="Bold"
+                        <TextBlock x:Name="FormTitle" Text="{helpers:Loc Suppliers.Form.AddTitle}" FontSize="13" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                     <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
@@ -51,42 +52,42 @@
 
                         <!-- Hàng 1 -->
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="TÊN NHÀ CUNG CẤP *" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.Name}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FName" Style="{StaticResource Input}" Tag="{Binding ElementName=WName}" TextChanged="Field_Changed"/>
                             <TextBlock x:Name="WName" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="TÊN GỌI TẮT *" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.Code}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FCode" Style="{StaticResource Input}" Tag="{Binding ElementName=WCode}" TextChanged="Field_Changed"/>
                             <TextBlock x:Name="WCode" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
 
                         <!-- Hàng 2 -->
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="MÃ SỐ THUẾ *" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.TaxCode}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FTaxCode" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                      Tag="{Binding ElementName=WTaxCode}" TextChanged="Field_Changed"/>
                             <TextBlock x:Name="WTaxCode" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
-                            <TextBlock Text="ĐỊA CHỈ" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.Address}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FAddress" Style="{StaticResource Input}"/>
                         </StackPanel>
 
                         <!-- Hàng 3 -->
                         <StackPanel Grid.Row="2" Grid.Column="0">
-                            <TextBlock Text="SỐ ĐIỆN THOẠI" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.Phone}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FPhone" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="2">
-                            <TextBlock Text="SỐ TÀI KHOẢN" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{helpers:Loc Suppliers.Field.BankAccount}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FBankAccount" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"/>
                         </StackPanel>
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
-                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu nhà cung cấp"
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="{helpers:Loc Common.Cancel}" Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="{helpers:Loc Suppliers.SaveButton}"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -100,7 +101,7 @@
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
-                    <TextBlock x:Name="SearchHint" Text="Tìm tên, mã số thuế, địa chỉ..." FontSize="12"
+                    <TextBlock x:Name="SearchHint" Text="{helpers:Loc Suppliers.SearchHint}" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="31,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
                 </Grid>
@@ -108,11 +109,11 @@
                         Click="BtnToggleColumnFilters_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="Lọc theo cột"/>
+                        <TextBlock x:Name="ToggleColumnFiltersLabel" Text="{helpers:Loc Common.FilterByColumn}"/>
                     </StackPanel>
                 </Button>
                 <Button x:Name="BtnClearColumnFilters" Style="{StaticResource BtnLink}" Margin="12,0,0,0"
-                        Content="Xóa bộ lọc cột" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
+                        Content="{helpers:Loc Common.ClearColumnFilter}" Click="BtnClearColumnFilters_Click" Visibility="Collapsed"/>
             </StackPanel>
 
             <!-- Bộ lọc theo từng cột (thu gọn mặc định) -->
@@ -121,15 +122,15 @@
                     Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
                 <UniformGrid Columns="3">
                     <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="TÊN NHÀ CUNG CẤP" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{helpers:Loc Suppliers.Column.Name}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FNameFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="MÃ SỐ THUẾ" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{helpers:Loc Suppliers.Column.TaxCode}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FTaxCodeFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="ĐỊA CHỈ" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{helpers:Loc Suppliers.Field.Address}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FAddressFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                 </UniformGrid>
@@ -142,7 +143,7 @@
                             BorderThickness="0,1,0,0" Padding="24,10">
                         <Grid>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tổng số nhà cung cấp:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{helpers:Loc Suppliers.TotalCount}" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="TotalCount" Text="0" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
@@ -157,7 +158,7 @@
 
                         <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" CanUserSortColumns="True">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="STT" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -167,7 +168,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="TÊN NHÀ CUNG CẤP" SortMemberPath="Name" Width="300" MinWidth="300">
+                                <DataGridTemplateColumn Header="{helpers:Loc Suppliers.Column.Name}" SortMemberPath="Name" Width="300" MinWidth="300">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel VerticalAlignment="Center">
@@ -180,7 +181,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="MÃ SỐ THUẾ" Binding="{Binding TaxCode}" Width="180" MinWidth="140">
+                                <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.TaxCode}" Binding="{Binding TaxCode}" Width="180" MinWidth="140">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -190,7 +191,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="ĐỊA CHỈ" Binding="{Binding Address}" Width="240" MinWidth="240">
+                                <DataGridTextColumn Header="{helpers:Loc Suppliers.Field.Address}" Binding="{Binding Address}" Width="240" MinWidth="240">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
@@ -209,23 +210,23 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Disabled">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="THAO TÁC" Width="290" MinWidth="290"
+                                <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="290" MinWidth="290"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <Button Style="{StaticResource BtnLink}" ToolTip="Xem báo giá của NCC này"
+                                                <Button Style="{StaticResource BtnLink}" ToolTip="{helpers:Loc Suppliers.Tooltip.ViewQuote}"
                                                         Click="OpenQuotation_Click" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding QuoteButtonText}" FontSize="12"/>
                                                         <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="4,2,0,0"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết"
+                                                <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Common.Tooltip.View}"
                                                         Margin="12,0,0,0" Click="ViewRow_Click">
                                                     <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                 </Button>
-                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa nhà cung cấp"
+                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="{helpers:Loc Suppliers.Tooltip.Delete}"
                                                         Margin="8,0,0,0" Click="DeleteRow_Click">
                                                     <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                 </Button>
@@ -236,7 +237,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Không có nhà cung cấp nào khớp tìm kiếm."
+                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="{helpers:Loc Suppliers.Empty}"
                                    Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                     </Grid>

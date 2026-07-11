@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using WoodInventory.Data;
 using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
 namespace WoodInventory.Views;
 
@@ -15,11 +16,11 @@ public partial class SuppliersView : UserControl, IModuleView
     {
         public Supplier Supplier { get; }
         public string Name => Supplier.Name;
-        public string CodeLabel => $"Tên gọi tắt: {Supplier.Code}";
+        public string CodeLabel => Lang.T("Suppliers.CodeLabel", Supplier.Code);
         public string TaxCode => string.IsNullOrWhiteSpace(Supplier.TaxCode) ? "—" : Supplier.TaxCode;
         public string Address => string.IsNullOrWhiteSpace(Supplier.Address) ? "—" : Supplier.Address;
         public int QuoteCount => AppState.QuotationItemCount(Supplier.Id);
-        public string QuoteButtonText => $"Xem báo giá ({QuoteCount} mục)";
+        public string QuoteButtonText => Lang.T("Suppliers.QuoteButtonText", QuoteCount);
         public SupRow(Supplier s) => Supplier = s;
     }
 
@@ -106,7 +107,7 @@ public partial class SuppliersView : UserControl, IModuleView
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = Lang.T(expand ? "Common.HideColumnFilter" : "Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
@@ -186,9 +187,9 @@ public partial class SuppliersView : UserControl, IModuleView
         _editingId = null;
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Khai Báo Nhà Cung Cấp Mới";
-        FormSaveBtn.Content = "Lưu nhà cung cấp";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("Suppliers.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("Suppliers.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         FName.Text = FCode.Text = FTaxCode.Text = FAddress.Text = FPhone.Text = FBankAccount.Text = "";
     }
 
@@ -204,9 +205,9 @@ public partial class SuppliersView : UserControl, IModuleView
         FPhone.Text = s.Phone;
         FBankAccount.Text = s.BankAccount;
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Nhà Cung Cấp — {s.Name}";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("Suppliers.Form.ViewTitle", s.Name);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -216,9 +217,9 @@ public partial class SuppliersView : UserControl, IModuleView
         _mode = "edit";
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = $"Sửa Nhà Cung Cấp — {FName.Text}";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("Suppliers.Form.EditTitle", FName.Text);
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         FName.Focus();
         FName.SelectAll();
     }
@@ -257,14 +258,14 @@ public partial class SuppliersView : UserControl, IModuleView
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var s = AppState.FindSupplier(_editingId);
             if (s != null) { EnterViewMode(s); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -272,7 +273,7 @@ public partial class SuppliersView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -282,9 +283,9 @@ public partial class SuppliersView : UserControl, IModuleView
 
         ClearWarnings();
         var ok = true;
-        if (string.IsNullOrWhiteSpace(FName.Text)) { ShowWarn(WName, "Vui lòng nhập tên nhà cung cấp."); ok = false; }
-        if (string.IsNullOrWhiteSpace(FCode.Text)) { ShowWarn(WCode, "Vui lòng nhập tên gọi tắt."); ok = false; }
-        if (string.IsNullOrWhiteSpace(FTaxCode.Text)) { ShowWarn(WTaxCode, "Vui lòng nhập mã số thuế."); ok = false; }
+        if (string.IsNullOrWhiteSpace(FName.Text)) { ShowWarn(WName, Lang.T("Suppliers.Warn.Name")); ok = false; }
+        if (string.IsNullOrWhiteSpace(FCode.Text)) { ShowWarn(WCode, Lang.T("Suppliers.Warn.Code")); ok = false; }
+        if (string.IsNullOrWhiteSpace(FTaxCode.Text)) { ShowWarn(WTaxCode, Lang.T("Suppliers.Warn.TaxCode")); ok = false; }
         if (!ok) return;
 
         var supplier = new Supplier
@@ -321,8 +322,8 @@ public partial class SuppliersView : UserControl, IModuleView
         // Không còn tham chiếu → xóa thường
         if (lotCount == 0 && receiptCount == 0 && !hasQuote)
         {
-            if (MessageBox.Show($"Bạn có chắc muốn xóa nhà cung cấp \"{s.Name}\"?",
-                    "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            if (MessageBox.Show(Lang.T("Suppliers.Confirm.DeleteSimple", s.Name),
+                    Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             try
             {
                 AppState.DeleteSupplier(s.Id);
@@ -330,20 +331,18 @@ public partial class SuppliersView : UserControl, IModuleView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             return;
         }
 
         // Còn tham chiếu → đề nghị xóa cưỡng bức (kèm toàn bộ dữ liệu liên quan)
         var parts = new List<string>();
-        if (receiptCount > 0) parts.Add($"{receiptCount} phiếu nhập");
-        if (lotCount > 0) parts.Add($"{lotCount} kiện gỗ");
-        if (hasQuote) parts.Add("bảng báo giá");
-        var msg = $"Nhà cung cấp \"{s.Name}\" đang gắn với {string.Join(", ", parts)}.\n\n" +
-                  "Xóa nhà cung cấp này sẽ xóa KÈM toàn bộ dữ liệu trên. Hành động KHÔNG THỂ hoàn tác.\n\n" +
-                  "Tiếp tục?";
-        if (MessageBox.Show(msg, "Xóa nhà cung cấp",
+        if (receiptCount > 0) parts.Add(Lang.T("Suppliers.ForceDeletePart.Receipts", receiptCount));
+        if (lotCount > 0) parts.Add(Lang.T("Suppliers.ForceDeletePart.Lots", lotCount));
+        if (hasQuote) parts.Add(Lang.T("Suppliers.ForceDeletePart.Quote"));
+        var msg = Lang.T("Suppliers.Confirm.DeleteForce", s.Name, string.Join(", ", parts));
+        if (MessageBox.Show(msg, Lang.T("Suppliers.Confirm.DeleteForceTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try
         {
@@ -353,7 +352,7 @@ public partial class SuppliersView : UserControl, IModuleView
         catch (Exception ex)
         {
             // Vd: có kiện đã xuất kho → chặn (giữ truy xuất nguồn gốc)
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
