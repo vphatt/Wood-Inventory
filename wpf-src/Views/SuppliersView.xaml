@@ -209,7 +209,7 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Disabled">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="THAO TÁC" Width="250" MinWidth="250"
+                                <DataGridTemplateColumn Header="THAO TÁC" Width="290" MinWidth="290"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -217,7 +217,7 @@
                                                 <Button Style="{StaticResource BtnLink}" ToolTip="Xem báo giá của NCC này"
                                                         Click="OpenQuotation_Click" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="Xem báo giá" FontSize="12"/>
+                                                        <TextBlock Text="{Binding QuoteButtonText}" FontSize="12"/>
                                                         <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="4,2,0,0"/>
                                                     </StackPanel>
                                                 </Button>

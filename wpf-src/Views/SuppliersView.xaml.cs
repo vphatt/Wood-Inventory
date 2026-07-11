@@ -18,6 +18,8 @@ public partial class SuppliersView : UserControl, IModuleView
         public string CodeLabel => $"Tên gọi tắt: {Supplier.Code}";
         public string TaxCode => string.IsNullOrWhiteSpace(Supplier.TaxCode) ? "—" : Supplier.TaxCode;
         public string Address => string.IsNullOrWhiteSpace(Supplier.Address) ? "—" : Supplier.Address;
+        public int QuoteCount => AppState.QuotationItemCount(Supplier.Id);
+        public string QuoteButtonText => $"Xem báo giá ({QuoteCount} mục)";
         public SupRow(Supplier s) => Supplier = s;
     }
 

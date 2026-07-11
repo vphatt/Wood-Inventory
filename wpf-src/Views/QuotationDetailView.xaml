@@ -87,23 +87,23 @@
                         Click="BtnToggleAdd_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,1,6,0"/>
-                        <TextBlock Text="Thêm mục giá"/>
+                        <TextBlock Text="Thêm báo giá"/>
                     </StackPanel>
                 </Button>
             </Grid>
 
-            <!-- ===== Form thêm/sửa/xem mục giá ===== -->
+            <!-- ===== Form thêm/sửa/xem báo giá ===== -->
             <Border x:Name="AddFormPanel" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,24" Visibility="Collapsed">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="FormTitle" Text="Thêm Mục Giá Mới" FontSize="13" FontWeight="Bold"
+                        <TextBlock x:Name="FormTitle" Text="Thêm Báo Giá Mới" FontSize="13" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                     <Border Height="1" Background="{StaticResource Slate100}" Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Chỉ Loại gỗ và Đơn giá là bắt buộc. Để trống field nào thì mục giá đó khớp với MỌI giá trị của field đó (vd để trống Xuất xứ = áp dụng cho mọi xuất xứ)."
+                    <TextBlock Text="Chỉ Loại gỗ và Đơn giá là bắt buộc. Để trống field nào thì báo giá đó khớp với MỌI giá trị của field đó (vd để trống Xuất xứ = áp dụng cho mọi xuất xứ)."
                                FontSize="11" Foreground="{StaticResource Slate500}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                     <Grid>
@@ -219,7 +219,7 @@
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                         <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="Hủy bỏ" Click="BtnCancelAdd_Click"/>
-                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu mục giá"
+                        <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="Lưu báo giá"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -292,13 +292,13 @@
                 </UniformGrid>
             </Border>
 
-            <!-- ===== Bảng mục giá (DataGrid tương tác) ===== -->
+            <!-- ===== Bảng báo giá (DataGrid tương tác) ===== -->
             <Border Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
                 <DockPanel>
                     <Border DockPanel.Dock="Bottom" Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
                             BorderThickness="0,1,0,0" Padding="24,10">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Tổng số mục giá:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Tổng số báo giá:" Foreground="{StaticResource Slate500}" VerticalAlignment="Center"/>
                             <TextBlock x:Name="TotalCount" Text="0" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
                                        Foreground="{StaticResource Slate800}" Margin="6,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -438,7 +438,7 @@
                                                 <Button Style="{StaticResource BtnIcon}" ToolTip="Xem chi tiết" Click="ViewRow_Click">
                                                     <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                 </Button>
-                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa mục giá"
+                                                <Button Style="{StaticResource BtnIconDanger}" ToolTip="Xóa báo giá"
                                                         Margin="8,0,0,0" Click="DeleteRow_Click">
                                                     <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                 </Button>
@@ -449,7 +449,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Chưa có mục giá nào. Bấm &quot;Thêm mục giá&quot; để khai báo."
+                        <TextBlock x:Name="EmptyRow" Grid.ColumnSpan="2" Text="Chưa có báo giá nào. Bấm &quot;Thêm báo giá&quot; để khai báo."
                                    Foreground="{StaticResource Slate400}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center" Margin="0,60" Visibility="Collapsed"/>
                     </Grid>

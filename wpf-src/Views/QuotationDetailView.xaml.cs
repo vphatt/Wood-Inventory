@@ -10,7 +10,7 @@ using WoodInventory.Helpers;
 
 namespace WoodInventory.Views;
 
-/// <summary>Trang chi tiết báo giá của MỘT nhà cung cấp: danh sách mục giá + search/filter + CRUD.</summary>
+/// <summary>Trang chi tiết báo giá của MỘT nhà cung cấp: danh sách báo giá + search/filter + CRUD.</summary>
 public partial class QuotationDetailView : UserControl
 {
     public sealed class ItemRow
@@ -319,8 +319,8 @@ public partial class QuotationDetailView : UserControl
         _editingId = null;
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Thêm Mục Giá Mới";
-        FormSaveBtn.Content = "Lưu mục giá";
+        FormTitle.Text = "Thêm Báo Giá Mới";
+        FormSaveBtn.Content = "Lưu báo giá";
         FormCancelBtn.Content = "Hủy bỏ";
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
@@ -356,7 +356,7 @@ public partial class QuotationDetailView : UserControl
         ClearWarnings();
         FillForm(it);
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Mục Giá — {it.WoodType} ({new ItemRow(it).ThicknessText})";
+        FormTitle.Text = $"Chi Tiết Báo Giá — {it.WoodType} ({new ItemRow(it).ThicknessText})";
         FormSaveBtn.Content = "Chỉnh sửa";
         FormCancelBtn.Content = "Đóng";
         AddFormPanel.Visibility = Visibility.Visible;
@@ -367,7 +367,7 @@ public partial class QuotationDetailView : UserControl
         _mode = "edit";
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Sửa Mục Giá";
+        FormTitle.Text = "Sửa Báo Giá";
         FormSaveBtn.Content = "Cập nhật";
         FormCancelBtn.Content = "Hủy sửa";
         FWoodSubType.Focus();
@@ -481,7 +481,7 @@ public partial class QuotationDetailView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
-        var confirm = MessageBox.Show($"Xóa mục giá {r.WoodType} ({r.ThicknessText}) khỏi báo giá?",
+        var confirm = MessageBox.Show($"Xóa báo giá {r.WoodType} ({r.ThicknessText})?",
             "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
