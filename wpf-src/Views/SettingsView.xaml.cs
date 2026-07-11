@@ -96,16 +96,16 @@ public partial class SettingsView : UserControl, IModuleView
         ClearWarnings();
         var ok = true;
 
-        if (string.IsNullOrWhiteSpace(FCompanyName.Text)) { ShowWarn(WCompanyName, "Vui lòng nhập tên công ty."); ok = false; }
+        if (string.IsNullOrWhiteSpace(FCompanyName.Text)) { ShowWarn(WCompanyName, Lang.T("Settings.Warn.CompanyName")); ok = false; }
 
         var exchangeRate = Fmt.ParseNum(FExchangeRate.Text);
-        if (exchangeRate <= 0) { ShowWarn(WExchangeRate, "Tỷ giá phải lớn hơn 0."); ok = false; }
+        if (exchangeRate <= 0) { ShowWarn(WExchangeRate, Lang.T("Settings.Warn.ExchangeRate")); ok = false; }
 
         var decimals = (int)Fmt.ParseNum(FVolumeDecimals.Text);
-        if (decimals < 0 || decimals > 15) { ShowWarn(WVolumeDecimals, "Số chữ số thập phân phải từ 0 đến 15."); ok = false; }
+        if (decimals < 0 || decimals > 15) { ShowWarn(WVolumeDecimals, Lang.T("Settings.Warn.VolumeDecimals")); ok = false; }
 
         var lowStock = (int)Fmt.ParseNum(FLowStockThreshold.Text);
-        if (lowStock < 0) { ShowWarn(WLowStockThreshold, "Ngưỡng cảnh báo không được âm."); ok = false; }
+        if (lowStock < 0) { ShowWarn(WLowStockThreshold, Lang.T("Settings.Warn.LowStock")); ok = false; }
 
         if (!ok) return;
 
@@ -121,7 +121,7 @@ public partial class SettingsView : UserControl, IModuleView
             LowStockThreshold = lowStock
         });
 
-        MessageBox.Show("Đã lưu cài đặt.", "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(Lang.T("Settings.SavedMessage"), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     // ---------------- Dữ liệu: sao lưu / phục hồi / mở thư mục ----------------
@@ -130,7 +130,7 @@ public partial class SettingsView : UserControl, IModuleView
     {
         var dialog = new SaveFileDialog
         {
-            Title = "Sao lưu dữ liệu",
+            Title = Lang.T("Settings.Backup.DialogTitle"),
             Filter = "SQLite Database (*.db)|*.db",
             FileName = $"woodinventory-backup-{DateTime.Now:yyyyMMdd-HHmmss}.db"
         };
@@ -147,23 +147,22 @@ public partial class SettingsView : UserControl, IModuleView
                 cmd.ExecuteNonQuery();
             }
             File.Copy(AppDbContext.DbPath, dialog.FileName, overwrite: true);
-            MessageBox.Show($"Đã sao lưu vào:\n{dialog.FileName}", "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Lang.T("Settings.Backup.SuccessMessage", dialog.FileName), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Sao lưu thất bại: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(Lang.T("Settings.Backup.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private void BtnRestore_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Chọn file sao lưu", Filter = "SQLite Database (*.db)|*.db" };
+        var dialog = new OpenFileDialog { Title = Lang.T("Settings.Restore.DialogTitle"), Filter = "SQLite Database (*.db)|*.db" };
         if (dialog.ShowDialog() != true) return;
 
         var confirm = MessageBox.Show(
-            "Toàn bộ dữ liệu hiện tại sẽ bị THAY THẾ bằng file sao lưu đã chọn và không thể hoàn tác.\n" +
-            "Ứng dụng sẽ khởi động lại ngay sau khi phục hồi xong. Tiếp tục?",
-            "Xác nhận phục hồi dữ liệu", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            Lang.T("Settings.Restore.ConfirmMessage"),
+            Lang.T("Settings.Restore.ConfirmTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
 
         try
@@ -181,7 +180,7 @@ public partial class SettingsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Phục hồi thất bại: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(Lang.T("Settings.Restore.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
