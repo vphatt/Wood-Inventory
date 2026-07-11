@@ -62,10 +62,10 @@ public partial class IssuesView : UserControl, IModuleView
     {
         var current = (FOrder.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         FOrder.Items.Clear();
-        FOrder.Items.Add(new ComboBoxItem { Content = "-- Chọn Đơn Hàng --", Tag = "" });
+        FOrder.Items.Add(new ComboBoxItem { Content = Lang.T("Issues.OrderPlaceholder"), Tag = "" });
         foreach (var o in AppState.Orders)
         {
-            var statusText = o.Status == "processing" ? "Đang sản xuất" : "Chờ xử lý";
+            var statusText = o.Status == "processing" ? Lang.T("Issues.OrderStatus.Processing") : Lang.T("Issues.OrderStatus.Pending");
             FOrder.Items.Add(new ComboBoxItem { Content = $"{o.Id} - {o.CustomerName} ({statusText})", Tag = o.Id });
         }
         foreach (ComboBoxItem item in FOrder.Items)
@@ -93,7 +93,7 @@ public partial class IssuesView : UserControl, IModuleView
         if (item.Lot == null)
         {
             item.IsValid = false;
-            item.Error = "Vui lòng chọn kiện gỗ";
+            item.Error = Lang.T("Issues.Warn.NoLot");
             item.CostPriceVnd = 0;
             item.AvailableQty = 0;
             item.AvailableCbm = 0;
@@ -109,13 +109,13 @@ public partial class IssuesView : UserControl, IModuleView
         if (qty <= 0)
         {
             item.IsValid = false;
-            item.Error = "Số lượng phải lớn hơn 0";
+            item.Error = Lang.T("Issues.Warn.QtyPositive");
             return;
         }
         if (qty > item.AvailableQty)
         {
             item.IsValid = false;
-            item.Error = $"Số lượng vượt quá tồn kho khả dụng ({item.AvailableQty})";
+            item.Error = Lang.T("Issues.Warn.QtyExceeds", item.AvailableQty);
             return;
         }
 
@@ -179,10 +179,11 @@ public partial class IssuesView : UserControl, IModuleView
         Cell(item.WoodLotId, 1, HorizontalAlignment.Left, weight: FontWeights.SemiBold,
             color: (Brush)FindResource("Slate900"), margin: new Thickness(12, 0, 6, 0));
         Cell(item.Lot != null
-            ? $"{item.Lot.WoodName} — Grade: {item.Lot.Grade} • {Fmt.Num(item.Lot.ThicknessMm)}x{Fmt.Num(item.Lot.WidthMm)}x{Fmt.Num(item.Lot.LengthMm)}mm"
+            ? Lang.T("Issues.RowInfo.ReadOnly", item.Lot.WoodName, item.Lot.Grade,
+                Fmt.Num(item.Lot.ThicknessMm), Fmt.Num(item.Lot.WidthMm), Fmt.Num(item.Lot.LengthMm))
             : "-", 2, HorizontalAlignment.Left, mono: false);
-        Cell(item.Lot != null ? $"{item.AvailableQty} thanh / {Fmt.M3Short(item.AvailableCbm)} m³" : "-", 3, HorizontalAlignment.Center);
-        Cell(item.Quantity + " thanh", 4, HorizontalAlignment.Center);
+        Cell(item.Lot != null ? Lang.T("Issues.AvailableText", item.AvailableQty, Lang.T("Common.Unit.Bar"), Fmt.M3Short(item.AvailableCbm)) : "-", 3, HorizontalAlignment.Center);
+        Cell(Lang.T("Issues.QtyUnitText", item.Quantity, Lang.T("Common.Unit.Bar")), 4, HorizontalAlignment.Center);
         Cell($"{Fmt.M3(item.Cbm)} m³", 5, HorizontalAlignment.Right, color: (Brush)FindResource("Blue600"), weight: FontWeights.Medium);
         Cell(item.Lot != null ? Fmt.Vnd(item.CostPriceVnd) : "-", 6, HorizontalAlignment.Right, color: (Brush)FindResource("Slate500"));
         Cell(item.TotalValueVnd > 0 ? Fmt.Vnd(item.TotalValueVnd) : "-", 7, HorizontalAlignment.Right,
@@ -257,7 +258,8 @@ public partial class IssuesView : UserControl, IModuleView
                 });
                 infoPanel.Children.Add(new TextBlock
                 {
-                    Text = $"Grade: {item.Lot.Grade} • Kích thước: {Fmt.Num(item.Lot.ThicknessMm)}x{Fmt.Num(item.Lot.WidthMm)}x{Fmt.Num(item.Lot.LengthMm)}mm",
+                    Text = Lang.T("Issues.RowInfo.GradeSize", item.Lot.Grade,
+                        Fmt.Num(item.Lot.ThicknessMm), Fmt.Num(item.Lot.WidthMm), Fmt.Num(item.Lot.LengthMm)),
                     FontSize = 10, Foreground = (Brush)FindResource("Slate400"), Margin = new Thickness(0, 2, 0, 0)
                 });
             }
@@ -270,7 +272,7 @@ public partial class IssuesView : UserControl, IModuleView
                 });
             }
             availText.Text = item.Lot != null
-                ? $"{item.AvailableQty} thanh / {Fmt.M3Short(item.AvailableCbm)} m³" : "-";
+                ? Lang.T("Issues.AvailableText", item.AvailableQty, Lang.T("Common.Unit.Bar"), Fmt.M3Short(item.AvailableCbm)) : "-";
             cbmText.Text = $"{Fmt.M3(item.Cbm)} m³";
             costText.Text = item.Lot != null ? Fmt.Vnd(item.CostPriceVnd) : "-";
             totalText.Text = item.TotalValueVnd > 0 ? Fmt.Vnd(item.TotalValueVnd) : "-";
@@ -284,11 +286,13 @@ public partial class IssuesView : UserControl, IModuleView
             FontFamily = (FontFamily)FindResource("FontMono"),
             Margin = new Thickness(12, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center
         };
-        lotCombo.Items.Add(new ComboBoxItem { Content = "-- Chọn Kiện gỗ --", Tag = "", IsSelected = item.WoodLotId == "" });
+        lotCombo.Items.Add(new ComboBoxItem { Content = Lang.T("Issues.LotComboPlaceholder"), Tag = "", IsSelected = item.WoodLotId == "" });
         foreach (var lot in availableLots)
             lotCombo.Items.Add(new ComboBoxItem
             {
-                Content = $"{lot.Id} ({lot.WoodType}{(string.IsNullOrWhiteSpace(lot.WoodSubType) ? "" : " · " + lot.WoodSubType)} - {lot.Quantity} thanh còn)",
+                Content = Lang.T("Issues.LotComboItem", lot.Id,
+                    lot.WoodType + (string.IsNullOrWhiteSpace(lot.WoodSubType) ? "" : " · " + lot.WoodSubType),
+                    lot.Quantity, Lang.T("Common.Unit.Bar")),
                 Tag = lot.Id,
                 IsSelected = lot.Id == item.WoodLotId
             });
@@ -360,7 +364,7 @@ public partial class IssuesView : UserControl, IModuleView
             });
             row.Children.Add(new TextBlock
             {
-                Text = $"Dòng #{i + 1}: {_draftItems[i].Error}",
+                Text = Lang.T("Issues.ErrorRow", i + 1, _draftItems[i].Error),
                 Foreground = (Brush)FindResource("Rose600"), FontWeight = FontWeights.Medium,
                 Margin = new Thickness(8, 0, 0, 0)
             });
@@ -389,9 +393,9 @@ public partial class IssuesView : UserControl, IModuleView
         _editingIssueId = null;
         SetHeaderReadOnly(false);
         BtnAddRow.Visibility = Visibility.Visible;
-        FormTitle.Text = "Tạo Phiếu Xuất Kho Mới";
-        FormSaveBtn.Content = "Xác nhận xuất kho sản xuất";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("Issues.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("Issues.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         FDate.SelectedDate = DateTime.Today;
         if (FOrder.Items.Count > 0) FOrder.SelectedIndex = 0;
         ResetDraft();
@@ -405,9 +409,9 @@ public partial class IssuesView : UserControl, IModuleView
         LoadIssueIntoForm(i);
         SetHeaderReadOnly(true);
         BtnAddRow.Visibility = Visibility.Collapsed;
-        FormTitle.Text = $"Chi Tiết Phiếu Xuất — {i.Id}";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("Issues.Form.ViewTitle", i.Id);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -419,9 +423,9 @@ public partial class IssuesView : UserControl, IModuleView
         SetHeaderReadOnly(false);
         RebuildRows();
         BtnAddRow.Visibility = Visibility.Visible;
-        FormTitle.Text = $"Sửa Phiếu Xuất — {_editingIssueId}";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("Issues.Form.EditTitle", _editingIssueId);
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -465,14 +469,14 @@ public partial class IssuesView : UserControl, IModuleView
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var i = AppState.Issues.FirstOrDefault(x => x.Id == _editingIssueId);
             if (i != null) { EnterViewMode(i); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -480,7 +484,7 @@ public partial class IssuesView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSaveIssue_Click(object sender, RoutedEventArgs e)
@@ -491,7 +495,7 @@ public partial class IssuesView : UserControl, IModuleView
         var orderId = (FOrder.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         if (orderId.Length == 0)
         {
-            MessageBox.Show("Vui lòng chọn hoặc lập Đơn hàng sản xuất.", "Quản Lý Gỗ",
+            MessageBox.Show(Lang.T("Issues.Warn.OrderRequired"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -500,8 +504,8 @@ public partial class IssuesView : UserControl, IModuleView
         var invalid = _draftItems.FirstOrDefault(i => !i.IsValid);
         if (invalid != null)
         {
-            MessageBox.Show($"Lỗi danh sách xuất kho: {invalid.Error}. Vui lòng kiểm tra lại.",
-                "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Lang.T("Issues.Warn.ListError", invalid.Error),
+                Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         var date = FDate.SelectedDate ?? DateTime.Today;
@@ -534,7 +538,7 @@ public partial class IssuesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -554,8 +558,8 @@ public partial class IssuesView : UserControl, IModuleView
     {
         if ((sender as FrameworkElement)?.DataContext is not IssRow r) return;
         if (MessageBox.Show(
-                $"Xóa phiếu xuất {r.Id} ({r.Qty} thanh)? Tồn kho các kiện liên quan sẽ được hoàn trả.\nHành động này không thể hoàn tác.",
-                "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                Lang.T("Issues.Confirm.DeleteIssue", r.Id, r.Qty, Lang.T("Common.Unit.Bar")),
+                Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         try
         {
@@ -564,7 +568,7 @@ public partial class IssuesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -580,7 +584,7 @@ public partial class IssuesView : UserControl, IModuleView
         public string DateText => Fmt.Date(Issue.Date);
         public List<string> LotIds { get; }
         public int Qty { get; }
-        public string QtyText => $"{Qty} thanh";
+        public string QtyText => Lang.T("Issues.QtyUnitText", Qty, Lang.T("Common.Unit.Bar"));
         public double Vol { get; }
         public string VolText => $"{Fmt.M3(Vol)} m³";
         public decimal Val { get; }
@@ -603,7 +607,7 @@ public partial class IssuesView : UserControl, IModuleView
     {
         var current = (FilterOrder.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterOrder.Items.Clear();
-        FilterOrder.Items.Add(new ComboBoxItem { Content = "Tất cả đơn hàng", Tag = "ALL" });
+        FilterOrder.Items.Add(new ComboBoxItem { Content = Lang.T("Issues.Filter.AllOrders"), Tag = "ALL" });
         foreach (var o in AppState.Orders)
             FilterOrder.Items.Add(new ComboBoxItem { Content = $"{o.Id} - {o.CustomerName}", Tag = o.Id });
         foreach (ComboBoxItem it in FilterOrder.Items)
@@ -686,7 +690,7 @@ public partial class IssuesView : UserControl, IModuleView
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = expand ? Lang.T("Common.HideColumnFilter") : Lang.T("Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
