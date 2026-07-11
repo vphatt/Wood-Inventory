@@ -24,9 +24,9 @@ public class WoodCategory
     public VolumeRule VolumeRule { get; set; }
 
     /// <summary>Nhãn hiển thị của nguyên tắc tính m³.</summary>
-    public string VolumeRuleLabel => VolumeRule == VolumeRule.ByFootage
-        ? "Theo Footage"
-        : "Theo quy cách (Dày x Rộng x Dài)";
+    public string VolumeRuleLabel => Helpers.Lang.T(VolumeRule == VolumeRule.ByFootage
+        ? "WoodCategories.Rule.ByFootage"
+        : "WoodCategories.Rule.BySpec");
 }
 
 /// <summary>

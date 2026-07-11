@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using WoodInventory.Data;
 using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
 namespace WoodInventory.Views;
 
@@ -18,7 +19,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         public string RuleLabel => Category.VolumeRuleLabel;
         public bool IsFootage => Category.VolumeRule == VolumeRule.ByFootage;
         public int SubCount => AppState.SubCategoriesOf(Category.Id).Count();
-        public string SubCountText => SubCount == 0 ? "Chưa phân loại" : $"{SubCount} phân loại";
+        public string SubCountText => SubCount == 0 ? Lang.T("WoodCategories.SubCount.None") : Lang.T("WoodCategories.SubCount.Text", SubCount);
         public CatRow(WoodCategory c) => Category = c;
     }
 
@@ -44,22 +45,22 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     private void InitFilterCombo()
     {
-        FilterRule.Items.Add(new ComboBoxItem { Content = "Tất cả nguyên tắc", Tag = "ALL", IsSelected = true });
-        FilterRule.Items.Add(new ComboBoxItem { Content = "Theo quy cách", Tag = "SPEC" });
-        FilterRule.Items.Add(new ComboBoxItem { Content = "Theo Footage", Tag = "FOOT" });
+        FilterRule.Items.Add(new ComboBoxItem { Content = Lang.T("WoodCategories.Filter.AllRules"), Tag = "ALL", IsSelected = true });
+        FilterRule.Items.Add(new ComboBoxItem { Content = Lang.T("WoodCategories.Filter.Spec"), Tag = "SPEC" });
+        FilterRule.Items.Add(new ComboBoxItem { Content = Lang.T("WoodCategories.Rule.ByFootage"), Tag = "FOOT" });
     }
 
     private void InitRuleCombo()
     {
         FRule.Items.Add(new ComboBoxItem
         {
-            Content = "Theo quy cách (Dày x Rộng x Dài)",
+            Content = Lang.T("WoodCategories.Rule.BySpec"),
             Tag = VolumeRule.BySpecification,
             IsSelected = true
         });
         FRule.Items.Add(new ComboBoxItem
         {
-            Content = "Theo Footage",
+            Content = Lang.T("WoodCategories.Rule.ByFootage"),
             Tag = VolumeRule.ByFootage
         });
         FRule.SelectionChanged += (_, _) => UpdateRuleHint();
@@ -78,9 +79,9 @@ public partial class WoodCategoriesView : UserControl, IModuleView
     private void UpdateRuleHint()
     {
         if (RuleHint == null) return;
-        RuleHint.Text = SelectedRule == VolumeRule.ByFootage
-            ? "Khi nhập/xuất loại gỗ này, hệ thống tính m³ theo Footage — bắt buộc nhập Độ dày và Footage (không cần Rộng/Dài)."
-            : "Khi nhập/xuất loại gỗ này, hệ thống tính m³ theo quy cách — bắt buộc nhập đầy đủ Độ dày, Chiều rộng và Chiều dài.";
+        RuleHint.Text = Lang.T(SelectedRule == VolumeRule.ByFootage
+            ? "WoodCategories.RuleHint.Footage"
+            : "WoodCategories.RuleHint.Spec");
     }
 
     public void RefreshView()
@@ -143,7 +144,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = Lang.T(expand ? "Common.HideColumnFilter" : "Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
@@ -220,9 +221,9 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         _editingId = null;
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Khai Báo Loại Gỗ Mới";
-        FormSaveBtn.Content = "Lưu loại gỗ";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("WoodCategories.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("WoodCategories.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         FName.Text = "";
         SelectRule(VolumeRule.BySpecification);
     }
@@ -235,9 +236,9 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         FName.Text = cat.Name;
         SelectRule(cat.VolumeRule);
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Loại Gỗ — {cat.Name}";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("WoodCategories.Form.ViewTitle", cat.Name);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -247,9 +248,9 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         _mode = "edit";
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = $"Sửa Loại Gỗ — {FName.Text}";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("WoodCategories.Form.EditTitle", FName.Text);
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         FName.Focus();
         FName.SelectAll();
     }
@@ -287,14 +288,14 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var cat = AppState.Categories.FirstOrDefault(c => c.Id == _editingId);
             if (cat != null) { EnterViewMode(cat); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -302,7 +303,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -314,7 +315,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         var name = (FName.Text ?? "").Trim();
         if (name.Length == 0)
         {
-            ShowWarn(WName, "Vui lòng nhập tên loại gỗ.");
+            ShowWarn(WName, Lang.T("WoodCategories.Warn.Name"));
             return;
         }
 
@@ -345,8 +346,8 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     private void DeleteCategory(WoodCategory cat)
     {
-        var confirm = MessageBox.Show($"Bạn có chắc muốn xóa loại gỗ \"{cat.Name}\" khỏi danh mục?",
-            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show(Lang.T("WoodCategories.Confirm.Delete", cat.Name),
+            Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         try
@@ -356,7 +357,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

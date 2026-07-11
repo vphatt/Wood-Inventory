@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using WoodInventory.Data;
 using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
 namespace WoodInventory.Views;
 
@@ -34,8 +35,8 @@ public partial class WoodSubCategoriesView : UserControl
         InitializeComponent();
         _category = category;
         _back = back;
-        TitleName.Text = $"Phân loại — {category.Name}";
-        Subtitle.Text = $"Nguyên tắc tính m³: {category.VolumeRuleLabel}";
+        TitleName.Text = Lang.T("WoodSubCategories.TitleName", category.Name);
+        Subtitle.Text = Lang.T("WoodSubCategories.Subtitle", category.VolumeRuleLabel);
         RebuildList();
         Helpers.GridLayoutStore.Attach(SubGrid, "wood-subcategories");
         Helpers.GridPairSync.Link(SubGrid, ActionGrid);
@@ -98,8 +99,8 @@ public partial class WoodSubCategoriesView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not SubRow r) return;
-        if (MessageBox.Show($"Xóa phân loại \"{r.Name}\" khỏi loại {_category.Name}?",
-                "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (MessageBox.Show(Lang.T("WoodSubCategories.Confirm.Delete", r.Name, _category.Name),
+                Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         try
         {
@@ -108,7 +109,7 @@ public partial class WoodSubCategoriesView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -126,9 +127,9 @@ public partial class WoodSubCategoriesView : UserControl
         _editingId = null;
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Thêm Phân Loại Mới";
-        FormSaveBtn.Content = "Lưu phân loại";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("WoodSubCategories.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("WoodSubCategories.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         FName.Text = "";
     }
 
@@ -139,9 +140,9 @@ public partial class WoodSubCategoriesView : UserControl
         ClearWarnings();
         FName.Text = s.Name;
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Phân Loại — {s.Name}";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("WoodSubCategories.Form.ViewTitle", s.Name);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -150,9 +151,9 @@ public partial class WoodSubCategoriesView : UserControl
         _mode = "edit";
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = $"Sửa Phân Loại — {FName.Text}";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("WoodSubCategories.Form.EditTitle", FName.Text);
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         FName.Focus();
         FName.SelectAll();
     }
@@ -173,14 +174,14 @@ public partial class WoodSubCategoriesView : UserControl
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var s = AppState.SubCategories.FirstOrDefault(x => x.Id == _editingId);
             if (s != null) { EnterViewMode(s); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -188,7 +189,7 @@ public partial class WoodSubCategoriesView : UserControl
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -199,7 +200,7 @@ public partial class WoodSubCategoriesView : UserControl
         ClearWarnings();
         if (string.IsNullOrWhiteSpace(FName.Text))
         {
-            ShowWarn(WName, "Vui lòng nhập tên phân loại.");
+            ShowWarn(WName, Lang.T("WoodSubCategories.Warn.Name"));
             return;
         }
 
