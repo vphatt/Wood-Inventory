@@ -44,6 +44,7 @@
   "Common.Tooltip.Edit": "编辑",
   "Common.Confirm.DiscardEdit": "更改尚未保存，确定要取消吗？",
   "Common.Confirm.DiscardAdd": "填写的信息尚未保存，确定要取消吗？",
+  "Common.BackLink": "返回",
 
   "Settings.Title": "设置",
   "Settings.Language.Title": "语言",
@@ -217,5 +218,24 @@
   "Receipts.Warn.QuantityRequired": "批次 {0}：数量必须大于 0。",
   "Receipts.RecRow.LotCountText": "{0} 个批次",
   "Receipts.Row.DecimalsTooltip": "该行 m³ 四舍五入保留的小数位数（默认 5）",
-  "Receipts.Row.AdjustmentTooltip": "四舍五入后再加/减的微调量，例如 0.0001 或 -0.0002"
+  "Receipts.Row.AdjustmentTooltip": "四舍五入后再加/减的微调量，例如 0.0001 或 -0.0002",
+
+  "ReceiptReport.Title": "入库明细汇总表",
+  "ReceiptReport.Subtitle": "所有已入库批次及其入库时的数量、体积和价值。",
+  "ReceiptReport.SearchHint": "搜索批次编号、单号、发票、产地...",
+  "ReceiptReport.Filter.Invoice": "发票",
+  "ReceiptReport.Filter.WoodType": "木材名称",
+  "ReceiptReport.Filter.SubType": "木材分类",
+  "ReceiptReport.Filter.Qty": "入库数量",
+  "ReceiptReport.Filter.Vol": "体积 M³",
+  "ReceiptReport.Filter.Currency": "货币单位",
+  "ReceiptReport.Filter.ExRate": "汇率",
+  "ReceiptReport.Filter.Tax": "增值税",
+  "ReceiptReport.Filter.Subtotal": "未税总额",
+  "ReceiptReport.Filter.Vat": "增值税额",
+  "ReceiptReport.Totals.Lots": "总批次数：",
+  "ReceiptReport.Totals.Qty": "入库总数量：",
+  "ReceiptReport.Totals.Vol": "入库总体积：",
+  "ReceiptReport.Totals.Val": "入库总价值：",
+  "ReceiptReport.Empty": "没有符合筛选条件的入库批次。"
 }

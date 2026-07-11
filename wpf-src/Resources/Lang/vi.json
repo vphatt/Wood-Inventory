@@ -44,6 +44,7 @@
   "Common.Tooltip.Edit": "Chỉnh sửa",
   "Common.Confirm.DiscardEdit": "Những thay đổi sẽ không được lưu, tiếp tục huỷ?",
   "Common.Confirm.DiscardAdd": "Các thông tin chưa được lưu, tiếp tục huỷ?",
+  "Common.BackLink": "Quay lại",
 
   "Settings.Title": "Cài Đặt",
   "Settings.Language.Title": "Ngôn Ngữ",
@@ -217,5 +218,24 @@
   "Receipts.Warn.QuantityRequired": "Kiện {0}: Số lượng phải lớn hơn 0.",
   "Receipts.RecRow.LotCountText": "{0} kiện",
   "Receipts.Row.DecimalsTooltip": "Số chữ số thập phân làm tròn m³ của riêng dòng này (mặc định 5)",
-  "Receipts.Row.AdjustmentTooltip": "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002"
+  "Receipts.Row.AdjustmentTooltip": "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002",
+
+  "ReceiptReport.Title": "Bảng Tổng Chi Tiết Nhập Kho",
+  "ReceiptReport.Subtitle": "Toàn bộ kiện gỗ đã nhập cùng số lượng, thể tích và giá trị tại thời điểm nhập kho.",
+  "ReceiptReport.SearchHint": "Tìm mã kiện, số phiếu, invoice, xuất xứ...",
+  "ReceiptReport.Filter.Invoice": "HÓA ĐƠN",
+  "ReceiptReport.Filter.WoodType": "TÊN GỖ",
+  "ReceiptReport.Filter.SubType": "PHÂN LOẠI GỖ",
+  "ReceiptReport.Filter.Qty": "SỐ LƯỢNG NHẬP",
+  "ReceiptReport.Filter.Vol": "THỂ TÍCH M³",
+  "ReceiptReport.Filter.Currency": "ĐƠN VỊ",
+  "ReceiptReport.Filter.ExRate": "TỶ GIÁ",
+  "ReceiptReport.Filter.Tax": "THUẾ VAT",
+  "ReceiptReport.Filter.Subtotal": "TỔNG CHƯA THUẾ",
+  "ReceiptReport.Filter.Vat": "TIỀN THUẾ VAT",
+  "ReceiptReport.Totals.Lots": "Tổng số kiện:",
+  "ReceiptReport.Totals.Qty": "Tổng số lượng nhập:",
+  "ReceiptReport.Totals.Vol": "Tổng thể tích nhập:",
+  "ReceiptReport.Totals.Val": "Tổng giá trị nhập:",
+  "ReceiptReport.Empty": "Chưa có kiện gỗ nhập kho nào khớp bộ lọc."
 }

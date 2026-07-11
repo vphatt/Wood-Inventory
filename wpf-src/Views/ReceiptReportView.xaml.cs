@@ -45,7 +45,7 @@ public partial class ReceiptReportView : UserControl
         public string FootageText => IsFootage ? Fmt.Num(Lot.Footage) : "—";
 
         // Số lượng + thể tích lúc NHẬP (ban đầu)
-        public string QtyText => $"{Fmt.N0((double)Lot.OriginalQuantity)} thanh";
+        public string QtyText => $"{Fmt.N0((double)Lot.OriginalQuantity)} {Lang.T("Common.Unit.Bar")}";
         public string VolText => $"{Fmt.M3(Lot.Cbm)} m³";
 
         // Tài chính nhập kho (tính theo Cbm gốc)
@@ -82,7 +82,7 @@ public partial class ReceiptReportView : UserControl
         // Bộ lọc nhà cung cấp
         var curSup = (FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterSupplier.Items.Clear();
-        FilterSupplier.Items.Add(new ComboBoxItem { Content = "Tất cả nhà cung cấp", Tag = "ALL" });
+        FilterSupplier.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.Filter.AllSuppliers"), Tag = "ALL" });
         foreach (var s in AppState.Suppliers)
             FilterSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         SelectByTag(FilterSupplier, curSup);
@@ -179,7 +179,7 @@ public partial class ReceiptReportView : UserControl
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = expand ? Lang.T("Common.HideColumnFilter") : Lang.T("Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
@@ -202,8 +202,8 @@ public partial class ReceiptReportView : UserControl
     private void UpdateTotals()
     {
         var rows = _view.Cast<Row>().ToList();
-        TotalLots.Text = $"{Fmt.N0((double)rows.Count)} kiện";
-        TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Qty))} thanh";
+        TotalLots.Text = Lang.T("Receipts.RecRow.LotCountText", Fmt.N0((double)rows.Count));
+        TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Qty))} {Lang.T("Common.Unit.Bar")}";
         TotalVol.Text = $"{Fmt.M3(rows.Sum(r => r.CbmV))} m³";
         TotalVal.Text = Fmt.Vnd(rows.Sum(r => r.SubtotalV + r.VatV));
         EmptyRow.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
