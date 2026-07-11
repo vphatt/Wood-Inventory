@@ -22,7 +22,7 @@ public partial class QuotationDetailView : UserControl
             ? Item.WoodType
             : $"{Item.WoodType} · {Item.WoodSubType}";
         public string Grade => Item.Grade;
-        public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "Bất kỳ" : Item.Grade;
+        public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? Lang.T("Common.AnyValue") : Item.Grade;
         public string ThicknessText => AppState.GetVolumeRule(Item.WoodType) == VolumeRule.ByFootage
             ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax)
             : Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
@@ -33,7 +33,7 @@ public partial class QuotationDetailView : UserControl
         public double? WidthMin => Item.WidthMin;
         public double? LengthMin => Item.LengthMin;
         public string Origin => Item.Origin;
-        public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? "Bất kỳ" : Item.Origin;
+        public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? Lang.T("Common.AnyValue") : Item.Origin;
         public string Specification => Item.Specification;
         public decimal Price => Item.Price;
         public string PriceCurrency => Item.PriceCurrency;
@@ -81,7 +81,7 @@ public partial class QuotationDetailView : UserControl
     private void PopulateSubCombo(string woodType, string selectSub = null)
     {
         FWoodSubType.Items.Clear();
-        FWoodSubType.Items.Add(new ComboBoxItem { Content = "— Không phân loại —", Tag = "" });
+        FWoodSubType.Items.Add(new ComboBoxItem { Content = Lang.T("Quotations.SubTypePlaceholder"), Tag = "" });
         foreach (var s in AppState.SubNamesOf(woodType))
             FWoodSubType.Items.Add(new ComboBoxItem { Content = s, Tag = s });
         SelectByTag(FWoodSubType, selectSub ?? "");
@@ -89,8 +89,8 @@ public partial class QuotationDetailView : UserControl
 
     public void RefreshView()
     {
-        TitleName.Text = $"Báo giá — {_supplier.Name}";
-        Subtitle.Text = $"Tên gọi tắt: {_supplier.Code}   •   Mã số thuế: {(string.IsNullOrWhiteSpace(_supplier.TaxCode) ? "—" : _supplier.TaxCode)}";
+        TitleName.Text = Lang.T("Quotations.TitleName", _supplier.Name);
+        Subtitle.Text = Lang.T("Quotations.Subtitle", _supplier.Code, string.IsNullOrWhiteSpace(_supplier.TaxCode) ? "—" : _supplier.TaxCode);
 
         var items = AppState.FindQuotation(_supplier.Id)?.Items ?? new List<QuotationItem>();
         _rows.Clear();
@@ -99,7 +99,7 @@ public partial class QuotationDetailView : UserControl
         // Bộ lọc loại gỗ
         var currentType = (FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterWoodType.Items.Clear();
-        FilterWoodType.Items.Add(new ComboBoxItem { Content = "Tất cả loại gỗ", Tag = "ALL" });
+        FilterWoodType.Items.Add(new ComboBoxItem { Content = Lang.T("Quotations.Filter.AllTypes"), Tag = "ALL" });
         foreach (var t in items.Select(i => i.WoodType).Distinct())
             FilterWoodType.Items.Add(new ComboBoxItem { Content = t, Tag = t });
         SelectByTag(FilterWoodType, currentType);
@@ -107,7 +107,7 @@ public partial class QuotationDetailView : UserControl
         // Bộ lọc đơn vị tiền tệ
         if (FilterCurrency.Items.Count == 0)
         {
-            FilterCurrency.Items.Add(new ComboBoxItem { Content = "Tất cả đơn vị", Tag = "ALL" });
+            FilterCurrency.Items.Add(new ComboBoxItem { Content = Lang.T("Quotations.Filter.AllCurrencies"), Tag = "ALL" });
             FilterCurrency.Items.Add(new ComboBoxItem { Content = "USD", Tag = "USD" });
             FilterCurrency.Items.Add(new ComboBoxItem { Content = "VND", Tag = "VND" });
             FilterCurrency.SelectedIndex = 0;
@@ -188,7 +188,7 @@ public partial class QuotationDetailView : UserControl
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = expand ? Lang.T("Common.HideColumnFilter") : Lang.T("Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
@@ -228,7 +228,7 @@ public partial class QuotationDetailView : UserControl
     private void UpdateThicknessLabel()
     {
         var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-        LblThickness.Text = IsFootage(woodType) ? "ĐỘ DÀY — TỪ / ĐẾN" : "ĐỘ DÀY (MM) — TỪ / ĐẾN";
+        LblThickness.Text = IsFootage(woodType) ? Lang.T("Quotations.Field.Thickness") : Lang.T("Quotations.Field.ThicknessMm");
         UpdateThicknessHints();
     }
 
@@ -251,8 +251,8 @@ public partial class QuotationDetailView : UserControl
     {
         var minOk = TryParseOptional(minText, out min);
         var maxOk = TryParseOptional(maxText, out max);
-        if (!minOk || !maxOk) { ShowWarn(warn, $"{label}: giá trị không hợp lệ."); return false; }
-        if (min != null && max != null && min > max) { ShowWarn(warn, $"{label}: giá trị 'Từ' phải nhỏ hơn hoặc bằng 'Đến'."); return false; }
+        if (!minOk || !maxOk) { ShowWarn(warn, Lang.T("Quotations.Warn.RangeInvalid", label)); return false; }
+        if (min != null && max != null && min > max) { ShowWarn(warn, Lang.T("Quotations.Warn.RangeOrder", label)); return false; }
         return true;
     }
 
@@ -272,12 +272,12 @@ public partial class QuotationDetailView : UserControl
         max = maxNote == null ? null : WoodVolumeCalculator.ParseFootageThicknessMm(maxText);
         if ((minNote != null && min == 0) || (maxNote != null && max == 0))
         {
-            ShowWarn(warn, "Độ dày: ký hiệu không hợp lệ (vd 4/4\", 8/4\", 1\").");
+            ShowWarn(warn, Lang.T("Quotations.Warn.ThicknessInvalidNote"));
             return false;
         }
         if (min != null && max != null && min > max)
         {
-            ShowWarn(warn, "Độ dày: giá trị 'Từ' phải nhỏ hơn hoặc bằng 'Đến'.");
+            ShowWarn(warn, Lang.T("Quotations.Warn.ThicknessOrder"));
             return false;
         }
         return true;
@@ -319,9 +319,9 @@ public partial class QuotationDetailView : UserControl
         _editingId = null;
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Thêm Báo Giá Mới";
-        FormSaveBtn.Content = "Lưu báo giá";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("Quotations.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("Quotations.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
         UpdateThicknessLabel();
@@ -356,9 +356,9 @@ public partial class QuotationDetailView : UserControl
         ClearWarnings();
         FillForm(it);
         SetReadOnly(true);
-        FormTitle.Text = $"Chi Tiết Báo Giá — {it.WoodType} ({new ItemRow(it).ThicknessText})";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("Quotations.Form.ViewTitle", it.WoodType, new ItemRow(it).ThicknessText);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -367,9 +367,9 @@ public partial class QuotationDetailView : UserControl
         _mode = "edit";
         ClearWarnings();
         SetReadOnly(false);
-        FormTitle.Text = "Sửa Báo Giá";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("Quotations.Form.EditTitle");
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         FWoodSubType.Focus();
     }
 
@@ -389,14 +389,14 @@ public partial class QuotationDetailView : UserControl
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var it = AppState.FindQuotation(_supplier.Id)?.Items.FirstOrDefault(i => i.Id == _editingId);
             if (it != null) { EnterViewMode(it); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -404,7 +404,7 @@ public partial class QuotationDetailView : UserControl
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -424,11 +424,11 @@ public partial class QuotationDetailView : UserControl
         }
         else
         {
-            if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, "Độ dày", out thickMin, out thickMax)) ok = false;
+            if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, Lang.T("Quotations.Label.Thickness"), out thickMin, out thickMax)) ok = false;
         }
-        if (!ValidateRange(FWidthMin.Text, FWidthMax.Text, WWidthRange, "Rộng", out var widthMin, out var widthMax)) ok = false;
-        if (!ValidateRange(FLengthMin.Text, FLengthMax.Text, WLengthRange, "Dài", out var lengthMin, out var lengthMax)) ok = false;
-        if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, "Đơn giá phải lớn hơn 0."); ok = false; }
+        if (!ValidateRange(FWidthMin.Text, FWidthMax.Text, WWidthRange, Lang.T("Quotations.Label.Width"), out var widthMin, out var widthMax)) ok = false;
+        if (!ValidateRange(FLengthMin.Text, FLengthMax.Text, WLengthRange, Lang.T("Quotations.Label.Length"), out var lengthMin, out var lengthMax)) ok = false;
+        if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, Lang.T("Quotations.Warn.PriceRequired")); ok = false; }
         if (!ok) return;
 
         // Báo giá: để trống phân loại con = áp cho MỌI con của loại cha (fallback cấp cha) — không bắt buộc.
@@ -461,7 +461,7 @@ public partial class QuotationDetailView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Flatten(ex), "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Flatten(ex), Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -481,8 +481,8 @@ public partial class QuotationDetailView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
-        var confirm = MessageBox.Show($"Xóa báo giá {r.WoodType} ({r.ThicknessText})?",
-            "Quản Lý Gỗ", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show(Lang.T("Quotations.Confirm.Delete", r.WoodType, r.ThicknessText),
+            Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         AppState.DeleteQuotationItem(r.Item.Id);
