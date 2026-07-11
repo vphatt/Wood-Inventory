@@ -135,6 +135,9 @@
   "Suppliers.ForceDeletePart.Receipts": "{0} phiếu nhập",
   "Suppliers.ForceDeletePart.Lots": "{0} kiện gỗ",
   "Suppliers.ForceDeletePart.Quote": "bảng báo giá",
+  "Suppliers.Warn.CodeExists": "Tên gọi tắt \"{0}\" đã tồn tại. Vui lòng dùng tên khác.",
+  "Suppliers.Warn.InUse": "Nhà cung cấp \"{0}\" đang được dùng bởi kiện gỗ / báo giá / phiếu nhập nên không thể xóa.",
+  "Suppliers.Warn.ForceDeleteBlocked": "Không thể xóa: nhà cung cấp \"{0}\" có kiện đã phát sinh xuất kho ({1}). Hãy xóa các phiếu xuất liên quan trước.",
 
   "WoodCategories.Title": "Quản Lý Phân Loại Gỗ",
   "WoodCategories.AddButton": "Thêm loại gỗ",
@@ -160,6 +163,9 @@
   "WoodCategories.Empty": "Không có loại gỗ nào khớp bộ lọc.",
   "WoodCategories.Warn.Name": "Vui lòng nhập tên loại gỗ.",
   "WoodCategories.Confirm.Delete": "Bạn có chắc muốn xóa loại gỗ \"{0}\" khỏi danh mục?",
+  "WoodCategories.Warn.NameEmpty": "Tên loại gỗ không được để trống.",
+  "WoodCategories.Warn.Exists": "Loại gỗ \"{0}\" đã tồn tại trong danh mục.",
+  "WoodCategories.Warn.InUse": "Loại gỗ \"{0}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.",
 
   "WoodSubCategories.BackLink": "Danh sách loại gỗ",
   "WoodSubCategories.TitleName": "Phân loại — {0}",
@@ -176,6 +182,9 @@
   "WoodSubCategories.Empty": "Loại gỗ này chưa có phân loại con nào.",
   "WoodSubCategories.Warn.Name": "Vui lòng nhập tên phân loại.",
   "WoodSubCategories.Confirm.Delete": "Xóa phân loại \"{0}\" khỏi loại {1}?",
+  "WoodSubCategories.Warn.NameEmpty": "Tên phân loại không được để trống.",
+  "WoodSubCategories.Warn.Exists": "Phân loại \"{0}\" đã tồn tại trong loại gỗ này.",
+  "WoodSubCategories.Warn.InUse": "Phân loại \"{0}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.",
 
   "Receipts.Title": "Phiếu Nhập Kho Gỗ Nguyên Liệu",
   "Receipts.OpenReportButton": "Bảng tổng chi tiết nhập kho",
@@ -249,6 +258,10 @@
   "Receipts.RecRow.LotCountText": "{0} kiện",
   "Receipts.Row.DecimalsTooltip": "Số chữ số thập phân làm tròn m³ của riêng dòng này (mặc định 5)",
   "Receipts.Row.AdjustmentTooltip": "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002",
+  "Receipts.Warn.LotIdExists": "Mã kiện {0} đã tồn tại trong hệ thống.",
+  "Receipts.Warn.NotFound": "Không tìm thấy phiếu nhập cần cập nhật.",
+  "Receipts.Warn.HasIssuedCannotEdit": "Phiếu có kiện đã phát sinh xuất kho ({0}) nên không thể chỉnh sửa.",
+  "Receipts.Warn.HasIssuedCannotDelete": "Phiếu có kiện đã xuất kho ({0}) nên không thể xóa.",
 
   "ReceiptReport.Title": "Bảng Tổng Chi Tiết Nhập Kho",
   "ReceiptReport.Subtitle": "Toàn bộ kiện gỗ đã nhập cùng số lượng, thể tích và giá trị tại thời điểm nhập kho.",
@@ -308,6 +321,7 @@
   "Lots.Detail.HistoryQty": "-{0} {1}",
   "Lots.Detail.HistoryOrder": "Đơn hàng: {0}",
   "Lots.Detail.HistoryDate": "Ngày xuất: {0}",
+  "Lots.Warn.HasHistory": "Kiện {0} đã có lịch sử xuất kho (truy xuất nguồn gốc) nên không thể xóa.",
 
   "Issues.Title": "Phiếu Xuất Kho Gỗ Cho Đơn Hàng",
   "Issues.AddButton": "Tạo phiếu xuất mới",
@@ -355,6 +369,8 @@
   "Issues.Warn.ListError": "Lỗi danh sách xuất kho: {0}. Vui lòng kiểm tra lại.",
   "Issues.Confirm.DeleteIssue": "Xóa phiếu xuất {0} ({1} {2})? Tồn kho các kiện liên quan sẽ được hoàn trả.\nHành động này không thể hoàn tác.",
   "Issues.ErrorRow": "Dòng #{0}: {1}",
+  "Issues.Warn.LotNotFound": "Không tìm thấy kiện {0}.",
+  "Issues.Warn.NotFound": "Không tìm thấy phiếu xuất cần cập nhật.",
 
   "Quotations.TitleName": "Báo giá — {0}",
   "Quotations.Subtitle": "Tên gọi tắt: {0}   •   Mã số thuế: {1}",

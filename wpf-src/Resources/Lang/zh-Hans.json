@@ -135,6 +135,9 @@
   "Suppliers.ForceDeletePart.Receipts": "{0} 张入库单",
   "Suppliers.ForceDeletePart.Lots": "{0} 个批次",
   "Suppliers.ForceDeletePart.Quote": "报价表",
+  "Suppliers.Warn.CodeExists": "简称\"{0}\"已存在。请使用其他名称。",
+  "Suppliers.Warn.InUse": "供应商\"{0}\"正被批次 / 报价 / 入库单使用，无法删除。",
+  "Suppliers.Warn.ForceDeleteBlocked": "无法删除：供应商\"{0}\"存在已出库的批次（{1}）。请先删除相关出库单。",
 
   "WoodCategories.Title": "木材分类管理",
   "WoodCategories.AddButton": "添加木材类型",
@@ -160,6 +163,9 @@
   "WoodCategories.Empty": "没有符合筛选条件的木材类型。",
   "WoodCategories.Warn.Name": "请输入木材类型名称。",
   "WoodCategories.Confirm.Delete": "确定要从分类中删除木材类型 \"{0}\" 吗？",
+  "WoodCategories.Warn.NameEmpty": "木材类型名称不能为空。",
+  "WoodCategories.Warn.Exists": "木材类型 \"{0}\" 已存在于分类中。",
+  "WoodCategories.Warn.InUse": "木材类型 \"{0}\" 正被库存批次使用，无法删除。",
 
   "WoodSubCategories.BackLink": "木材类型列表",
   "WoodSubCategories.TitleName": "分类 — {0}",
@@ -176,6 +182,9 @@
   "WoodSubCategories.Empty": "该木材类型尚无子分类。",
   "WoodSubCategories.Warn.Name": "请输入分类名称。",
   "WoodSubCategories.Confirm.Delete": "确定要从 {1} 中删除分类 \"{0}\" 吗？",
+  "WoodSubCategories.Warn.NameEmpty": "分类名称不能为空。",
+  "WoodSubCategories.Warn.Exists": "分类 \"{0}\" 已存在于该木材类型中。",
+  "WoodSubCategories.Warn.InUse": "分类 \"{0}\" 正被库存批次使用，无法删除。",
 
   "Receipts.Title": "原木入库单",
   "Receipts.OpenReportButton": "入库明细汇总表",
@@ -249,6 +258,10 @@
   "Receipts.RecRow.LotCountText": "{0} 个批次",
   "Receipts.Row.DecimalsTooltip": "该行 m³ 四舍五入保留的小数位数（默认 5）",
   "Receipts.Row.AdjustmentTooltip": "四舍五入后再加/减的微调量，例如 0.0001 或 -0.0002",
+  "Receipts.Warn.LotIdExists": "批次编号 {0} 已存在于系统中。",
+  "Receipts.Warn.NotFound": "未找到要更新的入库单。",
+  "Receipts.Warn.HasIssuedCannotEdit": "该单据存在已出库的批次（{0}），无法编辑。",
+  "Receipts.Warn.HasIssuedCannotDelete": "该单据存在已出库的批次（{0}），无法删除。",
 
   "ReceiptReport.Title": "入库明细汇总表",
   "ReceiptReport.Subtitle": "所有已入库批次及其入库时的数量、体积和价值。",
@@ -308,6 +321,7 @@
   "Lots.Detail.HistoryQty": "-{0} {1}",
   "Lots.Detail.HistoryOrder": "订单：{0}",
   "Lots.Detail.HistoryDate": "出库日期：{0}",
+  "Lots.Warn.HasHistory": "批次 {0} 已有出库记录（可追溯），无法删除。",
 
   "Issues.Title": "订单出库单",
   "Issues.AddButton": "新建出库单",
@@ -355,6 +369,8 @@
   "Issues.Warn.ListError": "出库清单有误：{0}。请检查后重试。",
   "Issues.Confirm.DeleteIssue": "删除出库单 {0}（{1} {2}）？相关批次库存将被恢复。\n此操作无法撤销。",
   "Issues.ErrorRow": "第 #{0} 行：{1}",
+  "Issues.Warn.LotNotFound": "未找到批次 {0}。",
+  "Issues.Warn.NotFound": "未找到要更新的出库单。",
 
   "Quotations.TitleName": "报价单 — {0}",
   "Quotations.Subtitle": "简称：{0}   •   税号：{1}",

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WoodInventory.Domain;
+using WoodInventory.Helpers;
 
 namespace WoodInventory.Data;
 
@@ -131,11 +132,11 @@ public static class AppState
     private static void ValidateSupplier(Supplier s)
     {
         if (string.IsNullOrWhiteSpace(s.Name))
-            throw new InvalidOperationException("Vui lòng nhập Tên nhà cung cấp.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.Name"));
         if (string.IsNullOrWhiteSpace(s.Code))
-            throw new InvalidOperationException("Vui lòng nhập Tên gọi tắt.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.Code"));
         if (string.IsNullOrWhiteSpace(s.TaxCode))
-            throw new InvalidOperationException("Vui lòng nhập Mã số thuế.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.TaxCode"));
     }
 
     /// <summary>Thêm nhà cung cấp mới. Chặn trùng Tên gọi tắt (Code).</summary>
@@ -145,7 +146,7 @@ public static class AppState
         using var db = new AppDbContext();
         var code = supplier.Code.Trim();
         if (db.Suppliers.Any(x => x.Code.ToLower() == code.ToLower()))
-            throw new InvalidOperationException($"Tên gọi tắt \"{code}\" đã tồn tại. Vui lòng dùng tên khác.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.CodeExists", code));
 
         supplier.Code = code;
         supplier.Name = supplier.Name.Trim();
@@ -165,7 +166,7 @@ public static class AppState
 
         var code = supplier.Code.Trim();
         if (db.Suppliers.Any(x => x.Id != supplier.Id && x.Code.ToLower() == code.ToLower()))
-            throw new InvalidOperationException($"Tên gọi tắt \"{code}\" đã tồn tại. Vui lòng dùng tên khác.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.CodeExists", code));
 
         existing.Code = code;
         existing.Name = supplier.Name.Trim();
@@ -187,8 +188,7 @@ public static class AppState
         if (db.WoodLots.Any(l => l.SupplierId == id)
             || db.WoodQuotations.Any(q => q.SupplierId == id)
             || db.WarehouseReceipts.Any(r => r.SupplierId == id))
-            throw new InvalidOperationException(
-                $"Nhà cung cấp \"{s.Name}\" đang được dùng bởi kiện gỗ / báo giá / phiếu nhập nên không thể xóa.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.InUse", s.Name));
 
         db.Suppliers.Remove(s);
         db.SaveChanges();
@@ -210,9 +210,7 @@ public static class AppState
         var issued = db.WarehouseIssueItems.Where(i => lotIds.Contains(i.WoodLotId))
                        .Select(i => i.WoodLotId).Distinct().ToList();
         if (issued.Count > 0)
-            throw new InvalidOperationException(
-                $"Không thể xóa: nhà cung cấp \"{s.Name}\" có kiện đã phát sinh xuất kho " +
-                $"({string.Join(", ", issued)}). Hãy xóa các phiếu xuất liên quan trước.");
+            throw new InvalidOperationException(Lang.T("Suppliers.Warn.ForceDeleteBlocked", s.Name, string.Join(", ", issued)));
 
         // Xóa theo thứ tự phụ thuộc: kiện gỗ → phiếu nhập → báo giá (+ mục giá cascade) → NCC.
         db.WoodLots.RemoveRange(db.WoodLots.Where(l => l.SupplierId == id).ToList());
@@ -231,7 +229,7 @@ public static class AppState
         using var db = new AppDbContext();
         var name = category.Name?.Trim() ?? "";
         if (db.WoodCategories.Any(c => c.Name.ToLower() == name.ToLower()))
-            throw new InvalidOperationException($"Loại gỗ \"{name}\" đã tồn tại trong danh mục.");
+            throw new InvalidOperationException(Lang.T("WoodCategories.Warn.Exists", name));
         category.Name = name;
         db.WoodCategories.Add(category);
         db.SaveChanges();
@@ -250,9 +248,9 @@ public static class AppState
 
         newName = newName?.Trim() ?? "";
         if (newName.Length == 0)
-            throw new InvalidOperationException("Tên loại gỗ không được để trống.");
+            throw new InvalidOperationException(Lang.T("WoodCategories.Warn.NameEmpty"));
         if (db.WoodCategories.Any(c => c.Id != id && c.Name.ToLower() == newName.ToLower()))
-            throw new InvalidOperationException($"Loại gỗ \"{newName}\" đã tồn tại trong danh mục.");
+            throw new InvalidOperationException(Lang.T("WoodCategories.Warn.Exists", newName));
 
         var oldName = cat.Name;
         if (!string.Equals(oldName, newName, StringComparison.Ordinal))
@@ -276,8 +274,7 @@ public static class AppState
         var cat = db.WoodCategories.Find(id);
         if (cat == null) return;
         if (db.WoodLots.Any(l => l.WoodType == cat.Name))
-            throw new InvalidOperationException(
-                $"Loại gỗ \"{cat.Name}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.");
+            throw new InvalidOperationException(Lang.T("WoodCategories.Warn.InUse", cat.Name));
         db.WoodCategories.Remove(cat);
         db.SaveChanges();
         Commit();
@@ -291,9 +288,9 @@ public static class AppState
         using var db = new AppDbContext();
         name = name?.Trim() ?? "";
         if (name.Length == 0)
-            throw new InvalidOperationException("Tên phân loại không được để trống.");
+            throw new InvalidOperationException(Lang.T("WoodSubCategories.Warn.NameEmpty"));
         if (db.WoodSubCategories.Any(s => s.CategoryId == categoryId && s.Name.ToLower() == name.ToLower()))
-            throw new InvalidOperationException($"Phân loại \"{name}\" đã tồn tại trong loại gỗ này.");
+            throw new InvalidOperationException(Lang.T("WoodSubCategories.Warn.Exists", name));
 
         db.WoodSubCategories.Add(new WoodSubCategory
         {
@@ -317,10 +314,10 @@ public static class AppState
 
         newName = newName?.Trim() ?? "";
         if (newName.Length == 0)
-            throw new InvalidOperationException("Tên phân loại không được để trống.");
+            throw new InvalidOperationException(Lang.T("WoodSubCategories.Warn.NameEmpty"));
         if (db.WoodSubCategories.Any(s => s.Id != id && s.CategoryId == sub.CategoryId
                                           && s.Name.ToLower() == newName.ToLower()))
-            throw new InvalidOperationException($"Phân loại \"{newName}\" đã tồn tại trong loại gỗ này.");
+            throw new InvalidOperationException(Lang.T("WoodSubCategories.Warn.Exists", newName));
 
         var oldName = sub.Name;
         if (!string.Equals(oldName, newName, StringComparison.Ordinal))
@@ -345,8 +342,7 @@ public static class AppState
         if (sub == null) return;
         var parentName = db.WoodCategories.Find(sub.CategoryId)?.Name;
         if (db.WoodLots.Any(l => l.WoodType == parentName && l.WoodSubType == sub.Name))
-            throw new InvalidOperationException(
-                $"Phân loại \"{sub.Name}\" đang được dùng bởi các kiện gỗ trong kho nên không thể xóa.");
+            throw new InvalidOperationException(Lang.T("WoodSubCategories.Warn.InUse", sub.Name));
         db.WoodSubCategories.Remove(sub);
         db.SaveChanges();
         Commit();
@@ -360,8 +356,7 @@ public static class AppState
         var lot = db.WoodLots.Find(id);
         if (lot == null) return;
         if (db.WarehouseIssueItems.Any(i => i.WoodLotId == id))
-            throw new InvalidOperationException(
-                $"Kiện {id} đã có lịch sử xuất kho (truy xuất nguồn gốc) nên không thể xóa.");
+            throw new InvalidOperationException(Lang.T("Lots.Warn.HasHistory", id));
         db.WoodLots.Remove(lot);
         db.SaveChanges();
         Commit();
@@ -465,7 +460,7 @@ public static class AppState
         using var db = new AppDbContext();
         var duplicated = receipt.Lots.Select(l => l.Id).FirstOrDefault(id => db.WoodLots.Any(l => l.Id == id));
         if (duplicated != null)
-            throw new InvalidOperationException($"Mã kiện {duplicated} đã tồn tại trong hệ thống.");
+            throw new InvalidOperationException(Lang.T("Receipts.Warn.LotIdExists", duplicated));
         db.WarehouseReceipts.Add(receipt);
         db.SaveChanges();
         Commit();
@@ -480,7 +475,7 @@ public static class AppState
     {
         using var db = new AppDbContext();
         var existing = db.WarehouseReceipts.Include(r => r.Lots).FirstOrDefault(r => r.Id == updated.Id)
-            ?? throw new InvalidOperationException("Không tìm thấy phiếu nhập cần cập nhật.");
+            ?? throw new InvalidOperationException(Lang.T("Receipts.Warn.NotFound"));
 
         var oldLotIds = existing.Lots.Select(l => l.Id).ToList();
 
@@ -488,12 +483,11 @@ public static class AppState
         issued.AddRange(db.WarehouseIssueItems.Where(i => oldLotIds.Contains(i.WoodLotId)).Select(i => i.WoodLotId));
         issued = issued.Distinct().ToList();
         if (issued.Count > 0)
-            throw new InvalidOperationException(
-                $"Phiếu có kiện đã phát sinh xuất kho ({string.Join(", ", issued)}) nên không thể chỉnh sửa.");
+            throw new InvalidOperationException(Lang.T("Receipts.Warn.HasIssuedCannotEdit", string.Join(", ", issued)));
 
         foreach (var lot in updated.Lots)
             if (!oldLotIds.Contains(lot.Id) && db.WoodLots.Any(l => l.Id == lot.Id))
-                throw new InvalidOperationException($"Mã kiện {lot.Id} đã tồn tại trong hệ thống.");
+                throw new InvalidOperationException(Lang.T("Receipts.Warn.LotIdExists", lot.Id));
 
         // Xóa toàn bộ kiện cũ + cập nhật header (lưu trước để tránh trùng khóa khi tái sử dụng mã kiện)
         db.WoodLots.RemoveRange(existing.Lots);
@@ -524,8 +518,7 @@ public static class AppState
         var issued = db.WarehouseIssueItems.Where(i => lotIds.Contains(i.WoodLotId))
                        .Select(i => i.WoodLotId).Distinct().ToList();
         if (issued.Count > 0)
-            throw new InvalidOperationException(
-                $"Phiếu có kiện đã xuất kho ({string.Join(", ", issued)}) nên không thể xóa.");
+            throw new InvalidOperationException(Lang.T("Receipts.Warn.HasIssuedCannotDelete", string.Join(", ", issued)));
 
         db.WarehouseReceipts.Remove(receipt);
         db.SaveChanges();
@@ -539,7 +532,7 @@ public static class AppState
         foreach (var item in issue.Items)
         {
             var lot = db.WoodLots.Find(item.WoodLotId)
-                ?? throw new InvalidOperationException($"Không tìm thấy kiện {item.WoodLotId}.");
+                ?? throw new InvalidOperationException(Lang.T("Issues.Warn.LotNotFound", item.WoodLotId));
             lot.IssueInventory(item.Quantity, item.Cbm);
         }
         db.WarehouseIssues.Add(issue);
@@ -556,7 +549,7 @@ public static class AppState
     {
         using var db = new AppDbContext();
         var existing = db.WarehouseIssues.Include(i => i.Items).FirstOrDefault(i => i.Id == updated.Id)
-            ?? throw new InvalidOperationException("Không tìm thấy phiếu xuất cần cập nhật.");
+            ?? throw new InvalidOperationException(Lang.T("Issues.Warn.NotFound"));
 
         foreach (var item in existing.Items)
             db.WoodLots.Find(item.WoodLotId)?.ReturnInventory(item.Quantity, item.Cbm);
@@ -570,7 +563,7 @@ public static class AppState
         foreach (var item in updated.Items)
         {
             var lot = db.WoodLots.Find(item.WoodLotId)
-                ?? throw new InvalidOperationException($"Không tìm thấy kiện {item.WoodLotId}.");
+                ?? throw new InvalidOperationException(Lang.T("Issues.Warn.LotNotFound", item.WoodLotId));
             lot.IssueInventory(item.Quantity, item.Cbm);
             item.WarehouseIssueId = existing.Id;
             db.WarehouseIssueItems.Add(item);
