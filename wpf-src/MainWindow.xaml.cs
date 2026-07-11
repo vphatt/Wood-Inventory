@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using WoodInventory.Data;
 using WoodInventory.Helpers;
 using WoodInventory.Views;
@@ -81,7 +82,24 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Nút làm mới chung trên breadcrumb — làm mới trang đang xem theo yêu cầu, không cần đóng/mở lại tab.</summary>
-    private void BtnGlobalRefresh_Click(object sender, RoutedEventArgs e) => RefreshActiveView();
+    private void BtnGlobalRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshActiveView();
+        SpinRefreshIcon();
+    }
+
+    /// <summary>Icon xoay 1 vòng (360°) rồi dừng để phản hồi trực quan lúc bấm — dùng "By" (cộng dồn từ góc
+    /// hiện tại) thay vì đặt lại From=0, để bấm liên tiếp lúc icon đang xoay không bị giật ngược về 0.</summary>
+    private void SpinRefreshIcon()
+    {
+        var anim = new DoubleAnimation
+        {
+            By = 360,
+            Duration = TimeSpan.FromMilliseconds(500),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+        };
+        RefreshIconRotate.BeginAnimation(RotateTransform.AngleProperty, anim);
+    }
 
     /// <summary>
     /// Hot-swap ngôn ngữ: phần XAML tĩnh (Text="{helpers:Loc ...}") tự cập nhật qua binding, nhưng phần

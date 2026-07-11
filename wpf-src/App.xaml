@@ -334,19 +334,332 @@
                 </Setter>
             </Style>
 
-            <!-- ======= DatePicker bo góc (đồng bộ style với Input/Select) ======= -->
+            <!-- ======= DatePicker bo góc, theme slate/blue đồng bộ Input/Select ======= -->
             <Style x:Key="DatePickerTextBoxStyle" TargetType="DatePickerTextBox">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                 <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DatePickerTextBox">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False" Background="{TemplateBinding Background}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Ô ngày trong lưới tháng: hôm nay = viền xanh, đang chọn = nền xanh, ngoài tháng = mờ -->
+            <Style x:Key="CalDayButtonStyle" TargetType="CalendarDayButton">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CalendarDayButton">
+                            <Border x:Name="bd" Margin="2" CornerRadius="6" Background="Transparent"
+                                    BorderThickness="1.2" BorderBrush="Transparent">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate100}"/>
+                                </Trigger>
+                                <Trigger Property="IsToday" Value="True">
+                                    <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Blue400}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource Blue600}"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Trigger>
+                                <Trigger Property="IsInactive" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource Slate300}"/>
+                                </Trigger>
+                                <Trigger Property="IsBlackedOut" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Blue500}"/>
+                                    <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Blue500}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Nút Tháng (Th1..Th12) trong bộ chọn Tháng/Năm TỰ LÀM (MonthPickerView) — Button thường,
+                 không phải CalendarButton, vì không đi qua cơ chế nội bộ của Calendar. -->
+            <Style x:Key="CalMonthPickButtonStyle" TargetType="Button">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Margin" Value="3"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd" CornerRadius="6" Background="Transparent" Padding="4,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate100}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Nút chọn Tháng/Năm khi bấm vào tiêu đề header (chế độ Year/Decade) -->
+            <Style x:Key="CalMonthYearButtonStyle" TargetType="CalendarButton">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CalendarButton">
+                            <Border x:Name="bd" Margin="3" CornerRadius="6" Background="Transparent">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,8"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource Slate100}"/>
+                                </Trigger>
+                                <Trigger Property="IsInactive" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource Slate300}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- "Trang" lịch: card trắng bo góc + đổ bóng nhẹ (cùng ngôn ngữ hình ảnh với popup Select),
+                 header có nút lùi/tiến tháng + nút tiêu đề mở chế độ chọn Tháng/Năm. -->
+            <Style x:Key="CalItemStyle" TargetType="CalendarItem">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CalendarItem">
+                            <Border Margin="0,4,8,8" Padding="14,12" Background="White"
+                                    BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="10">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.14" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Header: lùi tháng / tiêu đề Tháng-Năm / tiến tháng -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="PART_PreviousButton" Grid.Column="0" Width="26" Height="26" Focusable="False">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="pb" CornerRadius="6" Background="Transparent">
+                                                        <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                   Foreground="{StaticResource Slate500}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="pb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="pb" Property="Opacity" Value="0.3"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button x:Name="PART_HeaderButton" Grid.Column="1" Focusable="False"
+                                                HorizontalContentAlignment="Center" Click="CalendarHeaderButton_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="hb" CornerRadius="6" Background="Transparent" Padding="8,3">
+                                                        <ContentPresenter HorizontalAlignment="Center"
+                                                                          TextElement.FontWeight="SemiBold"
+                                                                          TextElement.FontSize="13"
+                                                                          TextElement.Foreground="{StaticResource Slate800}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="hb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button x:Name="PART_NextButton" Grid.Column="2" Width="26" Height="26" Focusable="False">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="nb" CornerRadius="6" Background="Transparent">
+                                                        <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                   Foreground="{StaticResource Slate500}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="nb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="nb" Property="Opacity" Value="0.3"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Hàng tên thứ tự vẽ TĨNH (bản .NET này Calendar không tự sinh header thứ vào hàng 0 của
+                                         PART_MonthView — để trống thật, không phải lỗi hiển thị). Đặt đè lên đúng vùng hàng 0
+                                         còn trống đó (cùng Grid.Row với PART_MonthView, ghim Top) nên không đụng hàng ngày bên dưới. -->
+                                    <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Height="24" IsHitTestVisible="False">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="T2" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="1" Text="T3" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="2" Text="T4" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="3" Text="T5" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="4" Text="T6" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="5" Text="T7" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Slate400}"/>
+                                        <TextBlock Grid.Column="6" Text="CN" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Rose400}"/>
+                                    </Grid>
+
+                                    <!-- Lưới ngày trong tháng: hàng 0 để trống (khớp không gian hàng tên thứ tĩnh phía trên),
+                                         hàng 1-6 = CalendarDayButton do Calendar tự sinh. -->
+                                    <Grid x:Name="PART_MonthView" Grid.Row="1" HorizontalAlignment="Center" Visibility="Visible">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="24"/>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="30"/>
+                                        </Grid.RowDefinitions>
+                                    </Grid>
+
+                                    <!-- Bộ chọn Tháng/Năm TỰ LÀM (bấm tiêu đề header mở ra) — KHÔNG dùng PART_YearView của
+                                         Calendar vì bản .NET này không tự chuyển hiển thị theo DisplayMode (đã verify bằng
+                                         log: DisplayMode đổi đúng Month→Year→Decade nhưng lưới không đổi theo, xem CLAUDE.md).
+                                         Toggle Visibility hoàn toàn bằng code trong App.xaml.cs (CalendarHeaderButton_Click),
+                                         không phụ thuộc cơ chế nội bộ của Calendar. -->
+                                    <Grid x:Name="MonthPickerView" Grid.Row="1" HorizontalAlignment="Center" Visibility="Collapsed">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid Grid.Row="0" Width="224" Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="MonthPickerPrevYear" Grid.Column="0" Width="26" Height="26" Focusable="False"
+                                                    Click="MonthPickerPrevYear_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="pyb" CornerRadius="6" Background="Transparent">
+                                                            <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                       Foreground="{StaticResource Slate500}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="pyb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <TextBlock x:Name="MonthPickerYearText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Slate800}"/>
+                                            <Button x:Name="MonthPickerNextYear" Grid.Column="2" Width="26" Height="26" Focusable="False"
+                                                    Click="MonthPickerNextYear_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="nyb" CornerRadius="6" Background="Transparent">
+                                                            <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                       Foreground="{StaticResource Slate500}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="nyb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                        <UniformGrid Grid.Row="1" Columns="4" Rows="3" Width="224">
+                                            <Button Content="Th 1" Tag="1" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 2" Tag="2" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 3" Tag="3" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 4" Tag="4" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 5" Tag="5" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 6" Tag="6" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 7" Tag="7" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 8" Tag="8" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 9" Tag="9" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 10" Tag="10" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 11" Tag="11" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                            <Button Content="Th 12" Tag="12" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                        </UniformGrid>
+                                    </Grid>
+
+                                    <!-- Grid RỖNG, giữ nguyên tên "PART_YearView" — KHÔNG dùng để hiển thị gì (đã thay bằng
+                                         MonthPickerView tự làm ở trên), nhưng PHẢI tồn tại: code nội bộ của Calendar trong
+                                         bản .NET này tham chiếu thẳng YearView khi DisplayMode đổi mà KHÔNG null-check, xóa
+                                         hẳn phần tử này gây NullReferenceException lúc bấm header (đã verify). Đừng xóa. -->
+                                    <Grid x:Name="PART_YearView" Grid.Row="1" Visibility="Hidden">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="56"/>
+                                            <ColumnDefinition Width="56"/>
+                                            <ColumnDefinition Width="56"/>
+                                            <ColumnDefinition Width="56"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="34"/>
+                                            <RowDefinition Height="34"/>
+                                            <RowDefinition Height="34"/>
+                                        </Grid.RowDefinitions>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style x:Key="DatePickerCalendarStyle" TargetType="Calendar">
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="BorderBrush" Value="{StaticResource Slate200}"/>
-                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="CalendarItemStyle" Value="{StaticResource CalItemStyle}"/>
+                <Setter Property="CalendarDayButtonStyle" Value="{StaticResource CalDayButtonStyle}"/>
+                <Setter Property="CalendarButtonStyle" Value="{StaticResource CalMonthYearButtonStyle}"/>
             </Style>
 
             <Style x:Key="DatePickerField" TargetType="DatePicker">
@@ -367,26 +680,32 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="34"/>
                                         </Grid.ColumnDefinitions>
                                         <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0"
                                                             Style="{StaticResource DatePickerTextBoxStyle}"
                                                             Margin="{TemplateBinding Padding}"/>
+                                        <Border Grid.Column="1" Width="1" Margin="0,7" Background="{StaticResource Slate150}"/>
                                         <Button x:Name="PART_Button" Grid.Column="1" Focusable="False"
                                                 Background="Transparent" BorderThickness="0" Cursor="Hand">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}">
+                                                    <Border x:Name="ib" Background="{TemplateBinding Background}" CornerRadius="0,7,7,0">
                                                         <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                                                   Foreground="{StaticResource Slate400}"
+                                                                   Foreground="{StaticResource Slate500}"
                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ib" Property="Background" Value="{StaticResource Slate100}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
                                     </Grid>
                                 </Border>
-                                <Popup x:Name="PART_Popup" Placement="Bottom" StaysOpen="False" AllowsTransparency="True"/>
+                                <Popup x:Name="PART_Popup" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade"/>
                             </Grid>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsKeyboardFocusWithin" Value="True">

@@ -22,7 +22,7 @@ public partial class QuotationDetailView : UserControl
             ? Item.WoodType
             : $"{Item.WoodType} · {Item.WoodSubType}";
         public string Grade => Item.Grade;
-        public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? Lang.T("Common.AnyValue") : Item.Grade;
+        public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "-" : Item.Grade;
         public string ThicknessText => AppState.GetVolumeRule(Item.WoodType) == VolumeRule.ByFootage
             ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax)
             : Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
@@ -33,7 +33,7 @@ public partial class QuotationDetailView : UserControl
         public double? WidthMin => Item.WidthMin;
         public double? LengthMin => Item.LengthMin;
         public string Origin => Item.Origin;
-        public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? Lang.T("Common.AnyValue") : Item.Origin;
+        public string OriginText => string.IsNullOrWhiteSpace(Item.Origin) ? "-" : Item.Origin;
         public string Specification => Item.Specification;
         public decimal Price => Item.Price;
         public string PriceCurrency => Item.PriceCurrency;

@@ -48,10 +48,10 @@ public static class Fmt
     public static double ParseNum(string s) =>
         double.TryParse(s, NumberStyles.Any, Vi, out var v) ? v : 0;
 
-    /// <summary>"20–30mm" / "≥150mm" / "≤2400mm" / "25mm" (min=max) / "Bất kỳ" (cả hai null).</summary>
+    /// <summary>"20–30mm" / "≥150mm" / "≤2400mm" / "25mm" (min=max) / "-" (cả hai null, để trống = wildcard).</summary>
     public static string Range(double? min, double? max, string unit = "mm")
     {
-        if (min == null && max == null) return "Bất kỳ";
+        if (min == null && max == null) return "-";
         if (min != null && max != null)
             return min == max ? $"{Num(min.Value)}{unit}" : $"{Num(min.Value)}–{Num(max.Value)}{unit}";
         return min != null ? $"≥{Num(min.Value)}{unit}" : $"≤{Num(max.Value)}{unit}";

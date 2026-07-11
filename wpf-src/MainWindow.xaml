@@ -101,7 +101,12 @@
                             HorizontalAlignment="Right" VerticalAlignment="Center"
                             Click="BtnGlobalRefresh_Click" ToolTip="{helpers:Loc App.RefreshTooltip}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,6,0"/>
+                            <TextBlock x:Name="RefreshIcon" Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,6,0"
+                                       RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform x:Name="RefreshIconRotate" Angle="0"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
                             <TextBlock Text="{helpers:Loc App.RefreshButton}"/>
                         </StackPanel>
                     </Button>
