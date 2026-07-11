@@ -114,13 +114,13 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (_reportView != null)
         {
             _reportView.RefreshView();
-            Main?.SetBreadcrumbDetail("Bảng tổng chi tiết nhập kho", BackToReceipts);
+            Main?.SetBreadcrumbDetail(Lang.T("Receipts.OpenReportButton"), BackToReceipts);
             return;
         }
 
         var current = (FSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         FSupplier.Items.Clear();
-        FSupplier.Items.Add(new ComboBoxItem { Content = "-- Chọn Nhà Cung Cấp --", Tag = "" });
+        FSupplier.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.SupplierPlaceholder"), Tag = "" });
         foreach (var s in AppState.Suppliers)
             FSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         foreach (ComboBoxItem item in FSupplier.Items)
@@ -230,7 +230,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         Cell(lot.VolumeDecimals.ToString(), 12, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
         Cell(lot.VolumeAdjustment == 0 ? "-" : (lot.VolumeAdjustment > 0 ? "+" : "") + Fmt.M3(lot.VolumeAdjustment, lot.VolumeDecimals),
             13, HorizontalAlignment.Right, color: (Brush)FindResource(lot.VolumeAdjustment == 0 ? "Slate400" : "Amber600"));
-        Cell(lot.EffectivePrice > 0 ? Fmt.Money(lot.EffectivePrice, SelectedCurrency) : "Chưa xác định", 14, HorizontalAlignment.Right,
+        Cell(lot.EffectivePrice > 0 ? Fmt.Money(lot.EffectivePrice, SelectedCurrency) : Lang.T("Receipts.NoPriceMatch"), 14, HorizontalAlignment.Right,
             color: (Brush)FindResource(lot.EffectivePrice > 0 ? "Slate800" : "Slate400"));
         Cell(Fmt.Money(lot.TotalPrice, SelectedCurrency), 15, HorizontalAlignment.Right);
         Cell(Fmt.Vnd(lot.TotalVnd), 16, HorizontalAlignment.Right);
@@ -301,7 +301,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         // (giống pattern SearchHint), thay vì chỉ tô đỏ giá trị hiện có.
         var priceHint = new TextBlock
         {
-            Text = "Chưa xác định", FontStyle = FontStyles.Italic,
+            Text = Lang.T("Receipts.NoPriceMatch"), FontStyle = FontStyles.Italic,
             FontFamily = (FontFamily)FindResource("FontMono"), FontSize = 11,
             Foreground = (Brush)FindResource("Slate400"),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
@@ -378,7 +378,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         var lengthBox = BuildSuggestCell(lot.Length, s => { lot.Length = s; Update(); }, LengthSuggest, center: true);
         var lengthNoteBox = Cell(lot.LengthNote ?? "", s => { lot.LengthNote = s; }, mono: true, center: true);
         lengthNoteBox.Margin = new Thickness(6, 0, 6, 0);
-        lengthNoteBox.ToolTip = "Độ dài dạng inch, vd 96\"108\"120\" (chỉ mô tả, không tính m³)";
+        lengthNoteBox.ToolTip = Lang.T("Receipts.LengthNoteTooltip");
         var footageBox = Cell(lot.Footage, s => { lot.Footage = s; Update(); }, mono: true, center: true);
         footageBox.Margin = new Thickness(6, 0, 6, 0);
 
@@ -411,7 +411,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         void RebuildSub()
         {
             subCombo.Items.Clear();
-            subCombo.Items.Add(new ComboBoxItem { Content = "— Không phân loại —", Tag = "" });
+            subCombo.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.SubTypePlaceholder"), Tag = "" });
             foreach (var s in AppState.SubNamesOf(lot.WoodType))
                 subCombo.Items.Add(new ComboBoxItem { Content = s, Tag = s, IsSelected = s == lot.WoodSubType });
             if (subCombo.SelectedIndex < 0) subCombo.SelectedIndex = 0;
@@ -423,7 +423,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Update();   // đổi phân loại con có thể đổi giá báo giá khớp được
         };
 
-        typeCombo.Items.Add(new ComboBoxItem { Content = "— Chọn loại gỗ —", Tag = "", IsSelected = string.IsNullOrEmpty(lot.WoodType) });
+        typeCombo.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.WoodTypePlaceholder"), Tag = "", IsSelected = string.IsNullOrEmpty(lot.WoodType) });
         foreach (var t in AppState.CategoryNames)
             typeCombo.Items.Add(new ComboBoxItem { Content = t, Tag = t, IsSelected = t == lot.WoodType });
         if (typeCombo.SelectedIndex < 0) typeCombo.SelectedIndex = 0;
@@ -447,7 +447,7 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         // 6. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...) — có dropdown gợi ý theo báo giá
         var thickBox = BuildSuggestCell(lot.Thickness, s => { lot.Thickness = s; Update(); }, ThickSuggest, center: true,
-            tooltip: "Số mm; gỗ nhóm Footage có thể nhập dạng inch: 1\", 4/4\", 5/4\"");
+            tooltip: Lang.T("Receipts.ThicknessTooltip"));
         Grid.SetColumn(thickBox, 6); grid.Children.Add(thickBox);
 
         // 7. Rộng (ẩn nếu gỗ footage)
@@ -472,7 +472,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             lot.VolumeDecimals = Math.Clamp((int)D(s), 0, 15);
             Update();
         }, mono: true, center: true);
-        decimalsBox.ToolTip = "Số chữ số thập phân làm tròn m³ của riêng dòng này (mặc định 5)";
+        decimalsBox.ToolTip = Lang.T("Receipts.Row.DecimalsTooltip");
         Grid.SetColumn(decimalsBox, 12); grid.Children.Add(decimalsBox);
 
         // 13. Điều chỉnh tay +/- cộng vào m³ sau khi làm tròn
@@ -482,7 +482,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Update();
         }, mono: true);
         adjustmentBox.TextAlignment = TextAlignment.Right;
-        adjustmentBox.ToolTip = "Cộng/trừ thêm vào m³ sau khi làm tròn, vd 0,0001 hoặc -0,0002";
+        adjustmentBox.ToolTip = Lang.T("Receipts.Row.AdjustmentTooltip");
         Grid.SetColumn(adjustmentBox, 13); grid.Children.Add(adjustmentBox);
 
         // 14. Đơn giá  15-18. Tổng tiền gốc/VND, Tiền thuế, Tổng cộng
@@ -704,7 +704,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         DetailHost.Content = _reportView;
         ListRoot.Visibility = Visibility.Collapsed;
         DetailHost.Visibility = Visibility.Visible;
-        Main?.SetBreadcrumbDetail("Bảng tổng chi tiết nhập kho", BackToReceipts);
+        Main?.SetBreadcrumbDetail(Lang.T("Receipts.OpenReportButton"), BackToReceipts);
     }
 
     private void BackToReceipts()
@@ -722,14 +722,14 @@ public partial class ReceiptsView : UserControl, IModuleView
         // Đang sửa → xác nhận hủy, bỏ thay đổi và quay lại xem chi tiết (không lưu)
         if (_mode == "edit")
         {
-            if (!ConfirmDiscard("Những thay đổi sẽ không được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardEdit"))) return;
             var r = AppState.Receipts.FirstOrDefault(x => x.Id == _editingReceiptId);
             if (r != null) { EnterViewMode(r); return; }
         }
         // Đang thêm mới → xác nhận trước khi bỏ thông tin đã nhập
         else if (_mode == "add")
         {
-            if (!ConfirmDiscard("Các thông tin chưa được lưu, tiếp tục huỷ?")) return;
+            if (!ConfirmDiscard(Lang.T("Common.Confirm.DiscardAdd"))) return;
         }
         AddFormPanel.Visibility = Visibility.Collapsed;
         EnterAddMode();
@@ -737,7 +737,7 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, "Xác nhận hủy",
+        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     // ---------------- Chế độ add / view / edit ----------------
@@ -761,9 +761,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         _editingReceiptId = null;
         SetHeaderReadOnly(false);
         BtnAddLotRow.Visibility = Visibility.Visible;
-        FormTitle.Text = "Lập Phiếu Nhập Kho Mới";
-        FormSaveBtn.Content = "Lưu phiếu nhập kho";
-        FormCancelBtn.Content = "Hủy bỏ";
+        FormTitle.Text = Lang.T("Receipts.Form.AddTitle");
+        FormSaveBtn.Content = Lang.T("Receipts.SaveButton");
+        FormCancelBtn.Content = Lang.T("Common.Cancel");
         FInvoice.Text = "";
         FPackingList.Text = "";
         FForestList.Text = "";
@@ -785,9 +785,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         LoadReceiptIntoForm(r);
         SetHeaderReadOnly(true);
         BtnAddLotRow.Visibility = Visibility.Collapsed;
-        FormTitle.Text = $"Chi Tiết Phiếu Nhập — {r.Id}";
-        FormSaveBtn.Content = "Chỉnh sửa";
-        FormCancelBtn.Content = "Đóng";
+        FormTitle.Text = Lang.T("Receipts.Form.ViewTitle", r.Id);
+        FormSaveBtn.Content = Lang.T("Common.Edit");
+        FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -799,9 +799,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         SetHeaderReadOnly(false);
         RebuildLotRows();                    // dựng lại các dòng ở chế độ có thể sửa
         BtnAddLotRow.Visibility = Visibility.Visible;
-        FormTitle.Text = $"Sửa Phiếu Nhập — {_editingReceiptId}";
-        FormSaveBtn.Content = "Cập nhật";
-        FormCancelBtn.Content = "Hủy sửa";
+        FormTitle.Text = Lang.T("Receipts.Form.EditTitle", _editingReceiptId);
+        FormSaveBtn.Content = Lang.T("Common.Update");
+        FormCancelBtn.Content = Lang.T("Common.CancelEdit");
         AddFormPanel.Visibility = Visibility.Visible;
     }
 
@@ -869,8 +869,8 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
         if (MessageBox.Show(
-                $"Xóa phiếu nhập {r.Id} cùng {r.Receipt.Lots.Count} kiện gỗ kèm theo?\nHành động này không thể hoàn tác.",
-                "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                Lang.T("Receipts.Confirm.DeleteReceipt", r.Id, r.Receipt.Lots.Count),
+                Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         try
         {
@@ -879,7 +879,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể xóa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -895,19 +895,19 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         if (supplierId.Length == 0 || invoice.Length == 0)
         {
-            MessageBox.Show("Vui lòng nhập đầy đủ thông tin chứng từ.", "Quản Lý Gỗ",
+            MessageBox.Show(Lang.T("Receipts.Warn.MissingDoc"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (SelectedExchangeRate <= 0)
         {
-            MessageBox.Show("Tỷ giá VND/USD phải lớn hơn 0.", "Quản Lý Gỗ",
+            MessageBox.Show(Lang.T("Receipts.Warn.RateInvalid"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (_draftLots.Count == 0)
         {
-            MessageBox.Show("Phiếu nhập kho phải chứa ít nhất một kiện gỗ.", "Quản Lý Gỗ",
+            MessageBox.Show(Lang.T("Receipts.Warn.NoLots"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -918,9 +918,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (duplicates.Count > 0)
         {
             MessageBox.Show(
-                $"Mã kiện gỗ bị trùng lặp trong phiếu: {string.Join(", ", duplicates)}. " +
-                "Mỗi kiện gỗ phải có một mã định danh duy nhất.",
-                "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Lang.T("Receipts.Warn.DuplicateLotId", string.Join(", ", duplicates)),
+                Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -928,25 +927,25 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             if (string.IsNullOrWhiteSpace(d.Id))
             {
-                MessageBox.Show("Vui lòng nhập Mã kiện cho tất cả các dòng kiện gỗ.", "Quản Lý Gỗ",
+                MessageBox.Show(Lang.T("Receipts.Warn.LotIdRequired"), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (string.IsNullOrWhiteSpace(d.WoodType))
             {
-                MessageBox.Show($"Kiện {d.Id}: vui lòng chọn loại gỗ.", "Quản Lý Gỗ",
+                MessageBox.Show(Lang.T("Receipts.Warn.WoodTypeRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (AppState.CategoryHasSubs(d.WoodType) && string.IsNullOrWhiteSpace(d.WoodSubType))
             {
-                MessageBox.Show($"Kiện {d.Id}: {d.WoodType} có phân loại con — vui lòng chọn phân loại con.",
-                    "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Lang.T("Receipts.Warn.SubTypeRequired", d.Id, d.WoodType),
+                    Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (ParseThickness(d) <= 0)
             {
-                MessageBox.Show($"Kiện {d.Id}: Độ dày phải lớn hơn 0.", "Quản Lý Gỗ",
+                MessageBox.Show(Lang.T("Receipts.Warn.ThicknessRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -954,20 +953,20 @@ public partial class ReceiptsView : UserControl, IModuleView
             {
                 if (D(d.Footage) <= 0)
                 {
-                    MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo Footage — Footage phải lớn hơn 0.",
-                        "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(Lang.T("Receipts.Warn.FootageRequired", d.Id, d.WoodType),
+                        Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
             }
             else if (D(d.Width) <= 0 || D(d.Length) <= 0)
             {
-                MessageBox.Show($"Kiện {d.Id}: {d.WoodType} tính theo quy cách — Rộng và Dài phải lớn hơn 0.",
-                    "Quản Lý Gỗ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Lang.T("Receipts.Warn.SpecRequired", d.Id, d.WoodType),
+                    Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if ((int)D(d.Quantity) <= 0)
             {
-                MessageBox.Show($"Kiện {d.Id}: Số lượng phải lớn hơn 0.", "Quản Lý Gỗ",
+                MessageBox.Show(Lang.T("Receipts.Warn.QuantityRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -1043,7 +1042,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Không thể lưu", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -1060,7 +1059,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string Invoice => Receipt.Invoice ?? "";
         public string InvoiceText => string.IsNullOrWhiteSpace(Receipt.Invoice) ? "—" : Receipt.Invoice;
         public int LotCount => Receipt.Lots.Count;
-        public string LotCountText => $"{Receipt.Lots.Count} kiện";
+        public string LotCountText => Lang.T("Receipts.RecRow.LotCountText", Receipt.Lots.Count);
         public double Vol { get; }
         public string VolText => $"{Fmt.M3(Vol)} m³";
         public decimal VndTotal { get; }
@@ -1095,7 +1094,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         var current = (FilterSupplier.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         FilterSupplier.Items.Clear();
-        FilterSupplier.Items.Add(new ComboBoxItem { Content = "Tất cả nhà cung cấp", Tag = "ALL" });
+        FilterSupplier.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.Filter.AllSuppliers"), Tag = "ALL" });
         foreach (var s in AppState.Suppliers)
             FilterSupplier.Items.Add(new ComboBoxItem { Content = s.Name, Tag = s.Id });
         foreach (ComboBoxItem it in FilterSupplier.Items)
@@ -1175,7 +1174,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         var expand = ColumnFilterPanel.Visibility != Visibility.Visible;
         ColumnFilterPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-        ToggleColumnFiltersLabel.Text = expand ? "Ẩn lọc theo cột" : "Lọc theo cột";
+        ToggleColumnFiltersLabel.Text = expand ? Lang.T("Common.HideColumnFilter") : Lang.T("Common.FilterByColumn");
     }
 
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
