@@ -16,4 +16,12 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
   </ItemGroup>
 
+  <!-- File dịch đa ngôn ngữ (JSON, không hardcode trong code) — copy nguyên văn ra thư mục cài đặt,
+       chỉnh sửa/thêm ngôn ngữ mới không cần build lại. Xem Helpers/LanguageService.cs. -->
+  <ItemGroup>
+    <Content Include="Resources\Lang\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

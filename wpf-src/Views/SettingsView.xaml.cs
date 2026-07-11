@@ -13,10 +13,13 @@ namespace WoodInventory.Views;
 
 public partial class SettingsView : UserControl, IModuleView
 {
+    private bool _loadingLanguage;
+
     public SettingsView()
     {
         InitializeComponent();
         InitTaxCombo();
+        InitLanguageCombo();
         RefreshView();
     }
 
@@ -25,6 +28,13 @@ public partial class SettingsView : UserControl, IModuleView
         FTaxPercent.Items.Clear();
         foreach (var t in new[] { "0", "5", "8", "10" })
             FTaxPercent.Items.Add(new ComboBoxItem { Content = $"{t}%", Tag = t });
+    }
+
+    private void InitLanguageCombo()
+    {
+        FLanguage.Items.Clear();
+        foreach (var (code, label) in LanguageService.Available)
+            FLanguage.Items.Add(new ComboBoxItem { Content = label, Tag = code });
     }
 
     public void RefreshView()
@@ -44,6 +54,22 @@ public partial class SettingsView : UserControl, IModuleView
         foreach (ComboBoxItem it in FTaxPercent.Items)
             if ((it.Tag as string) == taxTag) { FTaxPercent.SelectedItem = it; break; }
         if (FTaxPercent.SelectedIndex < 0) FTaxPercent.SelectedIndex = 3; // mặc định 10% nếu giá trị lạ
+
+        _loadingLanguage = true;
+        FLanguage.SelectedIndex = -1;
+        foreach (ComboBoxItem it in FLanguage.Items)
+            if ((it.Tag as string) == s.Language) { FLanguage.SelectedItem = it; break; }
+        if (FLanguage.SelectedIndex < 0) FLanguage.SelectedIndex = 0;
+        _loadingLanguage = false;
+    }
+
+    /// <summary>Đổi ngôn ngữ áp dụng NGAY (hot-swap) — không qua nút "Lưu cài đặt" chung như các field khác.</summary>
+    private void FLanguage_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingLanguage) return;
+        var code = (FLanguage.SelectedItem as ComboBoxItem)?.Tag as string ?? "vi";
+        Lang.SetLanguage(code);
+        AppState.SetLanguage(code);
     }
 
     // ---------------- Cảnh báo inline ----------------

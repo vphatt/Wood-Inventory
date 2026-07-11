@@ -195,9 +195,12 @@ public static class DbSeeder
                 "DefaultExchangeRate" TEXT NOT NULL,
                 "DefaultTaxPercent" TEXT NOT NULL,
                 "DefaultVolumeDecimals" INTEGER NOT NULL,
-                "LowStockThreshold" INTEGER NOT NULL
+                "LowStockThreshold" INTEGER NOT NULL,
+                "Language" TEXT NULL
             );
             """);
+        AddColumnIfMissing(context, "AppSettings", "Language", "TEXT");
+        context.Database.ExecuteSqlRaw("""UPDATE "AppSettings" SET "Language" = 'vi' WHERE "Language" IS NULL;""");
     }
 
     /// <summary>Mồi đúng 1 dòng cài đặt mặc định (chỉ khi bảng rỗng) — khớp các giá trị hardcode cũ.</summary>
@@ -215,7 +218,8 @@ public static class DbSeeder
             DefaultExchangeRate = 25400,
             DefaultTaxPercent = 10,
             DefaultVolumeDecimals = 5,
-            LowStockThreshold = 30
+            LowStockThreshold = 30,
+            Language = "vi"
         });
         context.SaveChanges();
     }

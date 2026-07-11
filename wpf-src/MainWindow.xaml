@@ -1,7 +1,8 @@
 ﻿<Window x:Class="WoodInventory.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quản Lý Gỗ" Width="1500" Height="920"
+        xmlns:helpers="clr-namespace:WoodInventory.Helpers"
+        Title="{helpers:Loc App.WindowTitle}" Width="1500" Height="920"
         MinWidth="1180" MinHeight="720"
         WindowStartupLocation="CenterScreen" WindowState="Maximized"
         Background="#F1F5F9" FontFamily="Segoe UI" FontSize="12"
@@ -30,8 +31,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel x:Name="LogoTextPanel" Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="Quản Lý Gỗ" Foreground="White" FontWeight="SemiBold" FontSize="15"/>
-                                <TextBlock Text="V1.0.4 - PRO EDITION" Foreground="#7A94A3B8" FontSize="9"
+                                <TextBlock Text="{helpers:Loc App.LogoTitle}" Foreground="White" FontWeight="SemiBold" FontSize="15"/>
+                                <TextBlock Text="{helpers:Loc App.LogoSubtitle}" Foreground="#7A94A3B8" FontSize="9"
                                            Margin="0,3,0,0">
                                     <TextBlock.LayoutTransform>
                                         <ScaleTransform/>
@@ -42,7 +43,7 @@
                         <Border x:Name="BtnToggleSidebar" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 Padding="12,8,12,8" CornerRadius="6"
                                 Background="Transparent" Cursor="Hand" MouseLeftButtonDown="BtnToggleSidebar_Click"
-                                ToolTip="Thu nhỏ / mở rộng sidebar">
+                                ToolTip="{helpers:Loc App.ToggleSidebar}">
                             <TextBlock x:Name="SidebarToggleIcon" Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                        Foreground="{StaticResource Slate400}"/>
                         </Border>
@@ -84,9 +85,9 @@
                     BorderThickness="0,0,0,1" Padding="24,0">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Home" Foreground="{StaticResource Slate500}" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{helpers:Loc App.Breadcrumb.Home}" Foreground="{StaticResource Slate500}" FontSize="13" FontWeight="Medium"/>
                         <TextBlock Text="/" Foreground="{StaticResource Slate300}" FontSize="13" Margin="8,0"/>
-                        <TextBlock Text="Quản Lý Gỗ" Foreground="{StaticResource Slate900}" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{helpers:Loc App.Breadcrumb.Org}" Foreground="{StaticResource Slate900}" FontSize="13" FontWeight="Medium"/>
                         <TextBlock Text="/" Foreground="{StaticResource Slate300}" FontSize="13" Margin="8,0"/>
                         <TextBlock x:Name="BreadcrumbCurrent" Text="Bảng Điều Khiển"
                                    Foreground="{StaticResource Slate900}" FontSize="13" FontWeight="SemiBold"

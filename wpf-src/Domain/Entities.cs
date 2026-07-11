@@ -209,4 +209,5 @@ public class AppSettings
     public decimal DefaultTaxPercent { get; set; }
     public int DefaultVolumeDecimals { get; set; }
     public int LowStockThreshold { get; set; }
+    public string Language { get; set; } = "vi";   // "vi" | "zh-Hans"
 }

@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WoodInventory.Data;
+using WoodInventory.Helpers;
 using WoodInventory.Views;
 
 namespace WoodInventory;
@@ -24,16 +25,16 @@ public partial class MainWindow : Window
 
     private static readonly NavItem[] NavItems =
     {
-        new("dashboard",  "Bảng Điều Khiển",        ""),
-        new("suppliers",  "Nhà Cung Cấp",           "", "THÔNG TIN CHUNG"),
-        new("categories", "Phân Loại Gỗ",         "", "THÔNG TIN CHUNG"),
-        new("receipts",   "Nhập Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
-        new("lots",       "Tồn Kho", "", "XUẤT NHẬP GỖ"),
-        new("issues",     "Xuất Kho Gỗ",            "", "XUẤT NHẬP GỖ"),
+        new("dashboard",  "Nav.Dashboard",        ""),
+        new("suppliers",  "Nav.Suppliers",           "", "Nav.Group.General"),
+        new("categories", "Nav.Categories",         "", "Nav.Group.General"),
+        new("receipts",   "Nav.Receipts",            "", "Nav.Group.Inventory"),
+        new("lots",       "Nav.Lots", "", "Nav.Group.Inventory"),
+        new("issues",     "Nav.Issues",            "", "Nav.Group.Inventory"),
     };
 
     /// <summary>Ghim riêng ở đáy sidebar (ngoài NavPanel cuộn được) — luôn hiện, không thuộc nhóm nào.</summary>
-    private static readonly NavItem SettingsNavItem = new("settings", "Cài Đặt", "");
+    private static readonly NavItem SettingsNavItem = new("settings", "Nav.Settings", "");
 
     private readonly List<WorkTab> _tabs = new();
     private readonly Dictionary<string, UserControl> _viewCache = new();
@@ -53,6 +54,9 @@ public partial class MainWindow : Window
         AppState.Changed += OnDataChanged;
         Unloaded += (_, _) => AppState.Changed -= OnDataChanged;
 
+        LanguageService.Instance.LanguageChanged += OnLanguageChanged;
+        Unloaded += (_, _) => LanguageService.Instance.LanguageChanged -= OnLanguageChanged;
+
         UpdateFooterCompanyName();
         OpenModule("dashboard");
 
@@ -71,23 +75,41 @@ public partial class MainWindow : Window
             refreshable.RefreshView();
     }
 
+    /// <summary>
+    /// Hot-swap ngôn ngữ: phần XAML tĩnh (Text="{helpers:Loc ...}") tự cập nhật qua binding, nhưng phần
+    /// dựng bằng code-behind (nav, tab title, breadcrumb, và bên trong từng View) phải tự rebuild lại —
+    /// dùng lại đúng các hàm Build.../RefreshView() sẵn có, giống hệt cơ chế AppState.Changed.
+    /// </summary>
+    private void OnLanguageChanged()
+    {
+        foreach (var tab in _tabs) tab.Title = GetModuleTitle(tab.Module);
+        var active = _tabs.FirstOrDefault(t => t.Module == _activeModule);
+        if (active != null) BreadcrumbCurrent.Text = active.Title;
+
+        BuildNav();
+        BuildTabStrip();
+
+        foreach (var view in _viewCache.Values)
+            (view as IModuleView)?.RefreshView();
+    }
+
     private void UpdateFooterCompanyName()
     {
         var name = AppState.Settings.CompanyName;
         FooterCompanyName.Text = string.IsNullOrWhiteSpace(name) ? "" : name.ToUpperInvariant();
     }
 
-    private static string GetModuleTitle(string module) => module switch
+    private static string GetModuleTitle(string module) => Lang.T(module switch
     {
-        "dashboard" => "Bảng Điều Khiển",
-        "categories" => "Phân Loại Gỗ",
-        "suppliers" => "Nhà Cung Cấp",
-        "lots" => "Tồn Kho",
-        "receipts" => "Nhập Kho Gỗ",
-        "issues" => "Xuất Kho Gỗ",
-        "settings" => "Cài Đặt",
+        "dashboard" => "Nav.Dashboard",
+        "categories" => "Nav.Categories",
+        "suppliers" => "Nav.Suppliers",
+        "lots" => "Nav.Lots",
+        "receipts" => "Nav.Receipts",
+        "issues" => "Nav.Issues",
+        "settings" => "Nav.Settings",
         _ => "Module"
-    };
+    });
 
     /// <summary>Mở module: nếu tab đã tồn tại thì kích hoạt, chưa có thì thêm tab mới (giống web).</summary>
     public void OpenModule(string module)
@@ -202,7 +224,7 @@ public partial class MainWindow : Window
                 {
                     NavPanel.Children.Add(new TextBlock
                     {
-                        Text = _sidebarCollapsed ? "—" : item.Group,
+                        Text = _sidebarCollapsed ? "—" : Lang.T(item.Group),
                         Foreground = (Brush)FindResource("Slate500"),
                         FontSize = 10.5, FontWeight = FontWeights.Bold,
                         TextAlignment = _sidebarCollapsed ? TextAlignment.Center : TextAlignment.Left,
@@ -238,7 +260,7 @@ public partial class MainWindow : Window
 
         var label = new TextBlock
         {
-            Text = item.Label,
+            Text = Lang.T(item.Label),
             FontSize = 12,
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
@@ -295,7 +317,7 @@ public partial class MainWindow : Window
             Cursor = Cursors.Hand,
             Child = row,
             Tag = item.Module,
-            ToolTip = _sidebarCollapsed ? item.Label : null
+            ToolTip = _sidebarCollapsed ? Lang.T(item.Label) : null
         };
 
         border.MouseLeftButtonDown += (_, _) => OpenModule(item.Module);

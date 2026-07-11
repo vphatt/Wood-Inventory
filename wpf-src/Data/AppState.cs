@@ -68,6 +68,18 @@ public static class AppState
         Commit();
     }
 
+    /// <summary>Đổi ngôn ngữ hiển thị — lưu ngay (không qua nút "Lưu cài đặt" chung) vì áp dụng tức thời (hot-swap).</summary>
+    public static void SetLanguage(string language)
+    {
+        using var db = new AppDbContext();
+        var existing = db.Settings.FirstOrDefault(s => s.Id == "default");
+        if (existing == null) return;
+
+        existing.Language = language;
+        db.SaveChanges();
+        Commit();
+    }
+
     private static void Commit()
     {
         Reload();

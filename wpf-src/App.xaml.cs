@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using WoodInventory.Data;
+using WoodInventory.Helpers;
 
 namespace WoodInventory;
 
@@ -18,6 +19,7 @@ public partial class App : Application
 
         // Khởi tạo SQLite + seed dữ liệu mẫu trước khi mở cửa sổ chính
         AppState.Initialize();
+        LanguageService.Instance.Initialize(AppState.Settings.Language);
 
         new MainWindow().Show();
     }
