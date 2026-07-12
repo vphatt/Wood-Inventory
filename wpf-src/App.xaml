@@ -518,7 +518,7 @@
                                     <!-- Hàng tên thứ tự vẽ TĨNH (bản .NET này Calendar không tự sinh header thứ vào hàng 0 của
                                          PART_MonthView — để trống thật, không phải lỗi hiển thị). Đặt đè lên đúng vùng hàng 0
                                          còn trống đó (cùng Grid.Row với PART_MonthView, ghim Top) nên không đụng hàng ngày bên dưới. -->
-                                    <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Height="24" IsHitTestVisible="False">
+                                    <Grid x:Name="DayNamesRow" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Height="24" IsHitTestVisible="False">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="32"/>
                                             <ColumnDefinition Width="32"/>
@@ -626,6 +626,72 @@
                                             <Button Content="Th 10" Tag="10" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
                                             <Button Content="Th 11" Tag="11" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
                                             <Button Content="Th 12" Tag="12" Style="{StaticResource CalMonthPickButtonStyle}" Click="MonthPickerMonth_Click"/>
+                                        </UniformGrid>
+                                    </Grid>
+
+                                    <!-- Bộ chọn NĂM TỰ LÀM (bấm tiêu đề header lần 2, khi đang ở lưới Tháng) — 12 năm/trang,
+                                         mũi tên lùi/tiến 12 năm. Nội dung nút năm do code đổ (App.xaml.cs FillYearPicker). -->
+                                    <Grid x:Name="YearPickerView" Grid.Row="1" HorizontalAlignment="Center" Visibility="Collapsed">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid Grid.Row="0" Width="224" Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="YearPickerPrev" Grid.Column="0" Width="26" Height="26" Focusable="False"
+                                                    Click="YearPickerPrev_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="pzb" CornerRadius="6" Background="Transparent">
+                                                            <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                       Foreground="{StaticResource Slate500}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="pzb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <TextBlock x:Name="YearPickerRangeText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Slate800}"/>
+                                            <Button x:Name="YearPickerNext" Grid.Column="2" Width="26" Height="26" Focusable="False"
+                                                    Click="YearPickerNext_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="nzb" CornerRadius="6" Background="Transparent">
+                                                            <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                                       Foreground="{StaticResource Slate500}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="nzb" Property="Background" Value="{StaticResource Slate100}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                        <UniformGrid x:Name="YearPickerGrid" Grid.Row="1" Columns="4" Rows="3" Width="224">
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
+                                            <Button Style="{StaticResource CalMonthPickButtonStyle}" Click="YearPickerYear_Click"/>
                                         </UniformGrid>
                                     </Grid>
 
