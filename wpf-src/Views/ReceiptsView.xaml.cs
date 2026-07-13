@@ -35,13 +35,19 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         // Kết quả tính toán gần nhất
         public double Cbm;
-        public decimal EffectivePrice;
+        public decimal EffectivePrice;   // LUÔN là con số đang có trong ô Đơn giá (user sửa đè được)
         public decimal CostPriceVnd;
         public decimal TotalPrice;
         public decimal TotalVnd;
         public decimal TaxVnd;
         public decimal TotalValueVnd;
-        public bool PriceFromQuotation;
+        public bool PriceFromQuotation;  // có khớp được 1 dòng báo giá không
+
+        // Dòng báo giá khớp được (để so lệch + tooltip + cập nhật ngược khi lưu)
+        public decimal QuotedPrice;      // đơn giá trên báo giá (0 = không khớp dòng nào)
+        public string QuotedCurrency;    // đơn vị của dòng báo giá đó (tooltip hiện đúng $ hay ₫)
+        public string QuotedItemId;      // Id dòng báo giá — dùng khi user chọn "cập nhật đơn giá mới cho báo giá"
+        public decimal LastQuoted;       // giá báo giá lần tự-điền gần nhất → biết match có ĐỔI để điền lại ô
     }
 
     private readonly List<DraftLot> _draftLots = new();
@@ -165,9 +171,14 @@ public partial class ReceiptsView : UserControl, IModuleView
         var thickness = ParseThickness(lot);
         var matched = LookupQuotationItem(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin);
         lot.PriceFromQuotation = matched != null && matched.Price > 0;
+        lot.QuotedPrice = lot.PriceFromQuotation ? matched.Price : 0;
+        lot.QuotedCurrency = lot.PriceFromQuotation ? matched.PriceCurrency : null;
+        lot.QuotedItemId = lot.PriceFromQuotation ? matched.Id : null;
         // Đơn giản hóa: không quan tâm báo giá NCC ghi theo USD hay VND, chỉ lấy con số — đơn vị tiền tệ
         // do người dùng chọn ở header phiếu (FCurrency) quyết định, Tỷ giá luôn nhân như cũ (VND thì Tỷ giá đã bị khóa = 1).
-        lot.EffectivePrice = lot.PriceFromQuotation ? matched.Price : (decimal)D(lot.ManualPriceText);
+        // Đơn giá LUÔN lấy con số đang có trong ô: giá báo giá chỉ được TỰ ĐIỀN vào ô (xem Update() trong BuildLotRow),
+        // sau đó user có quyền sửa đè — lệch so với báo giá thì hiện icon ≠ và cảnh báo lúc lưu.
+        lot.EffectivePrice = (decimal)D(lot.ManualPriceText);
         lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
             D(lot.Length), (int)D(lot.Quantity), D(lot.Footage), lot.VolumeDecimals, lot.VolumeAdjustment);
         lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePrice,
@@ -292,17 +303,14 @@ public partial class ReceiptsView : UserControl, IModuleView
         totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
         taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
         grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
+        // Đơn giá LUÔN sửa được (kể cả khi đã khớp báo giá) — chỉ khóa ở chế độ xem.
         var priceBox = new TextBox
         {
             Style = (Style)FindResource("CellInputMono"),
-            Text = lot.PriceFromQuotation ? Fmt.Num((double)lot.EffectivePrice) : lot.ManualPriceText,
+            Text = lot.ManualPriceText,
             TextAlignment = TextAlignment.Right,
             Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center,
-            IsReadOnly = ReadOnly || lot.PriceFromQuotation,
-            Foreground = lot.PriceFromQuotation
-                ? (Brush)FindResource("Emerald600")
-                : (Brush)FindResource("Slate700"),
-            FontWeight = lot.PriceFromQuotation ? FontWeights.SemiBold : FontWeights.Normal
+            IsReadOnly = ReadOnly
         };
         // Chưa khớp báo giá và cũng chưa nhập tay → hiện "Chưa xác định" đè lên ô trống
         // (giống pattern SearchHint), thay vì chỉ tô đỏ giá trị hiện có.
@@ -313,44 +321,70 @@ public partial class ReceiptsView : UserControl, IModuleView
             Foreground = (Brush)FindResource("Slate400"),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(6, 0, 12, 0), IsHitTestVisible = false,
-            Visibility = !lot.PriceFromQuotation && string.IsNullOrWhiteSpace(lot.ManualPriceText)
-                ? Visibility.Visible : Visibility.Collapsed
+            Visibility = Visibility.Collapsed
+        };
+        // Icon "≠" mép TRÁI ô đơn giá: chỉ hiện khi giá đang nhập LỆCH so với dòng báo giá khớp được.
+        // Hover hiện đơn giá gốc trên báo giá (theo đúng đơn vị của dòng báo giá đó).
+        var mismatchIcon = new TextBlock
+        {
+            Text = "≠", FontWeight = FontWeights.Bold, FontSize = 14,
+            Foreground = (Brush)FindResource("Amber600"),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0), Cursor = Cursors.Hand,
+            Visibility = Visibility.Collapsed
         };
 
         void Update()
         {
             Recalculate(lot);
+
+            // Báo giá khớp được vừa ĐỔI (đổi loại gỗ/kích thước/xuất xứ...) → tự điền giá mới vào ô,
+            // NHƯNG chỉ khi user chưa sửa đè (ô trống, hoặc đang giữ đúng giá báo giá cũ).
+            if (lot.QuotedPrice != lot.LastQuoted)
+            {
+                var untouched = string.IsNullOrWhiteSpace(priceBox.Text)
+                    || (lot.LastQuoted > 0 && priceBox.Text == Fmt.Num((double)lot.LastQuoted));
+                lot.LastQuoted = lot.QuotedPrice;
+                if (untouched && lot.QuotedPrice > 0)
+                {
+                    var auto = Fmt.Num((double)lot.QuotedPrice);
+                    if (priceBox.Text != auto) { priceBox.Text = auto; return; }   // TextChanged sẽ gọi lại Update()
+                }
+            }
+
             cbmText.Text = Fmt.M3(lot.Cbm, lot.VolumeDecimals);
             totalUsdText.Text = Fmt.Money(lot.TotalPrice, SelectedCurrency);
             totalVndText.Text = Fmt.Vnd(lot.TotalVnd);
             taxVndText.Text = Fmt.Vnd(lot.TaxVnd);
             grandTotalText.Text = Fmt.Vnd(lot.TotalValueVnd);
-            if (lot.PriceFromQuotation)
-            {
-                priceBox.IsReadOnly = true;
-                priceBox.Foreground = (Brush)FindResource("Emerald600");
-                priceBox.FontWeight = FontWeights.SemiBold;
-                var autoText = Fmt.Num((double)lot.EffectivePrice);
-                if (priceBox.Text != autoText) priceBox.Text = autoText;
-                priceHint.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                priceBox.IsReadOnly = ReadOnly;
-                priceBox.Foreground = (Brush)FindResource("Slate700");
-                priceBox.FontWeight = FontWeights.Normal;
-                // Reset lại text nếu trước đó đang hiện giá tự động (vd đổi độ dày làm mất khớp báo giá)
-                if (priceBox.Text != lot.ManualPriceText) priceBox.Text = lot.ManualPriceText;
-                priceHint.Visibility = string.IsNullOrWhiteSpace(lot.ManualPriceText)
-                    ? Visibility.Visible : Visibility.Collapsed;
-            }
+
+            var mismatch = lot.QuotedPrice > 0 && lot.EffectivePrice != lot.QuotedPrice;
+            priceBox.Foreground = (Brush)FindResource(
+                mismatch ? "Amber600" : lot.QuotedPrice > 0 ? "Emerald600" : "Slate700");
+            priceBox.FontWeight = lot.QuotedPrice > 0 ? FontWeights.SemiBold : FontWeights.Normal;
+            priceBox.IsReadOnly = ReadOnly;
+
+            mismatchIcon.Visibility = mismatch ? Visibility.Visible : Visibility.Collapsed;
+            if (mismatch)
+                mismatchIcon.ToolTip = Lang.T("Receipts.PriceMismatch.Tooltip",
+                    Fmt.Money(lot.QuotedPrice, lot.QuotedCurrency ?? SelectedCurrency));
+
+            priceHint.Visibility = lot.QuotedPrice == 0 && string.IsNullOrWhiteSpace(lot.ManualPriceText)
+                ? Visibility.Visible : Visibility.Collapsed;
             UpdateTotals();
         }
         _rowUpdaters.Add(Update);
 
-        priceBox.TextChanged += (_, _) =>
+        priceBox.TextChanged += (_, _) => { lot.ManualPriceText = priceBox.Text; Update(); };
+
+        // Nhấp đúp icon "≠" → bỏ phần sửa tay, trả ô đơn giá về đúng giá trên báo giá
+        // (TextChanged sẽ gọi Update() → icon tự ẩn, ô đổi lại màu khớp báo giá).
+        mismatchIcon.MouseLeftButtonDown += (_, e) =>
         {
-            if (!lot.PriceFromQuotation) { lot.ManualPriceText = priceBox.Text; Update(); }
+            if (e.ClickCount < 2 || ReadOnly || lot.QuotedPrice <= 0) return;
+            priceBox.Text = Fmt.Num((double)lot.QuotedPrice);
+            priceBox.CaretIndex = priceBox.Text.Length;
+            e.Handled = true;
         };
 
         // STT (không sửa được, chỉ hiển thị thứ tự)
@@ -510,6 +544,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         // 14. Đơn giá  15-18. Tổng tiền gốc/VND, Tiền thuế, Tổng cộng
         Grid.SetColumn(priceBox, 14); grid.Children.Add(priceBox);
         Grid.SetColumn(priceHint, 14); grid.Children.Add(priceHint);
+        Grid.SetColumn(mismatchIcon, 14); grid.Children.Add(mismatchIcon);   // đè mép trái ô đơn giá
         Grid.SetColumn(totalUsdText, 15); grid.Children.Add(totalUsdText);
         Grid.SetColumn(totalVndText, 16); grid.Children.Add(totalVndText);
         Grid.SetColumn(taxVndText, 17); grid.Children.Add(taxVndText);
@@ -994,6 +1029,23 @@ public partial class ReceiptsView : UserControl, IModuleView
             }
         }
 
+        // Đơn giá lệch so với báo giá → cảnh báo + hỏi có ghi đè giá mới vào báo giá không.
+        foreach (var d in _draftLots) Recalculate(d);
+        var mismatched = _draftLots
+            .Where(d => d.QuotedPrice > 0 && d.EffectivePrice != d.QuotedPrice)
+            .ToList();
+        var updateQuotation = false;
+        if (mismatched.Count > 0)
+        {
+            var lines = mismatched.Select(d => new PriceMismatchLine(
+                d.Id,
+                Fmt.Money(d.QuotedPrice, d.QuotedCurrency ?? SelectedCurrency),
+                Fmt.Money(d.EffectivePrice, SelectedCurrency)));
+            var dlg = new PriceMismatchDialog(lines) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() != true) return;     // Không → hủy lưu, quay lại form
+            updateQuotation = dlg.UpdateQuotation;
+        }
+
         var receiptId = _mode == "edit"
             ? _editingReceiptId
             : $"REC-{Random.Shared.Next(10000, 99999)}";
@@ -1058,6 +1110,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             if (_mode == "edit") AppState.UpdateReceipt(receipt);
             else AppState.AddReceipt(receipt);
+            if (updateQuotation) ApplyQuotationPriceUpdates(mismatched);
             var saved = AppState.Receipts.FirstOrDefault(r => r.Id == receiptId);
             if (saved != null) EnterViewMode(saved);
             else { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
@@ -1065,6 +1118,37 @@ public partial class ReceiptsView : UserControl, IModuleView
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// Ghi đè đơn giá vừa nhập vào đúng dòng báo giá đã khớp (kèm "Chỉnh sửa lần cuối" do
+    /// <c>AppState.UpdateQuotationItem</c> tự set). Nhiều kiện cùng khớp 1 dòng giá → lấy kiện CUỐI.
+    /// </summary>
+    private void ApplyQuotationPriceUpdates(List<DraftLot> mismatched)
+    {
+        var currency = SelectedCurrency;
+        // Gom trước: mỗi lần UpdateQuotationItem sẽ Reload AppState nên không iterate list cũ được.
+        var updates = mismatched
+            .Where(d => !string.IsNullOrEmpty(d.QuotedItemId))
+            .GroupBy(d => d.QuotedItemId)
+            .Select(g => (ItemId: g.Key, Price: g.Last().EffectivePrice))
+            .ToList();
+
+        foreach (var (itemId, price) in updates)
+        {
+            var item = AppState.Quotations.SelectMany(q => q.Items).FirstOrDefault(i => i.Id == itemId);
+            if (item == null) continue;
+            item.Price = price;
+            item.PriceCurrency = currency;   // giá vừa nhập theo đơn vị tiền tệ của phiếu nhập
+            try
+            {
+                AppState.UpdateQuotationItem(item);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 

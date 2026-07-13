@@ -185,13 +185,14 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="FThickMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WThickRange}" TextChanged="Field_Changed"/>
-                                <TextBlock x:Name="FThickMinHint" Grid.Column="0" Text="{helpers:Loc Quotations.ThickHintMin}" FontFamily="{StaticResource FontMono}"
+                                <!-- Hint (placeholder): nội dung do code đặt theo CHIP đang chọn — xem ApplyDim() -->
+                                <TextBlock x:Name="FThickMinHint" Grid.Column="0" FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False" Visibility="Collapsed"/>
                                 <TextBlock x:Name="FThickSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FThickMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WThickRange}" TextChanged="Field_Changed"/>
-                                <TextBlock x:Name="FThickMaxHint" Grid.Column="2" Text="{helpers:Loc Quotations.ThickHintMax}" FontFamily="{StaticResource FontMono}"
+                                <TextBlock x:Name="FThickMaxHint" Grid.Column="2" FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False" Visibility="Collapsed"/>
                             </Grid>
@@ -220,9 +221,15 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="FWidthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock x:Name="FWidthMinHint" Grid.Column="0" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False" Visibility="Collapsed"/>
                                 <TextBlock x:Name="FWidthSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FWidthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock x:Name="FWidthMaxHint" Grid.Column="2" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False" Visibility="Collapsed"/>
                             </Grid>
                             <TextBlock x:Name="WWidthRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
@@ -249,9 +256,15 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="FLengthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock x:Name="FLengthMinHint" Grid.Column="0" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False" Visibility="Collapsed"/>
                                 <TextBlock x:Name="FLengthSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FLengthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
+                                <TextBlock x:Name="FLengthMaxHint" Grid.Column="2" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False" Visibility="Collapsed"/>
                             </Grid>
                             <TextBlock x:Name="WLengthRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>

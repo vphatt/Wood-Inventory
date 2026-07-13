@@ -126,6 +126,7 @@ public partial class QuotationDetailView : UserControl
         }
         _view.Refresh();
         UpdateCountAndEmpty();
+        ApplyAllDims();   // hint đặt bằng Lang.T (không phải {Loc}) → phải áp lại khi đổi ngôn ngữ
     }
 
     private static void SelectByTag(ComboBox combo, string tag)
@@ -222,7 +223,10 @@ public partial class QuotationDetailView : UserControl
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is TextBlock w) w.Visibility = Visibility.Collapsed;
+        // Gõ vào ô nào thì ẩn/hiện lại hint (placeholder) của đúng field đó.
         if (sender == FThickMin || sender == FThickMax) ApplyThicknessVisibility();
+        else if (sender == FWidthMin || sender == FWidthMax) ApplyWidthVisibility();
+        else if (sender == FLengthMin || sender == FLengthMax) ApplyLengthVisibility();
     }
 
     /// <summary>Đọc chip đang chọn của 1 bộ 3 radio Đơn lẻ/Khoảng/Nhiều — mặc định Khoảng nếu chưa chip nào được chọn.</summary>
@@ -250,28 +254,62 @@ public partial class QuotationDetailView : UserControl
         minBox.ToolTip = mode == DimMode.List ? Lang.T("Quotations.Field.RangeHint") : null;
     }
 
+    /// <summary>
+    /// Ẩn/hiện ô + đặt HINT (placeholder) của 1 field kích thước THEO ĐÚNG CHIP đang chọn:
+    /// Đơn lẻ → 1 ô, hint 1 giá trị; Khoảng → 2 ô, hint "Từ"/"Đến"; Nhiều → 1 ô, hint danh sách "a/b/c".
+    /// Hint chỉ hiện khi ô TRỐNG (kiểu placeholder) và form không ở chế độ chỉ-đọc.
+    /// </summary>
+    private void ApplyDim(TextBox minBox, TextBox maxBox, TextBlock sep, TextBlock minHint, TextBlock maxHint,
+        DimMode mode, string singleKey, string minKey, string maxKey, string listKey)
+    {
+        ApplyDimVisibility(minBox, maxBox, sep, mode);
+
+        minHint.Text = Lang.T(mode == DimMode.Single ? singleKey : mode == DimMode.List ? listKey : minKey);
+        maxHint.Text = Lang.T(maxKey);
+
+        var ro = minBox.IsReadOnly;   // chế độ xem: không gợi ý nhập liệu
+        minHint.Visibility = !ro && string.IsNullOrEmpty(minBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        maxHint.Visibility = !ro && mode == DimMode.Range && string.IsNullOrEmpty(maxBox.Text)
+            ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void ThicknessMode_Changed(object sender, RoutedEventArgs e) => ApplyThicknessVisibility();
+    private void WidthMode_Changed(object sender, RoutedEventArgs e) => ApplyWidthVisibility();
+    private void LengthMode_Changed(object sender, RoutedEventArgs e) => ApplyLengthVisibility();
 
-    private void WidthMode_Changed(object sender, RoutedEventArgs e) =>
-        ApplyDimVisibility(FWidthMin, FWidthMax, FWidthSep, GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti));
+    private void ApplyWidthVisibility() =>
+        ApplyDim(FWidthMin, FWidthMax, FWidthSep, FWidthMinHint, FWidthMaxHint,
+            GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti),
+            "Quotations.Hint.WidthSingle", "Quotations.Hint.WidthMin", "Quotations.Hint.WidthMax", "Quotations.Hint.WidthList");
 
-    private void LengthMode_Changed(object sender, RoutedEventArgs e) =>
-        ApplyDimVisibility(FLengthMin, FLengthMax, FLengthSep, GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti));
+    private void ApplyLengthVisibility() =>
+        ApplyDim(FLengthMin, FLengthMax, FLengthSep, FLengthMinHint, FLengthMaxHint,
+            GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti),
+            "Quotations.Hint.LengthSingle", "Quotations.Hint.LengthMin", "Quotations.Hint.LengthMax", "Quotations.Hint.LengthList");
 
     /// <summary>Gỗ nhóm Footage — mm chính xác vô nghĩa, độ dày chỉ mô tả theo ký hiệu ngành gỗ Mỹ (vd "4/4\"").</summary>
     private static bool IsFootage(string woodType) => AppState.GetVolumeRule(woodType) == VolumeRule.ByFootage;
 
-    /// <summary>Như <see cref="ApplyDimVisibility"/> nhưng cho Dày — riêng field này Footage vẫn dùng ký hiệu
-    /// inch (không phải mm) nên hiện thêm placeholder hint "vd 4/4&quot;"/"vd 8/4&quot;" khi ô trống; chip
-    /// "Nhiều" không có ý nghĩa với Footage (đã ẩn ở <see cref="SyncThicknessForWoodType"/>) vì "/" đã dùng
-    /// cho ký hiệu phân số inch.</summary>
+    /// <summary>Như <see cref="ApplyDim"/> nhưng cho Dày — gỗ Footage nhập ký hiệu inch (vd "4/4&quot;") thay vì mm
+    /// nên bộ hint khác hẳn; chip "Nhiều" không có với Footage (đã ẩn ở <see cref="SyncThicknessForWoodType"/>)
+    /// vì "/" đã dùng cho ký hiệu phân số inch.</summary>
     private void ApplyThicknessVisibility()
     {
         var footage = IsFootage((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
-        var mode = GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti);
-        ApplyDimVisibility(FThickMin, FThickMax, FThickSep, mode);
-        FThickMinHint.Visibility = footage && string.IsNullOrEmpty(FThickMin.Text) ? Visibility.Visible : Visibility.Collapsed;
-        FThickMaxHint.Visibility = footage && mode == DimMode.Range && string.IsNullOrEmpty(FThickMax.Text) ? Visibility.Visible : Visibility.Collapsed;
+        ApplyDim(FThickMin, FThickMax, FThickSep, FThickMinHint, FThickMaxHint,
+            GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti),
+            singleKey: footage ? "Quotations.ThickHintMin" : "Quotations.Hint.ThickSingle",
+            minKey: footage ? "Quotations.ThickHintMin" : "Quotations.Hint.ThickMin",
+            maxKey: footage ? "Quotations.ThickHintMax" : "Quotations.Hint.ThickMax",
+            listKey: "Quotations.Hint.ThickList");
+    }
+
+    /// <summary>Áp lại hint/ẩn-hiện cho CẢ 3 field kích thước (dùng khi mở form, đổi chế độ xem/sửa, đổi ngôn ngữ).</summary>
+    private void ApplyAllDims()
+    {
+        ApplyThicknessVisibility();
+        ApplyWidthVisibility();
+        ApplyLengthVisibility();
     }
 
     /// <summary>Đổi nhãn Dày (mm thường vs ký hiệu inch Footage) + ẩn chip "Nhiều" khi gỗ Footage (không hỗ trợ
@@ -378,6 +416,7 @@ public partial class QuotationDetailView : UserControl
         FThickModeSingle.IsEnabled = FThickModeRange.IsEnabled = FThickModeMulti.IsEnabled = !ro;
         FWidthModeSingle.IsEnabled = FWidthModeRange.IsEnabled = FWidthModeMulti.IsEnabled = !ro;
         FLengthModeSingle.IsEnabled = FLengthModeRange.IsEnabled = FLengthModeMulti.IsEnabled = !ro;
+        ApplyAllDims();   // hint chỉ hiện ở chế độ nhập, không hiện khi xem
     }
 
     private void PriceInput_GotFocus(object sender, RoutedEventArgs e) =>
@@ -404,6 +443,7 @@ public partial class QuotationDetailView : UserControl
         SetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti, DimMode.Single);
         SetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti, DimMode.Single);
         SyncThicknessForWoodType();
+        ApplyAllDims();   // chip có thể đã đúng sẵn (Checked không bắn) → phải áp lại hint thủ công
     }
 
     private static string NumOrBlank(double? v) => v.HasValue ? Fmt.Num(v.Value) : "";

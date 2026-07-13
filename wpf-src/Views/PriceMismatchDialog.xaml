@@ -1,0 +1,52 @@
+<Window x:Class="WoodInventory.Views.PriceMismatchDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:WoodInventory.Helpers"
+        FontFamily="Segoe UI" FontSize="12"
+        Title="{helpers:Loc Receipts.PriceMismatch.Title}"
+        Width="620" SizeToContent="Height" MaxHeight="680"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        ShowInTaskbar="False" Background="White">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cảnh báo + tiêu đề -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+            <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                       Foreground="{StaticResource Amber600}" VerticalAlignment="Top" Margin="0,1,0,0"/>
+            <TextBlock Text="{helpers:Loc Receipts.PriceMismatch.Header}" TextWrapping="Wrap"
+                       FontWeight="SemiBold" Foreground="{StaticResource Slate800}"
+                       Margin="10,0,0,0" VerticalAlignment="Center" MaxWidth="520"/>
+        </StackPanel>
+
+        <!-- Liệt kê từng kiện lệch giá (mỗi kiện 1 dòng) -->
+        <Border Grid.Row="1" Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
+                BorderThickness="1" CornerRadius="8" Padding="14,10" MaxHeight="300">
+            <!-- Mỗi dòng dựng bằng code-behind (Run tô màu riêng cho 2 đơn giá) -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="MismatchList"/>
+            </ScrollViewer>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{helpers:Loc Receipts.PriceMismatch.Confirm}" TextWrapping="Wrap"
+                   FontWeight="SemiBold" Foreground="{StaticResource Slate800}" Margin="0,16,0,16"/>
+
+        <!-- Footer: checkbox bên TRÁI + nút bên phải -->
+        <Grid Grid.Row="3">
+            <CheckBox x:Name="ChkUpdateQuotation" HorizontalAlignment="Left" VerticalAlignment="Center"
+                      Content="{helpers:Loc Receipts.PriceMismatch.UpdateQuotation}"
+                      ToolTip="{helpers:Loc Receipts.PriceMismatch.UpdateQuotationHint}"
+                      Foreground="{StaticResource Slate700}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource BtnGhost}" Content="{helpers:Loc Common.No}" Click="BtnNo_Click"/>
+                <Button Style="{StaticResource BtnPrimary}" Content="{helpers:Loc Common.Yes}"
+                        Margin="8,0,0,0" Click="BtnYes_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
