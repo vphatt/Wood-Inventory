@@ -156,7 +156,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" CanUserSortColumns="True">
+                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="46" CanUserSortColumns="True"
+                                  ScrollViewer.VerticalScrollBarVisibility="Hidden">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -204,11 +205,11 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn _view. RowHeight=56 khớp grid data cho thẳng hàng -->
-                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="56"
+                        <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn _view. RowHeight=46 khớp grid data cho thẳng hàng -->
+                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="46"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="290" MinWidth="290"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">

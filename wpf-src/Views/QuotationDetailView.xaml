@@ -61,6 +61,33 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Chip radio 3 chế độ nhập Đơn lẻ/Khoảng/Nhiều — đặt cạnh label mỗi field kích thước -->
+        <Style x:Key="DimModeChip" TargetType="RadioButton">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bg" CornerRadius="5" Padding="7,3" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{StaticResource Blue500}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Cursor" Value="Arrow"/>
+                                <Setter Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
         <StackPanel Margin="24">
@@ -136,7 +163,20 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock x:Name="LblThickness" Text="{helpers:Loc Quotations.Field.ThicknessMm}" Style="{StaticResource FieldLabel}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblThickness" Grid.Column="0" Text="{helpers:Loc Quotations.Field.ThicknessMm}" Style="{StaticResource FieldLabel}" Margin="0" VerticalAlignment="Center"/>
+                                <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="FThickModeSingle" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="ThicknessMode_Changed"/>
+                                        <RadioButton x:Name="FThickModeRange" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="ThicknessMode_Changed"/>
+                                        <RadioButton x:Name="FThickModeMulti" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="ThicknessMode_Changed"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -148,7 +188,7 @@
                                 <TextBlock x:Name="FThickMinHint" Grid.Column="0" Text="{helpers:Loc Quotations.ThickHintMin}" FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource Slate400}" Margin="10,0,0,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False" Visibility="Collapsed"/>
-                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBlock x:Name="FThickSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FThickMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WThickRange}" TextChanged="Field_Changed"/>
                                 <TextBlock x:Name="FThickMaxHint" Grid.Column="2" Text="{helpers:Loc Quotations.ThickHintMax}" FontFamily="{StaticResource FontMono}"
@@ -158,7 +198,20 @@
                             <TextBlock x:Name="WThickRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.Width}" Style="{StaticResource FieldLabel}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{helpers:Loc Quotations.Field.Width}" Style="{StaticResource FieldLabel}" Margin="0" VerticalAlignment="Center"/>
+                                <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="FWidthModeSingle" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="WidthMode_Changed"/>
+                                        <RadioButton x:Name="FWidthModeRange" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="WidthMode_Changed"/>
+                                        <RadioButton x:Name="FWidthModeMulti" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="WidthMode_Changed"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -167,14 +220,27 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="FWidthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
-                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBlock x:Name="FWidthSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FWidthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WWidthRange}" TextChanged="Field_Changed"/>
                             </Grid>
                             <TextBlock x:Name="WWidthRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.Length}" Style="{StaticResource FieldLabel}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{helpers:Loc Quotations.Field.Length}" Style="{StaticResource FieldLabel}" Margin="0" VerticalAlignment="Center"/>
+                                <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="FLengthModeSingle" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="LengthMode_Changed"/>
+                                        <RadioButton x:Name="FLengthModeRange" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="LengthMode_Changed"/>
+                                        <RadioButton x:Name="FLengthModeMulti" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="LengthMode_Changed"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -183,7 +249,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="FLengthMin" Grid.Column="0" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
-                                <TextBlock Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
+                                <TextBlock x:Name="FLengthSep" Grid.Column="1" Text="–" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Slate400}"/>
                                 <TextBox x:Name="FLengthMax" Grid.Column="2" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}"
                                          Tag="{Binding ElementName=WLengthRange}" TextChanged="Field_Changed"/>
                             </Grid>
@@ -191,10 +257,6 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.Spec}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FSpec" Style="{StaticResource Input}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
                             <TextBlock Text="{helpers:Loc Quotations.Field.Price}" Style="{StaticResource FieldLabel}"/>
                             <Border x:Name="PriceInputBorder" BorderBrush="{StaticResource Slate200}" BorderThickness="1"
                                     CornerRadius="8" Background="White" Height="40">
@@ -215,6 +277,10 @@
                                 </Grid>
                             </Border>
                             <TextBlock x:Name="WPrice" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.Spec}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FSpec" Style="{StaticResource Input}"/>
                         </StackPanel>
                     </Grid>
 
@@ -312,7 +378,8 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- THỬ NGHIỆM: data cuộn ngang bên trái (*), cột thao tác tách riêng ghim phải (Auto) -->
-                        <DataGrid x:Name="ItemGrid" Grid.Column="0" Style="{StaticResource DataTable}" CanUserSortColumns="True">
+                        <DataGrid x:Name="ItemGrid" Grid.Column="0" Style="{StaticResource DataTable}" CanUserSortColumns="True"
+                                  ScrollViewer.VerticalScrollBarVisibility="Hidden">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -334,7 +401,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Thickness}" Binding="{Binding ThicknessText}" Width="120" MinWidth="110" SortMemberPath="ThicknessMin">
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Thickness}" Binding="{Binding ThicknessText}" Width="190" MinWidth="190" SortMemberPath="ThicknessMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -345,7 +412,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Width}" Binding="{Binding WidthText}" Width="120" MinWidth="110" SortMemberPath="WidthMin">
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Width}" Binding="{Binding WidthText}" Width="190" MinWidth="190" SortMemberPath="WidthMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -356,7 +423,7 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Length}" Binding="{Binding LengthText}" Width="120" MinWidth="110" SortMemberPath="LengthMin">
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Length}" Binding="{Binding LengthText}" Width="190" MinWidth="190" SortMemberPath="LengthMin">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -425,11 +492,11 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Cột thao tác tách riêng: bind cùng nguồn _view, không cuộn, luôn hiện bên phải -->
+                        <!-- Cột thao tác tách riêng: bind cùng nguồn _view, cuộn dọc đồng bộ theo ItemGrid qua GridPairSync -->
                         <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="120" MinWidth="120"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">

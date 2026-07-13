@@ -69,4 +69,30 @@ public static class Fmt
             return minNote == maxNote ? minNote : $"{minNote}–{maxNote}";
         return !string.IsNullOrWhiteSpace(minNote) ? $"≥{minNote}" : $"≤{maxNote}";
     }
+
+    /// <summary>
+    /// Tách chuỗi danh sách giá trị RỜI RẠC tương đương "1220/2440/3000" thành các số (vi-VN aware,
+    /// chấp nhận "1.220" hay "1220" đều ra 1220). Bỏ qua phần tử rỗng/không parse được. Dùng cho báo giá
+    /// (QuotationItem.ThicknessValues/WidthValues/LengthValues) và khi nhập kho tra khớp/gợi ý theo từng giá trị.
+    /// </summary>
+    public static List<double> ParseValueList(string raw)
+    {
+        var result = new List<double>();
+        if (string.IsNullOrWhiteSpace(raw)) return result;
+        foreach (var part in raw.Split('/'))
+        {
+            var t = part.Trim();
+            if (t.Length == 0) continue;
+            if (double.TryParse(t, NumberStyles.Any, Vi, out var v)) result.Add(v);
+        }
+        return result;
+    }
+
+    /// <summary>Như <see cref="Range"/> nhưng ưu tiên hiện danh sách giá trị rời rạc (vd "1.220/2.440/3.000mm")
+    /// nếu <paramref name="valuesRaw"/> có dữ liệu; rơi về Range (min/max) nếu không.</summary>
+    public static string RangeOrList(string valuesRaw, double? min, double? max, string unit = "mm")
+    {
+        var list = ParseValueList(valuesRaw);
+        return list.Count > 0 ? string.Join("/", list.Select(v => Num(v))) + unit : Range(min, max, unit);
+    }
 }

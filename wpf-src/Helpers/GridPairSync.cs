@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace WoodInventory.Helpers;
 
@@ -35,6 +36,9 @@ public static class GridPairSync
     private static readonly DependencyProperty SyncingProperty =
         DependencyProperty.RegisterAttached("Syncing", typeof(bool), typeof(GridPairSync), new PropertyMetadata(false));
 
+    private static readonly DependencyProperty SyncingScrollProperty =
+        DependencyProperty.RegisterAttached("SyncingScroll", typeof(bool), typeof(GridPairSync), new PropertyMetadata(false));
+
     /// <summary>Nối 2 DataGrid tách riêng (nội dung + thao tác) — gọi 1 lần trong constructor View.</summary>
     public static void Link(DataGrid a, DataGrid b)
     {
@@ -42,6 +46,54 @@ public static class GridPairSync
         b.SetValue(PartnerProperty, a);
         WireSelection(a);
         WireSelection(b);
+        WireScroll(a);
+        WireScroll(b);
+    }
+
+    /// <summary>
+    /// Đồng bộ VỊ TRÍ CUỘN DỌC giữa 2 DataGrid — cần từ khi mỗi bảng bị giới hạn chiều cao viewport
+    /// (~14 dòng, xem <c>MaxHeight</c> trong style <c>DataTable</c>) nên tự cuộn nội bộ thay vì để trang
+    /// ngoài cuộn: cuộn ở ItemGrid (thanh cuộn thật, hiện) phải kéo theo ActionGrid (thanh cuộn ẩn —
+    /// <c>ScrollViewer.VerticalScrollBarVisibility="Hidden"</c>, KHÔNG phải "Disabled" vì Disabled chặn
+    /// luôn khả năng cuộn bằng API) đi theo cùng offset, không thì cột "Thao tác" lệch hàng khi cuộn.
+    /// ScrollViewer nội bộ của DataGrid chỉ có sau khi template áp dụng nên phải đợi <c>Loaded</c>.
+    /// </summary>
+    private static void WireScroll(DataGrid grid)
+    {
+        void Hook()
+        {
+            if (FindScrollViewer(grid) is not ScrollViewer sv) return;
+            sv.ScrollChanged += (_, e) =>
+            {
+                if (e.VerticalChange == 0) return;
+                if ((bool)grid.GetValue(SyncingScrollProperty)) return;
+                if (grid.GetValue(PartnerProperty) is not DataGrid partner) return;
+                var offset = sv.VerticalOffset;
+                // Hoãn sang lượt Dispatcher kế tiếp (KHÔNG gọi ScrollToVerticalOffset ngay trong lúc grid
+                // nguồn đang tự layout/arrange do chính cú cuộn này) — gọi đồng bộ ngay tại đây từng gây
+                // "Index was outside the bounds of the array" ngẫu nhiên do đụng vào bảng ghi container
+                // đang tái sử dụng (virtualization) của DataGrid đối tác giữa chừng 1 pass layout khác.
+                partner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (FindScrollViewer(partner) is not ScrollViewer partnerSv) return;
+                    partner.SetValue(SyncingScrollProperty, true);
+                    try { partnerSv.ScrollToVerticalOffset(offset); }
+                    finally { partner.SetValue(SyncingScrollProperty, false); }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            };
+        }
+        if (grid.IsLoaded) Hook(); else grid.Loaded += (_, _) => Hook();
+    }
+
+    private static ScrollViewer FindScrollViewer(DependencyObject root)
+    {
+        if (root is ScrollViewer found) return found;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var result = FindScrollViewer(VisualTreeHelper.GetChild(root, i));
+            if (result != null) return result;
+        }
+        return null;
     }
 
     private static void WireSelection(DataGrid grid)

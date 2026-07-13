@@ -25,9 +25,9 @@ public partial class QuotationDetailView : UserControl
         public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "-" : Item.Grade;
         public string ThicknessText => AppState.GetVolumeRule(Item.WoodType) == VolumeRule.ByFootage
             ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax)
-            : Fmt.Range(Item.ThicknessMin, Item.ThicknessMax);
-        public string WidthText => Fmt.Range(Item.WidthMin, Item.WidthMax);
-        public string LengthText => Fmt.Range(Item.LengthMin, Item.LengthMax);
+            : Fmt.RangeOrList(Item.ThicknessValues, Item.ThicknessMin, Item.ThicknessMax);
+        public string WidthText => Fmt.RangeOrList(Item.WidthValues, Item.WidthMin, Item.WidthMax);
+        public string LengthText => Fmt.RangeOrList(Item.LengthValues, Item.LengthMin, Item.LengthMax);
         // Khóa sắp xếp cho cột kích thước (số thật, không theo chuỗi range hiển thị)
         public double? ThicknessMin => Item.ThicknessMin;
         public double? WidthMin => Item.WidthMin;
@@ -44,6 +44,10 @@ public partial class QuotationDetailView : UserControl
             : "—";
         public ItemRow(QuotationItem i) => Item = i;
     }
+
+    /// <summary>3 chế độ nhập Dày/Rộng/Dài, chọn qua chip radio cạnh label — quyết định field nào hiện +
+    /// cách parse/lưu khi bấm Lưu (xem <see cref="ValidateDimension"/>).</summary>
+    private enum DimMode { Single, Range, List }
 
     private readonly Supplier _supplier;
     private readonly Action _back;
@@ -71,7 +75,7 @@ public partial class QuotationDetailView : UserControl
         FWoodType.SelectionChanged += (_, _) =>
         {
             PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
-            UpdateThicknessLabel();
+            SyncThicknessForWoodType();
         };
         FWoodSubType.SelectionChanged += (_, _) => WSubType.Visibility = Visibility.Collapsed;
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
@@ -218,26 +222,68 @@ public partial class QuotationDetailView : UserControl
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is TextBlock w) w.Visibility = Visibility.Collapsed;
-        if (sender == FThickMin || sender == FThickMax) UpdateThicknessHints();
+        if (sender == FThickMin || sender == FThickMax) ApplyThicknessVisibility();
     }
 
-    /// <summary>Gỗ nhóm Footage — mm chính xác vô nghĩa, độ dày chỉ mô tả theo ký hiệu ngành gỗ Mỹ.</summary>
+    /// <summary>Đọc chip đang chọn của 1 bộ 3 radio Đơn lẻ/Khoảng/Nhiều — mặc định Khoảng nếu chưa chip nào được chọn.</summary>
+    private static DimMode GetMode(RadioButton single, RadioButton range, RadioButton multi) =>
+        multi.IsChecked == true ? DimMode.List : single.IsChecked == true ? DimMode.Single : DimMode.Range;
+
+    private static void SetMode(RadioButton single, RadioButton range, RadioButton multi, DimMode mode) =>
+        (mode == DimMode.Single ? single : mode == DimMode.List ? multi : range).IsChecked = true;
+
+    /// <summary>Suy ra chế độ ban đầu từ dữ liệu đã lưu (không cần cột DB riêng): có danh sách giá trị → Nhiều;
+    /// Từ = Đến (cùng 1 số) → Đơn lẻ; còn lại (kể cả khoảng mở 1 phía hoặc để trống) → Khoảng.</summary>
+    private static DimMode DetermineMode(string valuesRaw, double? min, double? max) =>
+        !string.IsNullOrWhiteSpace(valuesRaw) ? DimMode.List
+        : min.HasValue && max.HasValue && Math.Abs(min.Value - max.Value) < 0.0001 ? DimMode.Single
+        : DimMode.Range;
+
+    /// <summary>Hiện/ẩn ô "Đến" theo chế độ đang chọn: Khoảng = hiện đủ 2 ô; Đơn lẻ/Nhiều = chỉ 1 ô (Từ giãn hết chỗ).
+    /// Tooltip hướng dẫn cú pháp "/" chỉ hiện khi đang ở chế độ Nhiều.</summary>
+    private void ApplyDimVisibility(TextBox minBox, TextBox maxBox, TextBlock sep, DimMode mode)
+    {
+        var showMax = mode == DimMode.Range;
+        maxBox.Visibility = showMax ? Visibility.Visible : Visibility.Collapsed;
+        sep.Visibility = showMax ? Visibility.Visible : Visibility.Collapsed;
+        Grid.SetColumnSpan(minBox, showMax ? 1 : 3);
+        minBox.ToolTip = mode == DimMode.List ? Lang.T("Quotations.Field.RangeHint") : null;
+    }
+
+    private void ThicknessMode_Changed(object sender, RoutedEventArgs e) => ApplyThicknessVisibility();
+
+    private void WidthMode_Changed(object sender, RoutedEventArgs e) =>
+        ApplyDimVisibility(FWidthMin, FWidthMax, FWidthSep, GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti));
+
+    private void LengthMode_Changed(object sender, RoutedEventArgs e) =>
+        ApplyDimVisibility(FLengthMin, FLengthMax, FLengthSep, GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti));
+
+    /// <summary>Gỗ nhóm Footage — mm chính xác vô nghĩa, độ dày chỉ mô tả theo ký hiệu ngành gỗ Mỹ (vd "4/4\"").</summary>
     private static bool IsFootage(string woodType) => AppState.GetVolumeRule(woodType) == VolumeRule.ByFootage;
 
-    /// <summary>Đổi nhãn + placeholder field Độ dày theo loại gỗ đang chọn (mm thường vs ký hiệu inch của Footage).</summary>
-    private void UpdateThicknessLabel()
-    {
-        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
-        LblThickness.Text = IsFootage(woodType) ? Lang.T("Quotations.Field.Thickness") : Lang.T("Quotations.Field.ThicknessMm");
-        UpdateThicknessHints();
-    }
-
-    /// <summary>Placeholder "vd: 4/4&quot;" đè lên ô trống — chỉ hiện khi loại gỗ đang chọn thuộc nhóm Footage.</summary>
-    private void UpdateThicknessHints()
+    /// <summary>Như <see cref="ApplyDimVisibility"/> nhưng cho Dày — riêng field này Footage vẫn dùng ký hiệu
+    /// inch (không phải mm) nên hiện thêm placeholder hint "vd 4/4&quot;"/"vd 8/4&quot;" khi ô trống; chip
+    /// "Nhiều" không có ý nghĩa với Footage (đã ẩn ở <see cref="SyncThicknessForWoodType"/>) vì "/" đã dùng
+    /// cho ký hiệu phân số inch.</summary>
+    private void ApplyThicknessVisibility()
     {
         var footage = IsFootage((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
+        var mode = GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti);
+        ApplyDimVisibility(FThickMin, FThickMax, FThickSep, mode);
         FThickMinHint.Visibility = footage && string.IsNullOrEmpty(FThickMin.Text) ? Visibility.Visible : Visibility.Collapsed;
-        FThickMaxHint.Visibility = footage && string.IsNullOrEmpty(FThickMax.Text) ? Visibility.Visible : Visibility.Collapsed;
+        FThickMaxHint.Visibility = footage && mode == DimMode.Range && string.IsNullOrEmpty(FThickMax.Text) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Đổi nhãn Dày (mm thường vs ký hiệu inch Footage) + ẩn chip "Nhiều" khi gỗ Footage (không hỗ trợ
+    /// danh sách rời rạc ở Dày vì "/" đã dùng cho ký hiệu phân số inch) — gọi lại mỗi khi đổi Loại gỗ.</summary>
+    private void SyncThicknessForWoodType()
+    {
+        var woodType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+        var footage = IsFootage(woodType);
+        LblThickness.Text = footage ? Lang.T("Quotations.Field.Thickness") : Lang.T("Quotations.Field.ThicknessMm");
+        FThickModeMulti.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
+        if (footage && FThickModeMulti.IsChecked == true) FThickModeRange.IsChecked = true;
+        ApplyThicknessVisibility();
     }
 
     // ---------------- Thêm / Xem / Sửa ----------------
@@ -257,9 +303,32 @@ public partial class QuotationDetailView : UserControl
     }
 
     /// <summary>
+    /// Validate 1 field kích thước theo chip Đơn lẻ/Khoảng/Nhiều đang chọn (xem <see cref="DimMode"/>):
+    /// Đơn lẻ = 1 số (lưu Min=Max=chính nó, khớp giá CHÍNH XÁC bằng số đó); Khoảng = như <see cref="ValidateRange"/>
+    /// (Từ/Đến, 1 hoặc cả 2 có thể để trống); Nhiều = danh sách rời rạc cách nhau "/" (vd "1220/2440/3000"),
+    /// khớp giá khi giá trị thực tế bằng CHÍNH XÁC 1 trong các số này (không phải một khoảng liên tục).
+    /// </summary>
+    private static bool ValidateDimension(DimMode mode, string minText, string maxText, TextBlock warn, string label,
+        out double? min, out double? max, out string valuesRaw)
+    {
+        valuesRaw = null;
+        if (mode == DimMode.List)
+        {
+            min = max = null;
+            var list = Fmt.ParseValueList(minText);
+            if (!string.IsNullOrWhiteSpace(minText) && list.Count == 0) { ShowWarn(warn, Lang.T("Quotations.Warn.RangeInvalid", label)); return false; }
+            if (list.Count > 0) valuesRaw = string.Join("/", list.Select(Fmt.Num));
+            return true;
+        }
+        if (mode == DimMode.Single) return ValidateRange(minText, minText, warn, label, out min, out max);
+        return ValidateRange(minText, maxText, warn, label, out min, out max);
+    }
+
+    /// <summary>
     /// Như <see cref="ValidateRange"/> nhưng cho độ dày gỗ Footage: chấp nhận ký hiệu inch (4/4", 1"...)
     /// thay vì chỉ số mm. Parse ra mm để khớp giá (qua <see cref="WoodVolumeCalculator.ParseFootageThicknessMm"/>)
-    /// nhưng vẫn giữ nguyên văn ký hiệu gốc để hiển thị lại.
+    /// nhưng vẫn giữ nguyên văn ký hiệu gốc để hiển thị lại. Gọi với (minText, minText) cho chế độ Đơn lẻ
+    /// (Min=Max=cùng 1 ký hiệu, khớp giá CHÍNH XÁC — xem cách dùng ở <see cref="BtnSave_Click"/>).
     /// </summary>
     private static bool ValidateFootageThickness(string minText, string maxText, TextBlock warn,
         out double? min, out double? max, out string minNote, out string maxNote)
@@ -305,6 +374,10 @@ public partial class QuotationDetailView : UserControl
         PriceInputBorder.Background = bg;
         FPriceCurrency.IsEnabled = !ro;
         FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
+        // Chip Đơn lẻ/Khoảng/Nhiều không được đổi khi đang ở view mode (chỉ đọc).
+        FThickModeSingle.IsEnabled = FThickModeRange.IsEnabled = FThickModeMulti.IsEnabled = !ro;
+        FWidthModeSingle.IsEnabled = FWidthModeRange.IsEnabled = FWidthModeMulti.IsEnabled = !ro;
+        FLengthModeSingle.IsEnabled = FLengthModeRange.IsEnabled = FLengthModeMulti.IsEnabled = !ro;
     }
 
     private void PriceInput_GotFocus(object sender, RoutedEventArgs e) =>
@@ -324,29 +397,48 @@ public partial class QuotationDetailView : UserControl
         FormCancelBtn.Content = Lang.T("Common.Cancel");
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
-        UpdateThicknessLabel();
         FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
         FPriceCurrency.SelectedIndex = 0;   // mặc định USD
+        SetMode(FThickModeSingle, FThickModeRange, FThickModeMulti, DimMode.Single);
+        SetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti, DimMode.Single);
+        SetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti, DimMode.Single);
+        SyncThicknessForWoodType();
     }
 
     private static string NumOrBlank(double? v) => v.HasValue ? Fmt.Num(v.Value) : "";
 
+    /// <summary>Suy ra chip Đơn lẻ/Khoảng cho Dày gỗ Footage từ 2 ký hiệu ghi chú đã lưu (không có cột DB
+    /// riêng lưu chế độ): MinNote = MaxNote (cùng 1 ký hiệu, khác null) → Đơn lẻ; còn lại (kể cả 1 phía mở
+    /// hoặc để trống) → Khoảng. Footage không hỗ trợ chế độ Nhiều (xem <see cref="SyncThicknessForWoodType"/>).</summary>
+    private static DimMode DetermineFootageMode(string minNote, string maxNote) =>
+        minNote != null && maxNote != null && minNote == maxNote ? DimMode.Single : DimMode.Range;
+
     private void FillForm(QuotationItem it)
     {
+        var footage = IsFootage(it.WoodType);
         SelectByTag(FWoodType, it.WoodType);
         PopulateSubCombo(it.WoodType, it.WoodSubType);
-        UpdateThicknessLabel();
         FOrigin.Text = it.Origin;
-        FThickMin.Text = IsFootage(it.WoodType) ? (it.ThicknessMinNote ?? NumOrBlank(it.ThicknessMin)) : NumOrBlank(it.ThicknessMin);
-        FThickMax.Text = IsFootage(it.WoodType) ? (it.ThicknessMaxNote ?? NumOrBlank(it.ThicknessMax)) : NumOrBlank(it.ThicknessMax);
-        FWidthMin.Text = NumOrBlank(it.WidthMin);
-        FWidthMax.Text = NumOrBlank(it.WidthMax);
-        FLengthMin.Text = NumOrBlank(it.LengthMin);
-        FLengthMax.Text = NumOrBlank(it.LengthMax);
-        FSpec.Text = it.Specification;
+        FThickMin.Text = footage ? (it.ThicknessMinNote ?? NumOrBlank(it.ThicknessMin))
+            : (!string.IsNullOrWhiteSpace(it.ThicknessValues) ? it.ThicknessValues : NumOrBlank(it.ThicknessMin));
+        FThickMax.Text = footage ? (it.ThicknessMaxNote ?? NumOrBlank(it.ThicknessMax))
+            : (!string.IsNullOrWhiteSpace(it.ThicknessValues) ? "" : NumOrBlank(it.ThicknessMax));
+        FWidthMin.Text = !string.IsNullOrWhiteSpace(it.WidthValues) ? it.WidthValues : NumOrBlank(it.WidthMin);
+        FWidthMax.Text = !string.IsNullOrWhiteSpace(it.WidthValues) ? "" : NumOrBlank(it.WidthMax);
+        FLengthMin.Text = !string.IsNullOrWhiteSpace(it.LengthValues) ? it.LengthValues : NumOrBlank(it.LengthMin);
+        FLengthMax.Text = !string.IsNullOrWhiteSpace(it.LengthValues) ? "" : NumOrBlank(it.LengthMax);
         FPrice.Text = Fmt.Num((double)it.Price);
         FPriceCurrency.SelectedIndex = string.Equals(it.PriceCurrency, "VND", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        FSpec.Text = it.Specification;
+        SyncThicknessForWoodType();
+
+        // Suy ra chip Đơn lẻ/Khoảng/Nhiều từ dữ liệu đã lưu (không có cột DB riêng lưu chế độ).
+        SetMode(FThickModeSingle, FThickModeRange, FThickModeMulti, footage
+            ? DetermineFootageMode(it.ThicknessMinNote, it.ThicknessMaxNote)
+            : DetermineMode(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax));
+        SetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti, DetermineMode(it.WidthValues, it.WidthMin, it.WidthMax));
+        SetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti, DetermineMode(it.LengthValues, it.LengthMin, it.LengthMax));
     }
 
     private void EnterViewMode(QuotationItem it)
@@ -416,18 +508,23 @@ public partial class QuotationDetailView : UserControl
 
         ClearWarnings();
         var ok = true;
-        string thickMinNote = null, thickMaxNote = null;
+        var thickMode = GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti);
+        string thickMinNote = null, thickMaxNote = null, thickValues = null;
         double? thickMin, thickMax;
         if (footage)
         {
-            if (!ValidateFootageThickness(FThickMin.Text, FThickMax.Text, WThickRange, out thickMin, out thickMax, out thickMinNote, out thickMaxNote)) ok = false;
+            // Đơn lẻ = Min/Max cùng 1 ký hiệu (khớp giá CHÍNH XÁC); Khoảng = như trước (2 ký hiệu, 1 phía có thể để trống).
+            var maxTextForValidate = thickMode == DimMode.Single ? FThickMin.Text : FThickMax.Text;
+            if (!ValidateFootageThickness(FThickMin.Text, maxTextForValidate, WThickRange, out thickMin, out thickMax, out thickMinNote, out thickMaxNote)) ok = false;
         }
         else
         {
-            if (!ValidateRange(FThickMin.Text, FThickMax.Text, WThickRange, Lang.T("Quotations.Label.Thickness"), out thickMin, out thickMax)) ok = false;
+            if (!ValidateDimension(thickMode, FThickMin.Text, FThickMax.Text, WThickRange, Lang.T("Quotations.Label.Thickness"), out thickMin, out thickMax, out thickValues)) ok = false;
         }
-        if (!ValidateRange(FWidthMin.Text, FWidthMax.Text, WWidthRange, Lang.T("Quotations.Label.Width"), out var widthMin, out var widthMax)) ok = false;
-        if (!ValidateRange(FLengthMin.Text, FLengthMax.Text, WLengthRange, Lang.T("Quotations.Label.Length"), out var lengthMin, out var lengthMax)) ok = false;
+        var widthMode = GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti);
+        var lengthMode = GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti);
+        if (!ValidateDimension(widthMode, FWidthMin.Text, FWidthMax.Text, WWidthRange, Lang.T("Quotations.Label.Width"), out var widthMin, out var widthMax, out var widthValues)) ok = false;
+        if (!ValidateDimension(lengthMode, FLengthMin.Text, FLengthMax.Text, WLengthRange, Lang.T("Quotations.Label.Length"), out var lengthMin, out var lengthMax, out var lengthValues)) ok = false;
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, Lang.T("Quotations.Warn.PriceRequired")); ok = false; }
         if (!ok) return;
 
@@ -442,10 +539,13 @@ public partial class QuotationDetailView : UserControl
             ThicknessMax = thickMax,
             ThicknessMinNote = thickMinNote,
             ThicknessMaxNote = thickMaxNote,
+            ThicknessValues = thickValues,
             WidthMin = widthMin,
             WidthMax = widthMax,
+            WidthValues = widthValues,
             LengthMin = lengthMin,
             LengthMax = lengthMax,
+            LengthValues = lengthValues,
             Origin = NullIfBlank(FOrigin.Text),
             Specification = NullIfBlank(FSpec.Text),
             Price = (decimal)D(FPrice.Text),

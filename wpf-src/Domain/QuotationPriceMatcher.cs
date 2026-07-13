@@ -1,4 +1,6 @@
-﻿namespace WoodInventory.Domain;
+﻿using WoodInventory.Helpers;
+
+namespace WoodInventory.Domain;
 
 /// <summary>
 /// Khớp giá cho một kiện gỗ cụ thể theo danh sách báo giá của NCC.
@@ -25,9 +27,9 @@ public static class QuotationPriceMatcher
             // đã set thì phải khớp đúng con → dòng khớp con luôn cụ thể hơn (Specificity +1).
             if (!TextMatches(it.WoodSubType, woodSubType)) continue;
 
-            if (!RangeMatches(it.ThicknessMin, it.ThicknessMax, thickness)) continue;
-            if (!RangeMatches(it.WidthMin, it.WidthMax, width)) continue;
-            if (!RangeMatches(it.LengthMin, it.LengthMax, length)) continue;
+            if (!ValueMatches(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax, thickness)) continue;
+            if (!ValueMatches(it.WidthValues, it.WidthMin, it.WidthMax, width)) continue;
+            if (!ValueMatches(it.LengthValues, it.LengthMin, it.LengthMax, length)) continue;
             if (!TextMatches(it.Grade, grade)) continue;
             if (!TextMatches(it.Origin, origin)) continue;
 
@@ -51,6 +53,19 @@ public static class QuotationPriceMatcher
         return true;
     }
 
+    /// <summary>
+    /// Danh sách giá trị RỜI RẠC tương đương (vd "1220/2440/3000") có ưu tiên cao hơn Min/Max — khi đã set thì
+    /// giá trị thực tế phải khớp CHÍNH XÁC (dung sai 0,01mm) 1 trong các giá trị đó, KHÔNG phải nằm trong khoảng
+    /// liên tục. Không set thì rơi về <see cref="RangeMatches"/> như cũ.
+    /// </summary>
+    private static bool ValueMatches(string valuesRaw, double? min, double? max, double? actual)
+    {
+        var list = Fmt.ParseValueList(valuesRaw);
+        if (list.Count == 0) return RangeMatches(min, max, actual);
+        if (actual == null) return false;
+        return list.Any(v => Math.Abs(v - actual.Value) < 0.01);
+    }
+
     private static bool TextMatches(string ruleValue, string actual)
     {
         if (string.IsNullOrWhiteSpace(ruleValue)) return true;
@@ -61,9 +76,9 @@ public static class QuotationPriceMatcher
     {
         var n = 0;
         if (!string.IsNullOrWhiteSpace(it.WoodSubType)) n++;
-        if (it.ThicknessMin != null || it.ThicknessMax != null) n++;
-        if (it.WidthMin != null || it.WidthMax != null) n++;
-        if (it.LengthMin != null || it.LengthMax != null) n++;
+        if (it.ThicknessMin != null || it.ThicknessMax != null || !string.IsNullOrWhiteSpace(it.ThicknessValues)) n++;
+        if (it.WidthMin != null || it.WidthMax != null || !string.IsNullOrWhiteSpace(it.WidthValues)) n++;
+        if (it.LengthMin != null || it.LengthMax != null || !string.IsNullOrWhiteSpace(it.LengthValues)) n++;
         if (!string.IsNullOrWhiteSpace(it.Grade)) n++;
         if (!string.IsNullOrWhiteSpace(it.Origin)) n++;
         return n;

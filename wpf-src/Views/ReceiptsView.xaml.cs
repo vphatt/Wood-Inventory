@@ -371,14 +371,29 @@ public partial class ReceiptsView : UserControl, IModuleView
         deliveryNoteBox.Margin = new Thickness(6, 0, 6, 0);
         Grid.SetColumn(deliveryNoteBox, 2); grid.Children.Add(deliveryNoteBox);
 
-        // Gợi ý (tối đa 3) lấy từ báo giá NCC khớp loại gỗ cha + phân loại con của kiện.
+        // Gợi ý (tối đa 3) lấy từ báo giá NCC khớp loại gỗ cha + phân loại con của kiện. Dòng giá có khai
+        // danh sách giá trị rời rạc (vd "1220/2440/3000") thì TÁCH ra thành từng giá trị riêng để gợi ý,
+        // không phải Min/Max range — xem QuotationItem.WidthValues/LengthValues/ThicknessValues. Dòng giá là
+        // KHOẢNG thật (Từ khác Đến) thì hiện hint dạng "20-25" (không phải số cụ thể) — người dùng tự chọn
+        // 1 con số hợp lệ nằm trong khoảng đó để gõ vào, không kỳ vọng gõ nguyên văn "20-25".
         bool Footage() => AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
-        List<string> Suggest(Func<QuotationItem, string> pick) => DistinctSuggest(MatchingQuotationItems(lot).Select(pick));
-        List<string> OriginSuggest() => Suggest(i => i.Origin);
+        List<string> Suggest(Func<QuotationItem, IEnumerable<string>> pick) => DistinctSuggest(MatchingQuotationItems(lot).SelectMany(pick));
+        string RangeHint(double? min, double? max) =>
+            min.HasValue && max.HasValue && Math.Abs(min.Value - max.Value) > 0.0001
+                ? $"{Fmt.Num(min.Value)}-{Fmt.Num(max.Value)}"
+                : Fmt.Num((min ?? max ?? 0));
+        List<string> OriginSuggest() => Suggest(i => new[] { i.Origin });
         List<string> ThickSuggest() => Suggest(i => Footage()
-            ? i.ThicknessMinNote : (i.ThicknessMin.HasValue ? Fmt.Num(i.ThicknessMin.Value) : null));
-        List<string> WidthSuggest() => Suggest(i => i.WidthMin.HasValue ? Fmt.Num(i.WidthMin.Value) : null);
-        List<string> LengthSuggest() => Suggest(i => i.LengthMin.HasValue ? Fmt.Num(i.LengthMin.Value) : null);
+            ? new[] { i.ThicknessMinNote }
+            : !string.IsNullOrWhiteSpace(i.ThicknessValues)
+                ? Fmt.ParseValueList(i.ThicknessValues).Select(Fmt.Num)
+                : new[] { i.ThicknessMin.HasValue || i.ThicknessMax.HasValue ? RangeHint(i.ThicknessMin, i.ThicknessMax) : null });
+        List<string> WidthSuggest() => Suggest(i => !string.IsNullOrWhiteSpace(i.WidthValues)
+            ? Fmt.ParseValueList(i.WidthValues).Select(Fmt.Num)
+            : new[] { i.WidthMin.HasValue || i.WidthMax.HasValue ? RangeHint(i.WidthMin, i.WidthMax) : null });
+        List<string> LengthSuggest() => Suggest(i => !string.IsNullOrWhiteSpace(i.LengthValues)
+            ? Fmt.ParseValueList(i.LengthValues).Select(Fmt.Num)
+            : new[] { i.LengthMin.HasValue || i.LengthMax.HasValue ? RangeHint(i.LengthMin, i.LengthMax) : null });
 
         // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³) — Rộng/Dài có dropdown gợi ý.
         var widthBox = BuildSuggestCell(lot.Width, s => { lot.Width = s; Update(); }, WidthSuggest, center: true);

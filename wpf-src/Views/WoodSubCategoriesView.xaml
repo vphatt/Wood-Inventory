@@ -98,7 +98,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <DataGrid x:Name="SubGrid" Grid.Column="0" Style="{StaticResource DataTable}">
+                        <DataGrid x:Name="SubGrid" Grid.Column="0" Style="{StaticResource DataTable}"
+                                  ScrollViewer.VerticalScrollBarVisibility="Hidden">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -127,7 +128,7 @@
                         <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="150" MinWidth="150"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">

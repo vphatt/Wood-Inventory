@@ -144,7 +144,8 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" CanUserSortColumns="True">
+                                <DataGrid x:Name="LotGrid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="56" MaxHeight="838" CanUserSortColumns="True"
+                                          ScrollViewer.VerticalScrollBarVisibility="Hidden">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
@@ -309,10 +310,10 @@
                                 </DataGrid>
 
                                 <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn -->
-                                <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="56"
+                                <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="56" MaxHeight="838"
                                           BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                          ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <DataGrid.Columns>
                                         <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="100" MinWidth="100" CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                             <DataGridTemplateColumn.CellTemplate>

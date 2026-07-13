@@ -383,6 +383,12 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMinNote" TEXT;""");
         if (!existing.Contains("ThicknessMaxNote"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessMaxNote" TEXT;""");
+        if (!existing.Contains("ThicknessValues"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessValues" TEXT;""");
+        if (!existing.Contains("WidthValues"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "WidthValues" TEXT;""");
+        if (!existing.Contains("LengthValues"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthValues" TEXT;""");
         if (!existing.Contains("UpdatedAt"))
         {
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "UpdatedAt" TEXT;""");

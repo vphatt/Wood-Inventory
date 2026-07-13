@@ -1015,6 +1015,16 @@
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="MinRowHeight" Value="46"/>
                 <Setter Property="ColumnHeaderHeight" Value="38"/>
+                <!-- Giới hạn viewport ~14 dòng dữ liệu (header 38 + 14×46 + đệm cho thanh cuộn ngang) — bảng
+                     nào có nhiều dòng hơn tự cuộn DỌC bên trong (không đẩy cả trang cao lên vô hạn nữa).
+                     Bảng dùng RowHeight khác 46 (vd LotsView = 56) phải tự override MaxHeight tương ứng. -->
+                <Setter Property="MaxHeight" Value="700"/>
+                <!-- TẮT virtualization dòng: bảng giờ tự cuộn nội bộ + đồng bộ cuộn với ActionGrid cặp đôi
+                     (xem GridPairSync.WireScroll) — gọi ScrollToVerticalOffset trong khi virtualization
+                     đang tái sử dụng container dòng (ItemContainerGenerator) từng gây crash ngẫu nhiên
+                     "Index was outside the bounds of the array". App chỉ có vài trăm dòng/bảng là nhiều,
+                     đánh đổi hiệu năng ảo hóa lấy ổn định là hợp lý — đừng bật lại nếu chưa fix tận gốc. -->
+                <Setter Property="VirtualizingPanel.IsVirtualizing" Value="False"/>
                 <!-- Visible (không phải Auto) — thanh cuộn ngang luôn hiện trên viewport để người dùng biết
                      bảng còn cột tràn ngoài tầm nhìn, kể cả khi chưa cuộn/hover tới. -->
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible"/>
