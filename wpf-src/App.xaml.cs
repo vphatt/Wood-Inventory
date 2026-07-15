@@ -15,7 +15,7 @@ public partial class App : Application
 
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show(args.Exception.Message, $"{Lang.T("Common.AppTitle")} — {Lang.T("Common.ErrorTitle")}",
+            AppDialog.Show(args.Exception.Message, $"{Lang.T("Common.AppTitle")} — {Lang.T("Common.ErrorTitle")}",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };

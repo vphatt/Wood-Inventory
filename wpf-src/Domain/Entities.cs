@@ -72,12 +72,17 @@ public class QuotationItem
     // Khi field này có giá trị thì ƯU TIÊN dùng thay cho Min/Max — xem QuotationPriceMatcher. Chỉ áp dụng cho gỗ KHÔNG
     // phải Footage (gỗ Footage đã dùng "/" cho ký hiệu phân số inch như "4/4\"" nên không hỗ trợ danh sách ở Thickness).
     public string ThicknessValues { get; set; }
+    // Cờ khoảng MỞ cho Min/Max: false = ĐOẠN đóng [a;b] (a ≤ x ≤ b, mặc định, tương thích dữ liệu cũ);
+    // true = KHOẢNG mở (a;b) (a < x < b). Áp cho từng bound đang set — xem QuotationPriceMatcher.RangeMatches.
+    public bool ThicknessOpen { get; set; }
     public double? WidthMin { get; set; }
     public double? WidthMax { get; set; }
     public string WidthValues { get; set; }
+    public bool WidthOpen { get; set; }
     public double? LengthMin { get; set; }
     public double? LengthMax { get; set; }
     public string LengthValues { get; set; }
+    public bool LengthOpen { get; set; }
     public string Origin { get; set; }         // null = mọi xuất xứ
     public string Specification { get; set; }  // ghi chú tự do, không dùng để khớp giá
     public decimal Price { get; set; }

@@ -99,7 +99,7 @@ public partial class WoodSubCategoriesView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not SubRow r) return;
-        if (MessageBox.Show(Lang.T("WoodSubCategories.Confirm.Delete", r.Name, _category.Name),
+        if (AppDialog.Show(Lang.T("WoodSubCategories.Confirm.Delete", r.Name, _category.Name),
                 Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         try
@@ -109,7 +109,7 @@ public partial class WoodSubCategoriesView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -189,7 +189,7 @@ public partial class WoodSubCategoriesView : UserControl
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)

@@ -418,10 +418,16 @@ public static class AppState
         existing.ThicknessMax = item.ThicknessMax;
         existing.ThicknessMinNote = item.ThicknessMinNote;
         existing.ThicknessMaxNote = item.ThicknessMaxNote;
+        existing.ThicknessValues = item.ThicknessValues;
+        existing.ThicknessOpen = item.ThicknessOpen;
         existing.WidthMin = item.WidthMin;
         existing.WidthMax = item.WidthMax;
+        existing.WidthValues = item.WidthValues;
+        existing.WidthOpen = item.WidthOpen;
         existing.LengthMin = item.LengthMin;
         existing.LengthMax = item.LengthMax;
+        existing.LengthValues = item.LengthValues;
+        existing.LengthOpen = item.LengthOpen;
         existing.Origin = item.Origin;
         existing.Specification = item.Specification;
         existing.Price = item.Price;

@@ -45,9 +45,11 @@ public partial class QuotationDetailView : UserControl
         public ItemRow(QuotationItem i) => Item = i;
     }
 
-    /// <summary>3 chế độ nhập Dày/Rộng/Dài, chọn qua chip radio cạnh label — quyết định field nào hiện +
-    /// cách parse/lưu khi bấm Lưu (xem <see cref="ValidateDimension"/>).</summary>
-    private enum DimMode { Single, Range, List }
+    /// <summary>4 chế độ nhập Dày/Rộng/Dài, chọn qua chip radio cạnh label — quyết định field nào hiện +
+    /// cách parse/lưu khi bấm Lưu (xem <see cref="ValidateDimension"/>):
+    /// Single = Đơn lẻ (1 giá trị, x = a); Closed = Đoạn đóng [a;b] (a ≤ x ≤ b); Open = Khoảng mở (a;b)
+    /// (a &lt; x &lt; b); List = Nhiều (danh sách rời rạc). Closed/Open lưu chung Min/Max + cờ *Open phân biệt.</summary>
+    private enum DimMode { Single, Closed, Open, List }
 
     private readonly Supplier _supplier;
     private readonly Action _back;
@@ -229,25 +231,31 @@ public partial class QuotationDetailView : UserControl
         else if (sender == FLengthMin || sender == FLengthMax) ApplyLengthVisibility();
     }
 
-    /// <summary>Đọc chip đang chọn của 1 bộ 3 radio Đơn lẻ/Khoảng/Nhiều — mặc định Khoảng nếu chưa chip nào được chọn.</summary>
-    private static DimMode GetMode(RadioButton single, RadioButton range, RadioButton multi) =>
-        multi.IsChecked == true ? DimMode.List : single.IsChecked == true ? DimMode.Single : DimMode.Range;
+    /// <summary>Đọc chip đang chọn của 1 bộ 4 radio Đơn lẻ/Đoạn/Khoảng/Nhiều — mặc định Đơn lẻ nếu chưa chip nào chọn.</summary>
+    private static DimMode GetMode(RadioButton single, RadioButton closed, RadioButton open, RadioButton multi) =>
+        multi.IsChecked == true ? DimMode.List
+        : open.IsChecked == true ? DimMode.Open
+        : closed.IsChecked == true ? DimMode.Closed
+        : DimMode.Single;
 
-    private static void SetMode(RadioButton single, RadioButton range, RadioButton multi, DimMode mode) =>
-        (mode == DimMode.Single ? single : mode == DimMode.List ? multi : range).IsChecked = true;
+    private static void SetMode(RadioButton single, RadioButton closed, RadioButton open, RadioButton multi, DimMode mode) =>
+        (mode switch { DimMode.List => multi, DimMode.Open => open, DimMode.Closed => closed, _ => single }).IsChecked = true;
 
-    /// <summary>Suy ra chế độ ban đầu từ dữ liệu đã lưu (không cần cột DB riêng): có danh sách giá trị → Nhiều;
-    /// Từ = Đến (cùng 1 số) → Đơn lẻ; còn lại (kể cả khoảng mở 1 phía hoặc để trống) → Khoảng.</summary>
-    private static DimMode DetermineMode(string valuesRaw, double? min, double? max) =>
+    /// <summary>Suy ra chế độ ban đầu từ dữ liệu đã lưu: có danh sách giá trị → Nhiều; Từ = Đến (cùng 1 số) → Đơn lẻ;
+    /// còn lại (khoảng, kể cả mở 1 phía) → Khoảng mở nếu cờ <paramref name="open"/> bật, ngược lại Đoạn đóng.</summary>
+    private static DimMode DetermineMode(string valuesRaw, double? min, double? max, bool open) =>
         !string.IsNullOrWhiteSpace(valuesRaw) ? DimMode.List
         : min.HasValue && max.HasValue && Math.Abs(min.Value - max.Value) < 0.0001 ? DimMode.Single
-        : DimMode.Range;
+        : open ? DimMode.Open : DimMode.Closed;
 
-    /// <summary>Hiện/ẩn ô "Đến" theo chế độ đang chọn: Khoảng = hiện đủ 2 ô; Đơn lẻ/Nhiều = chỉ 1 ô (Từ giãn hết chỗ).
+    /// <summary>Đoạn/Khoảng cần cả 2 ô (Từ/Đến); Đơn lẻ/Nhiều chỉ 1 ô (Từ giãn hết chỗ).</summary>
+    private static bool IsInterval(DimMode mode) => mode is DimMode.Closed or DimMode.Open;
+
+    /// <summary>Hiện/ẩn ô "Đến" theo chế độ: Đoạn/Khoảng = 2 ô; Đơn lẻ/Nhiều = 1 ô.
     /// Tooltip hướng dẫn cú pháp "/" chỉ hiện khi đang ở chế độ Nhiều.</summary>
     private void ApplyDimVisibility(TextBox minBox, TextBox maxBox, TextBlock sep, DimMode mode)
     {
-        var showMax = mode == DimMode.Range;
+        var showMax = IsInterval(mode);
         maxBox.Visibility = showMax ? Visibility.Visible : Visibility.Collapsed;
         sep.Visibility = showMax ? Visibility.Visible : Visibility.Collapsed;
         Grid.SetColumnSpan(minBox, showMax ? 1 : 3);
@@ -256,7 +264,7 @@ public partial class QuotationDetailView : UserControl
 
     /// <summary>
     /// Ẩn/hiện ô + đặt HINT (placeholder) của 1 field kích thước THEO ĐÚNG CHIP đang chọn:
-    /// Đơn lẻ → 1 ô, hint 1 giá trị; Khoảng → 2 ô, hint "Từ"/"Đến"; Nhiều → 1 ô, hint danh sách "a/b/c".
+    /// Đơn lẻ → 1 ô, hint 1 giá trị; Đoạn/Khoảng → 2 ô, hint "Từ"/"Đến"; Nhiều → 1 ô, hint danh sách "a/b/c".
     /// Hint chỉ hiện khi ô TRỐNG (kiểu placeholder) và form không ở chế độ chỉ-đọc.
     /// </summary>
     private void ApplyDim(TextBox minBox, TextBox maxBox, TextBlock sep, TextBlock minHint, TextBlock maxHint,
@@ -269,7 +277,7 @@ public partial class QuotationDetailView : UserControl
 
         var ro = minBox.IsReadOnly;   // chế độ xem: không gợi ý nhập liệu
         minHint.Visibility = !ro && string.IsNullOrEmpty(minBox.Text) ? Visibility.Visible : Visibility.Collapsed;
-        maxHint.Visibility = !ro && mode == DimMode.Range && string.IsNullOrEmpty(maxBox.Text)
+        maxHint.Visibility = !ro && IsInterval(mode) && string.IsNullOrEmpty(maxBox.Text)
             ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -279,12 +287,12 @@ public partial class QuotationDetailView : UserControl
 
     private void ApplyWidthVisibility() =>
         ApplyDim(FWidthMin, FWidthMax, FWidthSep, FWidthMinHint, FWidthMaxHint,
-            GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti),
+            GetMode(FWidthModeSingle, FWidthModeClosed, FWidthModeOpen, FWidthModeMulti),
             "Quotations.Hint.WidthSingle", "Quotations.Hint.WidthMin", "Quotations.Hint.WidthMax", "Quotations.Hint.WidthList");
 
     private void ApplyLengthVisibility() =>
         ApplyDim(FLengthMin, FLengthMax, FLengthSep, FLengthMinHint, FLengthMaxHint,
-            GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti),
+            GetMode(FLengthModeSingle, FLengthModeClosed, FLengthModeOpen, FLengthModeMulti),
             "Quotations.Hint.LengthSingle", "Quotations.Hint.LengthMin", "Quotations.Hint.LengthMax", "Quotations.Hint.LengthList");
 
     /// <summary>Gỗ nhóm Footage — mm chính xác vô nghĩa, độ dày chỉ mô tả theo ký hiệu ngành gỗ Mỹ (vd "4/4\"").</summary>
@@ -297,7 +305,7 @@ public partial class QuotationDetailView : UserControl
     {
         var footage = IsFootage((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
         ApplyDim(FThickMin, FThickMax, FThickSep, FThickMinHint, FThickMaxHint,
-            GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti),
+            GetMode(FThickModeSingle, FThickModeClosed, FThickModeOpen, FThickModeMulti),
             singleKey: footage ? "Quotations.ThickHintMin" : "Quotations.Hint.ThickSingle",
             minKey: footage ? "Quotations.ThickHintMin" : "Quotations.Hint.ThickMin",
             maxKey: footage ? "Quotations.ThickHintMax" : "Quotations.Hint.ThickMax",
@@ -320,7 +328,7 @@ public partial class QuotationDetailView : UserControl
         var footage = IsFootage(woodType);
         LblThickness.Text = footage ? Lang.T("Quotations.Field.Thickness") : Lang.T("Quotations.Field.ThicknessMm");
         FThickModeMulti.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
-        if (footage && FThickModeMulti.IsChecked == true) FThickModeRange.IsChecked = true;
+        if (footage && FThickModeMulti.IsChecked == true) FThickModeClosed.IsChecked = true;
         ApplyThicknessVisibility();
     }
 
@@ -412,10 +420,10 @@ public partial class QuotationDetailView : UserControl
         PriceInputBorder.Background = bg;
         FPriceCurrency.IsEnabled = !ro;
         FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
-        // Chip Đơn lẻ/Khoảng/Nhiều không được đổi khi đang ở view mode (chỉ đọc).
-        FThickModeSingle.IsEnabled = FThickModeRange.IsEnabled = FThickModeMulti.IsEnabled = !ro;
-        FWidthModeSingle.IsEnabled = FWidthModeRange.IsEnabled = FWidthModeMulti.IsEnabled = !ro;
-        FLengthModeSingle.IsEnabled = FLengthModeRange.IsEnabled = FLengthModeMulti.IsEnabled = !ro;
+        // Chip Đơn lẻ/Đoạn/Khoảng/Nhiều không được đổi khi đang ở view mode (chỉ đọc).
+        FThickModeSingle.IsEnabled = FThickModeClosed.IsEnabled = FThickModeOpen.IsEnabled = FThickModeMulti.IsEnabled = !ro;
+        FWidthModeSingle.IsEnabled = FWidthModeClosed.IsEnabled = FWidthModeOpen.IsEnabled = FWidthModeMulti.IsEnabled = !ro;
+        FLengthModeSingle.IsEnabled = FLengthModeClosed.IsEnabled = FLengthModeOpen.IsEnabled = FLengthModeMulti.IsEnabled = !ro;
         ApplyAllDims();   // hint chỉ hiện ở chế độ nhập, không hiện khi xem
     }
 
@@ -439,20 +447,20 @@ public partial class QuotationDetailView : UserControl
         FOrigin.Text = FSpec.Text = FPrice.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
         FPriceCurrency.SelectedIndex = 0;   // mặc định USD
-        SetMode(FThickModeSingle, FThickModeRange, FThickModeMulti, DimMode.Single);
-        SetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti, DimMode.Single);
-        SetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti, DimMode.Single);
+        SetMode(FThickModeSingle, FThickModeClosed, FThickModeOpen, FThickModeMulti, DimMode.Single);
+        SetMode(FWidthModeSingle, FWidthModeClosed, FWidthModeOpen, FWidthModeMulti, DimMode.Single);
+        SetMode(FLengthModeSingle, FLengthModeClosed, FLengthModeOpen, FLengthModeMulti, DimMode.Single);
         SyncThicknessForWoodType();
         ApplyAllDims();   // chip có thể đã đúng sẵn (Checked không bắn) → phải áp lại hint thủ công
     }
 
     private static string NumOrBlank(double? v) => v.HasValue ? Fmt.Num(v.Value) : "";
 
-    /// <summary>Suy ra chip Đơn lẻ/Khoảng cho Dày gỗ Footage từ 2 ký hiệu ghi chú đã lưu (không có cột DB
-    /// riêng lưu chế độ): MinNote = MaxNote (cùng 1 ký hiệu, khác null) → Đơn lẻ; còn lại (kể cả 1 phía mở
-    /// hoặc để trống) → Khoảng. Footage không hỗ trợ chế độ Nhiều (xem <see cref="SyncThicknessForWoodType"/>).</summary>
-    private static DimMode DetermineFootageMode(string minNote, string maxNote) =>
-        minNote != null && maxNote != null && minNote == maxNote ? DimMode.Single : DimMode.Range;
+    /// <summary>Suy ra chip cho Dày gỗ Footage từ 2 ký hiệu ghi chú đã lưu: MinNote = MaxNote (cùng 1 ký hiệu,
+    /// khác null) → Đơn lẻ; còn lại → Khoảng mở nếu cờ <paramref name="open"/> bật, ngược lại Đoạn đóng.
+    /// Footage không hỗ trợ chế độ Nhiều (xem <see cref="SyncThicknessForWoodType"/>).</summary>
+    private static DimMode DetermineFootageMode(string minNote, string maxNote, bool open) =>
+        minNote != null && maxNote != null && minNote == maxNote ? DimMode.Single : open ? DimMode.Open : DimMode.Closed;
 
     private void FillForm(QuotationItem it)
     {
@@ -473,12 +481,12 @@ public partial class QuotationDetailView : UserControl
         FSpec.Text = it.Specification;
         SyncThicknessForWoodType();
 
-        // Suy ra chip Đơn lẻ/Khoảng/Nhiều từ dữ liệu đã lưu (không có cột DB riêng lưu chế độ).
-        SetMode(FThickModeSingle, FThickModeRange, FThickModeMulti, footage
-            ? DetermineFootageMode(it.ThicknessMinNote, it.ThicknessMaxNote)
-            : DetermineMode(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax));
-        SetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti, DetermineMode(it.WidthValues, it.WidthMin, it.WidthMax));
-        SetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti, DetermineMode(it.LengthValues, it.LengthMin, it.LengthMax));
+        // Suy ra chip Đơn lẻ/Đoạn/Khoảng/Nhiều từ dữ liệu đã lưu (chế độ đóng/mở lấy từ cờ *Open).
+        SetMode(FThickModeSingle, FThickModeClosed, FThickModeOpen, FThickModeMulti, footage
+            ? DetermineFootageMode(it.ThicknessMinNote, it.ThicknessMaxNote, it.ThicknessOpen)
+            : DetermineMode(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax, it.ThicknessOpen));
+        SetMode(FWidthModeSingle, FWidthModeClosed, FWidthModeOpen, FWidthModeMulti, DetermineMode(it.WidthValues, it.WidthMin, it.WidthMax, it.WidthOpen));
+        SetMode(FLengthModeSingle, FLengthModeClosed, FLengthModeOpen, FLengthModeMulti, DetermineMode(it.LengthValues, it.LengthMin, it.LengthMax, it.LengthOpen));
     }
 
     private void EnterViewMode(QuotationItem it)
@@ -536,7 +544,7 @@ public partial class QuotationDetailView : UserControl
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -548,12 +556,12 @@ public partial class QuotationDetailView : UserControl
 
         ClearWarnings();
         var ok = true;
-        var thickMode = GetMode(FThickModeSingle, FThickModeRange, FThickModeMulti);
+        var thickMode = GetMode(FThickModeSingle, FThickModeClosed, FThickModeOpen, FThickModeMulti);
         string thickMinNote = null, thickMaxNote = null, thickValues = null;
         double? thickMin, thickMax;
         if (footage)
         {
-            // Đơn lẻ = Min/Max cùng 1 ký hiệu (khớp giá CHÍNH XÁC); Khoảng = như trước (2 ký hiệu, 1 phía có thể để trống).
+            // Đơn lẻ = Min/Max cùng 1 ký hiệu (khớp giá CHÍNH XÁC); Đoạn/Khoảng = 2 ký hiệu (1 phía có thể để trống).
             var maxTextForValidate = thickMode == DimMode.Single ? FThickMin.Text : FThickMax.Text;
             if (!ValidateFootageThickness(FThickMin.Text, maxTextForValidate, WThickRange, out thickMin, out thickMax, out thickMinNote, out thickMaxNote)) ok = false;
         }
@@ -561,13 +569,14 @@ public partial class QuotationDetailView : UserControl
         {
             if (!ValidateDimension(thickMode, FThickMin.Text, FThickMax.Text, WThickRange, Lang.T("Quotations.Label.Thickness"), out thickMin, out thickMax, out thickValues)) ok = false;
         }
-        var widthMode = GetMode(FWidthModeSingle, FWidthModeRange, FWidthModeMulti);
-        var lengthMode = GetMode(FLengthModeSingle, FLengthModeRange, FLengthModeMulti);
+        var widthMode = GetMode(FWidthModeSingle, FWidthModeClosed, FWidthModeOpen, FWidthModeMulti);
+        var lengthMode = GetMode(FLengthModeSingle, FLengthModeClosed, FLengthModeOpen, FLengthModeMulti);
         if (!ValidateDimension(widthMode, FWidthMin.Text, FWidthMax.Text, WWidthRange, Lang.T("Quotations.Label.Width"), out var widthMin, out var widthMax, out var widthValues)) ok = false;
         if (!ValidateDimension(lengthMode, FLengthMin.Text, FLengthMax.Text, WLengthRange, Lang.T("Quotations.Label.Length"), out var lengthMin, out var lengthMax, out var lengthValues)) ok = false;
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, Lang.T("Quotations.Warn.PriceRequired")); ok = false; }
         if (!ok) return;
 
+        // Cờ khoảng MỞ (a;b) chỉ bật khi chip = Khoảng; Đơn lẻ/Đoạn/Nhiều đều là đóng.
         // Báo giá: để trống phân loại con = áp cho MỌI con của loại cha (fallback cấp cha) — không bắt buộc.
         var item = new QuotationItem
         {
@@ -580,12 +589,15 @@ public partial class QuotationDetailView : UserControl
             ThicknessMinNote = thickMinNote,
             ThicknessMaxNote = thickMaxNote,
             ThicknessValues = thickValues,
+            ThicknessOpen = thickMode == DimMode.Open,
             WidthMin = widthMin,
             WidthMax = widthMax,
             WidthValues = widthValues,
+            WidthOpen = widthMode == DimMode.Open,
             LengthMin = lengthMin,
             LengthMax = lengthMax,
             LengthValues = lengthValues,
+            LengthOpen = lengthMode == DimMode.Open,
             Origin = NullIfBlank(FOrigin.Text),
             Specification = NullIfBlank(FSpec.Text),
             Price = (decimal)D(FPrice.Text),
@@ -596,12 +608,15 @@ public partial class QuotationDetailView : UserControl
         {
             if (_editingId == null) AppState.AddQuotationItem(_supplier.Id, item);
             else AppState.UpdateQuotationItem(item);
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            EnterAddMode();
+            RefreshView();   // nạp lại bảng từ dữ liệu vừa lưu
+            // KHÔNG đóng form — chuyển thẳng sang xem chi tiết mục vừa lưu (giống ReceiptsView).
+            var saved = AppState.FindQuotation(_supplier.Id)?.Items.FirstOrDefault(i => i.Id == item.Id);
+            if (saved != null) EnterViewMode(saved);
+            else { AddFormPanel.Visibility = Visibility.Collapsed; EnterAddMode(); }
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Flatten(ex), Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(Flatten(ex), Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -621,7 +636,7 @@ public partial class QuotationDetailView : UserControl
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
-        var confirm = MessageBox.Show(Lang.T("Quotations.Confirm.Delete", r.WoodType, r.ThicknessText),
+        var confirm = AppDialog.Show(Lang.T("Quotations.Confirm.Delete", r.WoodType, r.ThicknessText),
             Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 

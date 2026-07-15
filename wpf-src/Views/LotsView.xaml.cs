@@ -228,7 +228,7 @@ public partial class LotsView : UserControl, IModuleView
 
     private void DeleteLot(WoodLot lot)
     {
-        var confirm = MessageBox.Show(Lang.T("Lots.Confirm.Delete", lot.Id),
+        var confirm = AppDialog.Show(Lang.T("Lots.Confirm.Delete", lot.Id),
             Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
@@ -239,7 +239,7 @@ public partial class LotsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

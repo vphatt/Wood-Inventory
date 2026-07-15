@@ -303,7 +303,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -346,7 +346,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
 
     private void DeleteCategory(WoodCategory cat)
     {
-        var confirm = MessageBox.Show(Lang.T("WoodCategories.Confirm.Delete", cat.Name),
+        var confirm = AppDialog.Show(Lang.T("WoodCategories.Confirm.Delete", cat.Name),
             Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
@@ -357,7 +357,7 @@ public partial class WoodCategoriesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

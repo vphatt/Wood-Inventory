@@ -172,7 +172,8 @@
                                 <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <RadioButton x:Name="FThickModeSingle" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="ThicknessMode_Changed"/>
-                                        <RadioButton x:Name="FThickModeRange" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="ThicknessMode_Changed"/>
+                                        <RadioButton x:Name="FThickModeClosed" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Closed}" Checked="ThicknessMode_Changed"/>
+                                        <RadioButton x:Name="FThickModeOpen" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="ThicknessMode_Changed"/>
                                         <RadioButton x:Name="FThickModeMulti" GroupName="ThickMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="ThicknessMode_Changed"/>
                                     </StackPanel>
                                 </Border>
@@ -208,7 +209,8 @@
                                 <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <RadioButton x:Name="FWidthModeSingle" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="WidthMode_Changed"/>
-                                        <RadioButton x:Name="FWidthModeRange" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="WidthMode_Changed"/>
+                                        <RadioButton x:Name="FWidthModeClosed" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Closed}" Checked="WidthMode_Changed"/>
+                                        <RadioButton x:Name="FWidthModeOpen" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="WidthMode_Changed"/>
                                         <RadioButton x:Name="FWidthModeMulti" GroupName="WidthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="WidthMode_Changed"/>
                                     </StackPanel>
                                 </Border>
@@ -243,7 +245,8 @@
                                 <Border Grid.Column="1" Background="{StaticResource Slate100}" CornerRadius="6" Padding="2" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <RadioButton x:Name="FLengthModeSingle" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Single}" Checked="LengthMode_Changed"/>
-                                        <RadioButton x:Name="FLengthModeRange" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="LengthMode_Changed"/>
+                                        <RadioButton x:Name="FLengthModeClosed" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Closed}" Checked="LengthMode_Changed"/>
+                                        <RadioButton x:Name="FLengthModeOpen" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Range}" Checked="LengthMode_Changed"/>
                                         <RadioButton x:Name="FLengthModeMulti" GroupName="LengthMode" Style="{StaticResource DimModeChip}" Content="{helpers:Loc Quotations.Mode.Multi}" Checked="LengthMode_Changed"/>
                                     </StackPanel>
                                 </Border>
@@ -404,7 +407,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.WoodType}" Binding="{Binding WoodTypeDisplay}" Width="200" MinWidth="200" SortMemberPath="WoodType">
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.WoodType}" Binding="{Binding WoodTypeDisplay}" Width="200" MinWidth="200" SortMemberPath="WoodTypeDisplay">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>

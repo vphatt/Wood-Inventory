@@ -484,7 +484,7 @@ public partial class IssuesView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSaveIssue_Click(object sender, RoutedEventArgs e)
@@ -495,7 +495,7 @@ public partial class IssuesView : UserControl, IModuleView
         var orderId = (FOrder.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         if (orderId.Length == 0)
         {
-            MessageBox.Show(Lang.T("Issues.Warn.OrderRequired"), Lang.T("Common.AppTitle"),
+            AppDialog.Show(Lang.T("Issues.Warn.OrderRequired"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -504,7 +504,7 @@ public partial class IssuesView : UserControl, IModuleView
         var invalid = _draftItems.FirstOrDefault(i => !i.IsValid);
         if (invalid != null)
         {
-            MessageBox.Show(Lang.T("Issues.Warn.ListError", invalid.Error),
+            AppDialog.Show(Lang.T("Issues.Warn.ListError", invalid.Error),
                 Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -538,7 +538,7 @@ public partial class IssuesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -557,7 +557,7 @@ public partial class IssuesView : UserControl, IModuleView
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not IssRow r) return;
-        if (MessageBox.Show(
+        if (AppDialog.Show(
                 Lang.T("Issues.Confirm.DeleteIssue", r.Id, r.Qty, Lang.T("Common.Unit.Bar")),
                 Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
@@ -568,7 +568,7 @@ public partial class IssuesView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

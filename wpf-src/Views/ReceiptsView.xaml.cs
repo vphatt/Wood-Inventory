@@ -794,7 +794,7 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     // ---------------- Chế độ add / view / edit ----------------
@@ -925,7 +925,7 @@ public partial class ReceiptsView : UserControl, IModuleView
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
-        if (MessageBox.Show(
+        if (AppDialog.Show(
                 Lang.T("Receipts.Confirm.DeleteReceipt", r.Id, r.Receipt.Lots.Count),
                 Lang.T("Common.ConfirmDeleteTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
@@ -936,7 +936,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -952,19 +952,19 @@ public partial class ReceiptsView : UserControl, IModuleView
 
         if (supplierId.Length == 0 || invoice.Length == 0)
         {
-            MessageBox.Show(Lang.T("Receipts.Warn.MissingDoc"), Lang.T("Common.AppTitle"),
+            AppDialog.Show(Lang.T("Receipts.Warn.MissingDoc"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (SelectedExchangeRate <= 0)
         {
-            MessageBox.Show(Lang.T("Receipts.Warn.RateInvalid"), Lang.T("Common.AppTitle"),
+            AppDialog.Show(Lang.T("Receipts.Warn.RateInvalid"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (_draftLots.Count == 0)
         {
-            MessageBox.Show(Lang.T("Receipts.Warn.NoLots"), Lang.T("Common.AppTitle"),
+            AppDialog.Show(Lang.T("Receipts.Warn.NoLots"), Lang.T("Common.AppTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -974,7 +974,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         var duplicates = ids.GroupBy(i => i).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         if (duplicates.Count > 0)
         {
-            MessageBox.Show(
+            AppDialog.Show(
                 Lang.T("Receipts.Warn.DuplicateLotId", string.Join(", ", duplicates)),
                 Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -984,25 +984,25 @@ public partial class ReceiptsView : UserControl, IModuleView
         {
             if (string.IsNullOrWhiteSpace(d.Id))
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.LotIdRequired"), Lang.T("Common.AppTitle"),
+                AppDialog.Show(Lang.T("Receipts.Warn.LotIdRequired"), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (string.IsNullOrWhiteSpace(d.WoodType))
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.WoodTypeRequired", d.Id), Lang.T("Common.AppTitle"),
+                AppDialog.Show(Lang.T("Receipts.Warn.WoodTypeRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (AppState.CategoryHasSubs(d.WoodType) && string.IsNullOrWhiteSpace(d.WoodSubType))
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.SubTypeRequired", d.Id, d.WoodType),
+                AppDialog.Show(Lang.T("Receipts.Warn.SubTypeRequired", d.Id, d.WoodType),
                     Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (ParseThickness(d) <= 0)
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.ThicknessRequired", d.Id), Lang.T("Common.AppTitle"),
+                AppDialog.Show(Lang.T("Receipts.Warn.ThicknessRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -1010,20 +1010,20 @@ public partial class ReceiptsView : UserControl, IModuleView
             {
                 if (D(d.Footage) <= 0)
                 {
-                    MessageBox.Show(Lang.T("Receipts.Warn.FootageRequired", d.Id, d.WoodType),
+                    AppDialog.Show(Lang.T("Receipts.Warn.FootageRequired", d.Id, d.WoodType),
                         Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
             }
             else if (D(d.Width) <= 0 || D(d.Length) <= 0)
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.SpecRequired", d.Id, d.WoodType),
+                AppDialog.Show(Lang.T("Receipts.Warn.SpecRequired", d.Id, d.WoodType),
                     Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if ((int)D(d.Quantity) <= 0)
             {
-                MessageBox.Show(Lang.T("Receipts.Warn.QuantityRequired", d.Id), Lang.T("Common.AppTitle"),
+                AppDialog.Show(Lang.T("Receipts.Warn.QuantityRequired", d.Id), Lang.T("Common.AppTitle"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -1117,7 +1117,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -1147,7 +1147,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Show(ex.Message, Lang.T("Common.CannotSaveTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }

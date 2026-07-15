@@ -389,6 +389,13 @@ public static class DbSeeder
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "WidthValues" TEXT;""");
         if (!existing.Contains("LengthValues"))
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthValues" TEXT;""");
+        // Cờ khoảng mở (a;b) vs đoạn đóng [a;b] — default 0 = đóng (dữ liệu cũ giữ nguyên hành vi khớp giá đóng).
+        if (!existing.Contains("ThicknessOpen"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "ThicknessOpen" INTEGER NOT NULL DEFAULT 0;""");
+        if (!existing.Contains("WidthOpen"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "WidthOpen" INTEGER NOT NULL DEFAULT 0;""");
+        if (!existing.Contains("LengthOpen"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "LengthOpen" INTEGER NOT NULL DEFAULT 0;""");
         if (!existing.Contains("UpdatedAt"))
         {
             context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "UpdatedAt" TEXT;""");

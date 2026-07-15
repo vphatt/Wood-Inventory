@@ -16,11 +16,6 @@
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="White"
-                        BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="4" Padding="12,5">
-                    <TextBlock Text="{helpers:Loc Dashboard.VersionBadge}" FontFamily="{StaticResource FontMono}"
-                               FontSize="11" Foreground="{StaticResource Slate400}"/>
-                </Border>
             </Grid>
 
             <!-- 4 thẻ KPI -->

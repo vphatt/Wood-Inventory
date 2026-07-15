@@ -27,9 +27,9 @@ public static class QuotationPriceMatcher
             // đã set thì phải khớp đúng con → dòng khớp con luôn cụ thể hơn (Specificity +1).
             if (!TextMatches(it.WoodSubType, woodSubType)) continue;
 
-            if (!ValueMatches(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax, thickness)) continue;
-            if (!ValueMatches(it.WidthValues, it.WidthMin, it.WidthMax, width)) continue;
-            if (!ValueMatches(it.LengthValues, it.LengthMin, it.LengthMax, length)) continue;
+            if (!ValueMatches(it.ThicknessValues, it.ThicknessMin, it.ThicknessMax, it.ThicknessOpen, thickness)) continue;
+            if (!ValueMatches(it.WidthValues, it.WidthMin, it.WidthMax, it.WidthOpen, width)) continue;
+            if (!ValueMatches(it.LengthValues, it.LengthMin, it.LengthMax, it.LengthOpen, length)) continue;
             if (!TextMatches(it.Grade, grade)) continue;
             if (!TextMatches(it.Origin, origin)) continue;
 
@@ -44,24 +44,36 @@ public static class QuotationPriceMatcher
         return best;
     }
 
-    private static bool RangeMatches(double? min, double? max, double? actual)
+    /// <summary>
+    /// Khớp theo khoảng Min/Max. <paramref name="open"/> = false → ĐOẠN đóng [a;b] (a ≤ x ≤ b); true → KHOẢNG
+    /// mở (a;b) (a &lt; x &lt; b). Cờ mở áp cho CẢ 2 bound đang set (chỉ set 1 bound thì thành ≥/&gt; hoặc ≤/&lt;).
+    /// </summary>
+    private static bool RangeMatches(double? min, double? max, bool open, double? actual)
     {
         if (min == null && max == null) return true;       // không giới hạn
         if (actual == null) return false;                  // dòng giá yêu cầu nhưng không có giá trị thực tế
-        if (min != null && actual < min) return false;
-        if (max != null && actual > max) return false;
+        if (open)
+        {
+            if (min != null && actual <= min) return false;
+            if (max != null && actual >= max) return false;
+        }
+        else
+        {
+            if (min != null && actual < min) return false;
+            if (max != null && actual > max) return false;
+        }
         return true;
     }
 
     /// <summary>
     /// Danh sách giá trị RỜI RẠC tương đương (vd "1220/2440/3000") có ưu tiên cao hơn Min/Max — khi đã set thì
     /// giá trị thực tế phải khớp CHÍNH XÁC (dung sai 0,01mm) 1 trong các giá trị đó, KHÔNG phải nằm trong khoảng
-    /// liên tục. Không set thì rơi về <see cref="RangeMatches"/> như cũ.
+    /// liên tục. Không set thì rơi về <see cref="RangeMatches"/> (đóng/mở theo <paramref name="open"/>).
     /// </summary>
-    private static bool ValueMatches(string valuesRaw, double? min, double? max, double? actual)
+    private static bool ValueMatches(string valuesRaw, double? min, double? max, bool open, double? actual)
     {
         var list = Fmt.ParseValueList(valuesRaw);
-        if (list.Count == 0) return RangeMatches(min, max, actual);
+        if (list.Count == 0) return RangeMatches(min, max, open, actual);
         if (actual == null) return false;
         return list.Any(v => Math.Abs(v - actual.Value) < 0.01);
     }

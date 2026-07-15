@@ -273,7 +273,7 @@ public partial class SuppliersView : UserControl, IModuleView
 
     /// <summary>Hộp thoại xác nhận hủy (thông điệp tùy chế độ add/edit).</summary>
     private static bool ConfirmDiscard(string message) =>
-        MessageBox.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
+        AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -322,7 +322,7 @@ public partial class SuppliersView : UserControl, IModuleView
         // Không còn tham chiếu → xóa thường
         if (lotCount == 0 && receiptCount == 0 && !hasQuote)
         {
-            if (MessageBox.Show(Lang.T("Suppliers.Confirm.DeleteSimple", s.Name),
+            if (AppDialog.Show(Lang.T("Suppliers.Confirm.DeleteSimple", s.Name),
                     Lang.T("Common.AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             try
             {
@@ -331,7 +331,7 @@ public partial class SuppliersView : UserControl, IModuleView
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             return;
         }
@@ -342,7 +342,7 @@ public partial class SuppliersView : UserControl, IModuleView
         if (lotCount > 0) parts.Add(Lang.T("Suppliers.ForceDeletePart.Lots", lotCount));
         if (hasQuote) parts.Add(Lang.T("Suppliers.ForceDeletePart.Quote"));
         var msg = Lang.T("Suppliers.Confirm.DeleteForce", s.Name, string.Join(", ", parts));
-        if (MessageBox.Show(msg, Lang.T("Suppliers.Confirm.DeleteForceTitle"),
+        if (AppDialog.Show(msg, Lang.T("Suppliers.Confirm.DeleteForceTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try
         {
@@ -352,7 +352,7 @@ public partial class SuppliersView : UserControl, IModuleView
         catch (Exception ex)
         {
             // Vd: có kiện đã xuất kho → chặn (giữ truy xuất nguồn gốc)
-            MessageBox.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppDialog.Show(ex.Message, Lang.T("Common.CannotDeleteTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

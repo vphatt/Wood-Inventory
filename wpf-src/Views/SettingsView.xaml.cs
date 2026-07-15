@@ -121,7 +121,7 @@ public partial class SettingsView : UserControl, IModuleView
             LowStockThreshold = lowStock
         });
 
-        MessageBox.Show(Lang.T("Settings.SavedMessage"), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+        AppDialog.Show(Lang.T("Settings.SavedMessage"), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     // ---------------- Dữ liệu: sao lưu / phục hồi / mở thư mục ----------------
@@ -147,11 +147,11 @@ public partial class SettingsView : UserControl, IModuleView
                 cmd.ExecuteNonQuery();
             }
             File.Copy(AppDbContext.DbPath, dialog.FileName, overwrite: true);
-            MessageBox.Show(Lang.T("Settings.Backup.SuccessMessage", dialog.FileName), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            AppDialog.Show(Lang.T("Settings.Backup.SuccessMessage", dialog.FileName), Lang.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Lang.T("Settings.Backup.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Show(Lang.T("Settings.Backup.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -160,7 +160,7 @@ public partial class SettingsView : UserControl, IModuleView
         var dialog = new OpenFileDialog { Title = Lang.T("Settings.Restore.DialogTitle"), Filter = "SQLite Database (*.db)|*.db" };
         if (dialog.ShowDialog() != true) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = AppDialog.Show(
             Lang.T("Settings.Restore.ConfirmMessage"),
             Lang.T("Settings.Restore.ConfirmTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
@@ -180,7 +180,7 @@ public partial class SettingsView : UserControl, IModuleView
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Lang.T("Settings.Restore.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialog.Show(Lang.T("Settings.Restore.FailMessage", ex.Message), Lang.T("Common.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
