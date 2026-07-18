@@ -69,8 +69,9 @@
             <!-- ===== Thanh tìm kiếm ===== -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <Grid Width="300">
-                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,30,6"
                              Background="White" TextChanged="Filter_Changed"/>
+                    <Button Style="{StaticResource SearchClearBtn}" helpers:ClearBox.Target="{Binding ElementName=SearchBox}"/>
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -104,7 +105,7 @@
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -113,7 +114,7 @@
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="{helpers:Loc WoodSubCategories.Field.Name}" Binding="{Binding Name}" Width="200" MinWidth="200">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>

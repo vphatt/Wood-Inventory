@@ -52,16 +52,13 @@ public static class QuotationPriceMatcher
     {
         if (min == null && max == null) return true;       // không giới hạn
         if (actual == null) return false;                  // dòng giá yêu cầu nhưng không có giá trị thực tế
-        if (open)
+        if (min != null)
         {
-            if (min != null && actual <= min) return false;
-            if (max != null && actual >= max) return false;
+            // Cận dưới MỞ (loại đúng min) khi: khoảng mở, HOẶC min = 0 (kích thước gỗ = 0 vô nghĩa → luôn > 0).
+            var lowerOpen = open || Math.Abs(min.Value) < 1e-9;
+            if (lowerOpen ? actual <= min : actual < min) return false;
         }
-        else
-        {
-            if (min != null && actual < min) return false;
-            if (max != null && actual > max) return false;
-        }
+        if (max != null && (open ? actual >= max : actual > max)) return false;
         return true;
     }
 
@@ -70,6 +67,11 @@ public static class QuotationPriceMatcher
     /// giá trị thực tế phải khớp CHÍNH XÁC (dung sai 0,01mm) 1 trong các giá trị đó, KHÔNG phải nằm trong khoảng
     /// liên tục. Không set thì rơi về <see cref="RangeMatches"/> (đóng/mở theo <paramref name="open"/>).
     /// </summary>
+    /// <summary>Public wrapper của khớp kích thước 1 chiều — dùng để LỌC gợi ý cascade ở Nhập Kho
+    /// (chọn Dày 23 → chỉ item có Dày khớp 23 mới đem gợi ý Rộng/Dài).</summary>
+    public static bool DimensionMatches(string valuesRaw, double? min, double? max, bool open, double? actual) =>
+        ValueMatches(valuesRaw, min, max, open, actual);
+
     private static bool ValueMatches(string valuesRaw, double? min, double? max, bool open, double? actual)
     {
         var list = Fmt.ParseValueList(valuesRaw);

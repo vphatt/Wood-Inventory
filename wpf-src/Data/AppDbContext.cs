@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
     public DbSet<Supplier> Suppliers { get; set; }
     public DbSet<WoodQuotation> WoodQuotations { get; set; }
     public DbSet<QuotationItem> QuotationItems { get; set; }
+    public DbSet<QuotationPriceHistory> QuotationPriceHistories { get; set; }
     public DbSet<WarehouseReceipt> WarehouseReceipts { get; set; }
     public DbSet<WarehouseIssue> WarehouseIssues { get; set; }
     public DbSet<WarehouseIssueItem> WarehouseIssueItems { get; set; }
@@ -105,6 +106,18 @@ public class AppDbContext : DbContext
         {
             entity.Property(e => e.Price).HasPrecision(18, 2);
             entity.Property(e => e.PriceCurrency).HasMaxLength(3);
+        });
+
+        modelBuilder.Entity<QuotationPriceHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(50);
+            entity.Property(e => e.QuotationItemId).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Price).HasPrecision(18, 2);
+            entity.Property(e => e.PriceCurrency).HasMaxLength(3);
+            entity.HasIndex(e => e.QuotationItemId);
+            entity.HasOne<QuotationItem>().WithMany()
+                  .HasForeignKey(e => e.QuotationItemId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<WarehouseReceipt>(entity =>

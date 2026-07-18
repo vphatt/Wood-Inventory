@@ -36,8 +36,12 @@ public static class GridPairSync
     private static readonly DependencyProperty SyncingProperty =
         DependencyProperty.RegisterAttached("Syncing", typeof(bool), typeof(GridPairSync), new PropertyMetadata(false));
 
-    private static readonly DependencyProperty SyncingScrollProperty =
-        DependencyProperty.RegisterAttached("SyncingScroll", typeof(bool), typeof(GridPairSync), new PropertyMetadata(false));
+    // Offset mà CODE vừa chủ động cuộn grid này tới (NaN = chưa/không phải cuộn do đồng bộ). Dùng để nhận diện
+    // cú ScrollChanged "echo" (do sync sinh ra) và bỏ qua nó — xem WireScroll.
+    private static readonly DependencyProperty LastSyncedProperty =
+        DependencyProperty.RegisterAttached("LastSynced", typeof(double), typeof(GridPairSync), new PropertyMetadata(double.NaN));
+    private static double GetLastSynced(DependencyObject d) => (double)d.GetValue(LastSyncedProperty);
+    private static void SetLastSynced(DependencyObject d, double v) => d.SetValue(LastSyncedProperty, v);
 
     /// <summary>Nối 2 DataGrid tách riêng (nội dung + thao tác) — gọi 1 lần trong constructor View.</summary>
     public static void Link(DataGrid a, DataGrid b)
@@ -66,19 +70,28 @@ public static class GridPairSync
             sv.ScrollChanged += (_, e) =>
             {
                 if (e.VerticalChange == 0) return;
-                if ((bool)grid.GetValue(SyncingScrollProperty)) return;
+                // Cú cuộn này là ECHO do CHÍNH code vừa đồng bộ grid NÀY (offset = giá trị vừa set) → tiêu thụ,
+                // TUYỆT ĐỐI không sync ngược. Đây là điểm triệt vòng lặp: khi cuộn nhanh, grid bị-đồng-bộ (lag) KHÔNG
+                // được kéo grid-đang-dẫn về vị trí cũ nữa. Đặt NaN sau khi tiêu thụ để lần cuộn TAY tới đúng offset
+                // đó về sau không bị nhầm là echo.
+                if (Math.Abs(sv.VerticalOffset - GetLastSynced(grid)) < 0.5) { SetLastSynced(grid, double.NaN); return; }
                 if (grid.GetValue(PartnerProperty) is not DataGrid partner) return;
-                var offset = sv.VerticalOffset;
-                // Hoãn sang lượt Dispatcher kế tiếp (KHÔNG gọi ScrollToVerticalOffset ngay trong lúc grid
-                // nguồn đang tự layout/arrange do chính cú cuộn này) — gọi đồng bộ ngay tại đây từng gây
-                // "Index was outside the bounds of the array" ngẫu nhiên do đụng vào bảng ghi container
-                // đang tái sử dụng (virtualization) của DataGrid đối tác giữa chừng 1 pass layout khác.
+                // Hoãn 1 lượt Dispatcher (tránh crash "Index outside bounds" khi cuộn giữa layout) + đọc offset HIỆN TẠI
+                // trong lambda để GỘP các cú cuộn nhanh liên tiếp về vị trí cuối (không dùng offset cũ lúc schedule).
                 partner.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (FindScrollViewer(partner) is not ScrollViewer partnerSv) return;
-                    partner.SetValue(SyncingScrollProperty, true);
-                    try { partnerSv.ScrollToVerticalOffset(offset); }
-                    finally { partner.SetValue(SyncingScrollProperty, false); }
+                    // Nuốt lỗi tạm thời của DataGrid ảo hoá (vd ScrollChanged bắn ngay lúc CollectionView.Refresh do
+                    // tìm kiếm/lọc đang rebuild container → ScrollToVerticalOffset ném "Index was outside the bounds
+                    // of the array"). Đồng bộ cuộn chỉ là cosmetic — bỏ qua 1 khung, không cho nổi dialog lỗi.
+                    try
+                    {
+                        if (FindScrollViewer(partner) is not ScrollViewer partnerSv) return;
+                        var target = sv.VerticalOffset;
+                        if (Math.Abs(partnerSv.VerticalOffset - target) < 0.5) return;
+                        SetLastSynced(partner, target);   // đánh dấu để cú ScrollChanged dội lại của partner nhận ra là echo
+                        partnerSv.ScrollToVerticalOffset(target);
+                    }
+                    catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException) { }
                 }), System.Windows.Threading.DispatcherPriority.Background);
             };
         }

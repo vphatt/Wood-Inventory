@@ -88,12 +88,16 @@ public partial class WoodSubCategoriesView : UserControl
 
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is SubRow r) EnterViewMode(r.Sub);
+        if ((sender as FrameworkElement)?.DataContext is not SubRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterViewMode(r.Sub);
     }
 
     private void EditRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is SubRow r) { EnterViewMode(r.Sub); EnterEditMode(); }
+        if ((sender as FrameworkElement)?.DataContext is not SubRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterViewMode(r.Sub); EnterEditMode();
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
@@ -144,6 +148,7 @@ public partial class WoodSubCategoriesView : UserControl
         FormSaveBtn.Content = Lang.T("Common.Edit");
         FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
+        UiScroll.ToTop(AddFormPanel);   // luôn kéo lên đầu trang để thấy form xem (kể cả khi đang xem dòng khác)
     }
 
     private void EnterEditMode()
@@ -160,11 +165,9 @@ public partial class WoodSubCategoriesView : UserControl
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
     {
-        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add")
-        {
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+        // Đã ở add mode → không làm gì (bỏ hành vi click lần 2 đóng form, gây mất dữ liệu chưa lưu không cảnh báo)
+        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add") return;
+        if (!ConfirmLeaveDirty()) return;   // đang sửa (có thay đổi chưa lưu) → xác nhận trước khi sang thêm mới
         EnterAddMode();
         AddFormPanel.Visibility = Visibility.Visible;
     }
@@ -191,6 +194,11 @@ public partial class WoodSubCategoriesView : UserControl
     private static bool ConfirmDiscard(string message) =>
         AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    /// <summary>Đang MỞ form add/edit (dữ liệu chưa lưu) → hỏi xác nhận bỏ trước khi rời sang xem/sửa dòng khác (true = được rời).</summary>
+    private bool ConfirmLeaveDirty() =>
+        AddFormPanel.Visibility != Visibility.Visible || (_mode != "add" && _mode != "edit")
+        || ConfirmDiscard(Lang.T(_mode == "add" ? "Common.Confirm.DiscardAdd" : "Common.Confirm.DiscardEdit"));
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {

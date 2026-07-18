@@ -23,7 +23,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         public string WoodType = "";
         public string WoodSubType;   // phân loại con (null = chưa chọn/không phân loại)
         public string Thickness = "";
-        public string Origin = "";   // Xuất xứ (thay cho Grade cũ)
+        public string Origin = "";   // Xuất xứ
+        public string Grade = "";    // Chất lượng (Grade) — khớp báo giá như Xuất xứ
         public string Width = "";
         public string Length = "";
         public string LengthNote;    // độ dài dạng inch cho gỗ footage, vd 96"108"120"
@@ -157,19 +158,19 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     /// <summary>Tra dòng giá từ báo giá của NCC — khớp dòng giá cụ thể nhất theo loại gỗ + kích thước + grade.</summary>
     private static QuotationItem LookupQuotationItem(string supplierId, string woodType, string woodSubType,
-        double thickness, double width, double length, string origin)
+        double thickness, double width, double length, string origin, string grade)
     {
         if (string.IsNullOrEmpty(supplierId)) return null;
         var quotation = AppState.Quotations.FirstOrDefault(q => q.SupplierId == supplierId);
         if (quotation == null) return null;
         return QuotationPriceMatcher.FindBestMatch(quotation.Items, woodType,
-            thickness: thickness, width: width, length: length, origin: origin, woodSubType: woodSubType);
+            thickness: thickness, width: width, length: length, origin: origin, grade: grade, woodSubType: woodSubType);
     }
 
     private void Recalculate(DraftLot lot)
     {
         var thickness = ParseThickness(lot);
-        var matched = LookupQuotationItem(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin);
+        var matched = LookupQuotationItem(SelectedSupplierId, lot.WoodType, lot.WoodSubType, thickness, D(lot.Width), D(lot.Length), lot.Origin, lot.Grade);
         lot.PriceFromQuotation = matched != null && matched.Price > 0;
         lot.QuotedPrice = lot.PriceFromQuotation ? matched.Price : 0;
         lot.QuotedCurrency = lot.PriceFromQuotation ? matched.PriceCurrency : null;
@@ -210,7 +211,8 @@ public partial class ReceiptsView : UserControl, IModuleView
         var isFootage = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
+        // Cột 6 = Chất lượng (Grade), chèn giữa Xuất xứ (5) và Dày (7) → các cột sau dịch +1.
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
                 ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
                 : new ColumnDefinition { Width = new GridLength(w) });
@@ -239,23 +241,24 @@ public partial class ReceiptsView : UserControl, IModuleView
         Cell(lot.WoodType, 3, HorizontalAlignment.Left, mono: false);
         Cell(lot.WoodSubType, 4, HorizontalAlignment.Left, mono: false);
         Cell(lot.Origin, 5, HorizontalAlignment.Center);
-        Cell(lot.Thickness, 6, HorizontalAlignment.Center);
-        Cell(isFootage ? "-" : lot.Width, 7, HorizontalAlignment.Center);
-        Cell(isFootage ? lot.LengthNote : lot.Length, 8, HorizontalAlignment.Center);
-        Cell(isFootage ? lot.Footage : "-", 9, HorizontalAlignment.Center);
-        Cell(lot.Quantity, 10, HorizontalAlignment.Center);
-        Cell(Fmt.M3(lot.Cbm, lot.VolumeDecimals), 11, HorizontalAlignment.Right);
-        Cell(lot.VolumeDecimals.ToString(), 12, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
+        Cell(lot.Grade, 6, HorizontalAlignment.Center);
+        Cell(lot.Thickness, 7, HorizontalAlignment.Center);
+        Cell(isFootage ? "-" : lot.Width, 8, HorizontalAlignment.Center);
+        Cell(isFootage ? lot.LengthNote : lot.Length, 9, HorizontalAlignment.Center);
+        Cell(isFootage ? lot.Footage : "-", 10, HorizontalAlignment.Center);
+        Cell(lot.Quantity, 11, HorizontalAlignment.Center);
+        Cell(Fmt.M3(lot.Cbm, lot.VolumeDecimals), 12, HorizontalAlignment.Right);
+        Cell(lot.VolumeDecimals.ToString(), 13, HorizontalAlignment.Center, color: (Brush)FindResource("Slate400"));
         Cell(lot.VolumeAdjustment == 0 ? "-" : (lot.VolumeAdjustment > 0 ? "+" : "") + Fmt.M3(lot.VolumeAdjustment, lot.VolumeDecimals),
-            13, HorizontalAlignment.Right, color: (Brush)FindResource(lot.VolumeAdjustment == 0 ? "Slate400" : "Amber600"));
-        Cell(lot.EffectivePrice > 0 ? Fmt.Money(lot.EffectivePrice, SelectedCurrency) : Lang.T("Receipts.NoPriceMatch"), 14, HorizontalAlignment.Right,
+            14, HorizontalAlignment.Right, color: (Brush)FindResource(lot.VolumeAdjustment == 0 ? "Slate400" : "Amber600"));
+        Cell(lot.EffectivePrice > 0 ? Fmt.Money(lot.EffectivePrice, SelectedCurrency) : Lang.T("Receipts.NoPriceMatch"), 15, HorizontalAlignment.Right,
             color: (Brush)FindResource(lot.EffectivePrice > 0 ? "Slate800" : "Slate400"));
-        Cell(Fmt.Money(lot.TotalPrice, SelectedCurrency), 15, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TotalVnd), 16, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TaxVnd), 17, HorizontalAlignment.Right);
-        Cell(Fmt.Vnd(lot.TotalValueVnd), 18, HorizontalAlignment.Right,
+        Cell(Fmt.Money(lot.TotalPrice, SelectedCurrency), 16, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalVnd), 17, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TaxVnd), 18, HorizontalAlignment.Right);
+        Cell(Fmt.Vnd(lot.TotalValueVnd), 19, HorizontalAlignment.Right,
             weight: FontWeights.SemiBold, color: (Brush)FindResource("Emerald600"), margin: new Thickness(6, 0, 12, 0));
-        // Cột 19 (Xóa): để trống — chế độ xem không cho xóa.
+        // Cột 20 (Xóa): để trống — chế độ xem không cho xóa.
 
         return new Border
         {
@@ -271,9 +274,9 @@ public partial class ReceiptsView : UserControl, IModuleView
         Recalculate(lot);
 
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        // STT, MãKiện, PhiếuGiaoHàng, LoạiGỗ, PhânLoại, XuấtXứ, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, SốTP, ĐiềuChỉnh,
-        // ĐơnGiáUSD, TổngTiềnUSD, TổngTiềnVND, TiềnThuếVND, TổngCộngVND(*), Xóa
-        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
+        // STT, MãKiện, PhiếuGiaoHàng, LoạiGỗ, PhânLoại, XuấtXứ, ChấtLượng, Dày, Rộng, Dài, Footage, SốLượng, ThểTích, SốTP,
+        // ĐiềuChỉnh, ĐơnGiáUSD, TổngTiềnUSD, TổngTiềnVND, TiềnThuếVND, TổngCộngVND(*), Xóa — ChấtLượng(6) chèn giữa XuấtXứ(5) và Dày(7).
+        foreach (var w in new[] { 45.0, 100, 120, 120, 120, 95, 95, 95, 95, 95, 95, 70, 90, 70, 100, 140, 110, 120, 110, -1, 50 })
             grid.ColumnDefinitions.Add(w < 0
                 ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 130 }
                 : new ColumnDefinition { Width = new GridLength(w) });
@@ -345,9 +348,11 @@ public partial class ReceiptsView : UserControl, IModuleView
                 var untouched = string.IsNullOrWhiteSpace(priceBox.Text)
                     || (lot.LastQuoted > 0 && priceBox.Text == Fmt.Num((double)lot.LastQuoted));
                 lot.LastQuoted = lot.QuotedPrice;
-                if (untouched && lot.QuotedPrice > 0)
+                if (untouched)
                 {
-                    var auto = Fmt.Num((double)lot.QuotedPrice);
+                    // Khớp mới → tự điền giá; MẤT khớp (QuotedPrice=0) → XÓA ô để hiện lại "Chưa xác định",
+                    // KHÔNG giữ giá auto cũ tô đen. (Chỉ giữ nếu user đã sửa tay giá khác → untouched=false.)
+                    var auto = lot.QuotedPrice > 0 ? Fmt.Num((double)lot.QuotedPrice) : "";
                     if (priceBox.Text != auto) { priceBox.Text = auto; return; }   // TextChanged sẽ gọi lại Update()
                 }
             }
@@ -405,29 +410,53 @@ public partial class ReceiptsView : UserControl, IModuleView
         deliveryNoteBox.Margin = new Thickness(6, 0, 6, 0);
         Grid.SetColumn(deliveryNoteBox, 2); grid.Children.Add(deliveryNoteBox);
 
-        // Gợi ý (tối đa 3) lấy từ báo giá NCC khớp loại gỗ cha + phân loại con của kiện. Dòng giá có khai
-        // danh sách giá trị rời rạc (vd "1220/2440/3000") thì TÁCH ra thành từng giá trị riêng để gợi ý,
-        // không phải Min/Max range — xem QuotationItem.WidthValues/LengthValues/ThicknessValues. Dòng giá là
-        // KHOẢNG thật (Từ khác Đến) thì hiện hint dạng "20-25" (không phải số cụ thể) — người dùng tự chọn
-        // 1 con số hợp lệ nằm trong khoảng đó để gõ vào, không kỳ vọng gõ nguyên văn "20-25".
+        // Gợi ý (tối đa 10) lấy từ báo giá NCC khớp loại gỗ cha + phân loại con của kiện; mỗi field còn LỌC CHÉO
+        // theo mọi field KHÁC đã nhập (Xuất xứ/Grade/Dày/Rộng/Dài) bất kể thứ tự nhập — xem ItemsExcept. Dòng giá có khai
+        // danh sách giá trị rời rạc (vd "1220/2440/3000") thì TÁCH ra thành từng giá trị riêng để gợi ý.
+        // Dòng giá là KHOẢNG/ĐOẠN thì hiện hint ký hiệu ĐẦY ĐỦ dải hợp lệ: "20≤x≤25" (đoạn) / "20<x<25" (khoảng)
+        // / "x≥20" / "x≤25" ... — cho user biết chính xác được nhập từ bao nhiêu đến bao nhiêu. Insert nguyên
+        // chuỗi vào ô cũng được, user tự sửa thành 1 con số hợp lệ.
         bool Footage() => AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
-        List<string> Suggest(Func<QuotationItem, IEnumerable<string>> pick) => DistinctSuggest(MatchingQuotationItems(lot).SelectMany(pick));
-        string RangeHint(double? min, double? max) =>
-            min.HasValue && max.HasValue && Math.Abs(min.Value - max.Value) > 0.0001
-                ? $"{Fmt.Num(min.Value)}-{Fmt.Num(max.Value)}"
-                : Fmt.Num((min ?? max ?? 0));
-        List<string> OriginSuggest() => Suggest(i => new[] { i.Origin });
-        List<string> ThickSuggest() => Suggest(i => Footage()
-            ? new[] { i.ThicknessMinNote }
+        List<string> SuggestFrom(IEnumerable<QuotationItem> items, Func<QuotationItem, IEnumerable<string>> pick) =>
+            DistinctSuggest(items.SelectMany(pick));
+        // Lọc CHÉO: gợi ý của MỘT field chỉ lấy từ dòng giá khớp TẤT CẢ field KHÁC đã nhập (bất kể thứ tự nhập —
+        // nhập Dày + Dài trước thì gợi ý Rộng vẫn lọc theo cả hai). Field để trống → không lọc theo field đó.
+        // Base MatchingQuotationItems đã lọc sẵn Loại gỗ (cha) + Phân loại con; ở đây lọc thêm Xuất xứ/Grade/kích thước.
+        // Text: dòng giá để trống (NULL) = áp mọi giá trị nên vẫn khớp.
+        double? Num(string t) => string.IsNullOrWhiteSpace(t) ? (double?)null : D(t);
+        bool TxtMatch(string rule, string actual) => string.IsNullOrWhiteSpace(actual)
+            || string.IsNullOrWhiteSpace(rule) || string.Equals(rule.Trim(), actual.Trim(), StringComparison.OrdinalIgnoreCase);
+        bool DimMatch(string vals, double? mn, double? mx, bool op, string entered) =>
+            Num(entered) is not double v || QuotationPriceMatcher.DimensionMatches(vals, mn, mx, op, v);
+        bool OriginMatch(QuotationItem i) => TxtMatch(i.Origin, lot.Origin);
+        bool GradeMatch(QuotationItem i) => TxtMatch(i.Grade, lot.Grade);
+        bool ThickMatch(QuotationItem i) => DimMatch(i.ThicknessValues, i.ThicknessMin, i.ThicknessMax, i.ThicknessOpen, lot.Thickness);
+        bool WidthMatch(QuotationItem i) => DimMatch(i.WidthValues, i.WidthMin, i.WidthMax, i.WidthOpen, lot.Width);
+        bool LengthMatch(QuotationItem i) => DimMatch(i.LengthValues, i.LengthMin, i.LengthMax, i.LengthOpen, lot.Length);
+        // Item khớp mọi field KHÁC (trừ field đang gợi ý "skip").
+        IEnumerable<QuotationItem> ItemsExcept(string skip) => MatchingQuotationItems(lot).Where(i =>
+            (skip == "origin" || OriginMatch(i)) && (skip == "grade" || GradeMatch(i)) && (skip == "thick" || ThickMatch(i))
+            && (skip == "width" || WidthMatch(i)) && (skip == "length" || LengthMatch(i)));
+        // min=0 → cận dưới luôn MỞ (>) như matcher (kích thước gỗ = 0 vô nghĩa).
+        string RangeHint(double? min, double? max, bool open) =>
+            IntervalHint(min.HasValue ? Fmt.Num(min.Value) : null, max.HasValue ? Fmt.Num(max.Value) : null,
+                open || (min.HasValue && Math.Abs(min.Value) < 1e-9), open);
+        string FootageHint(string minNote, string maxNote, bool open) =>
+            IntervalHint(string.IsNullOrWhiteSpace(minNote) ? null : minNote,
+                string.IsNullOrWhiteSpace(maxNote) ? null : maxNote, open, open);
+        List<string> OriginSuggest() => SuggestFrom(ItemsExcept("origin"), i => new[] { i.Origin });
+        List<string> GradeSuggest() => SuggestFrom(ItemsExcept("grade"), i => new[] { i.Grade });
+        List<string> ThickSuggest() => SuggestFrom(ItemsExcept("thick"), i => Footage()
+            ? new[] { FootageHint(i.ThicknessMinNote, i.ThicknessMaxNote, i.ThicknessOpen) }
             : !string.IsNullOrWhiteSpace(i.ThicknessValues)
                 ? Fmt.ParseValueList(i.ThicknessValues).Select(Fmt.Num)
-                : new[] { i.ThicknessMin.HasValue || i.ThicknessMax.HasValue ? RangeHint(i.ThicknessMin, i.ThicknessMax) : null });
-        List<string> WidthSuggest() => Suggest(i => !string.IsNullOrWhiteSpace(i.WidthValues)
+                : new[] { i.ThicknessMin.HasValue || i.ThicknessMax.HasValue ? RangeHint(i.ThicknessMin, i.ThicknessMax, i.ThicknessOpen) : null });
+        List<string> WidthSuggest() => SuggestFrom(ItemsExcept("width"), i => !string.IsNullOrWhiteSpace(i.WidthValues)
             ? Fmt.ParseValueList(i.WidthValues).Select(Fmt.Num)
-            : new[] { i.WidthMin.HasValue || i.WidthMax.HasValue ? RangeHint(i.WidthMin, i.WidthMax) : null });
-        List<string> LengthSuggest() => Suggest(i => !string.IsNullOrWhiteSpace(i.LengthValues)
+            : new[] { i.WidthMin.HasValue || i.WidthMax.HasValue ? RangeHint(i.WidthMin, i.WidthMax, i.WidthOpen) : null });
+        List<string> LengthSuggest() => SuggestFrom(ItemsExcept("length"), i => !string.IsNullOrWhiteSpace(i.LengthValues)
             ? Fmt.ParseValueList(i.LengthValues).Select(Fmt.Num)
-            : new[] { i.LengthMin.HasValue || i.LengthMax.HasValue ? RangeHint(i.LengthMin, i.LengthMax) : null });
+            : new[] { i.LengthMin.HasValue || i.LengthMax.HasValue ? RangeHint(i.LengthMin, i.LengthMax, i.LengthOpen) : null });
 
         // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³) — Rộng/Dài có dropdown gợi ý.
         var widthBox = BuildSuggestCell(lot.Width, s => { lot.Width = s; Update(); }, WidthSuggest, center: true);
@@ -501,37 +530,41 @@ public partial class ReceiptsView : UserControl, IModuleView
         var originCell = BuildSuggestCell(lot.Origin, s => { lot.Origin = s; Update(); }, OriginSuggest, center: true);
         Grid.SetColumn(originCell, 5); grid.Children.Add(originCell);
 
-        // 6. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...) — có dropdown gợi ý theo báo giá
+        // 6. Chất lượng (Grade) — ô nhập kèm dropdown gợi ý theo grade trong báo giá NCC khớp
+        var gradeCell = BuildSuggestCell(lot.Grade, s => { lot.Grade = s; Update(); }, GradeSuggest, center: true);
+        Grid.SetColumn(gradeCell, 6); grid.Children.Add(gradeCell);
+
+        // 7. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...) — có dropdown gợi ý theo báo giá
         var thickBox = BuildSuggestCell(lot.Thickness, s => { lot.Thickness = s; Update(); }, ThickSuggest, center: true,
             tooltip: Lang.T("Receipts.ThicknessTooltip"));
-        Grid.SetColumn(thickBox, 6); grid.Children.Add(thickBox);
+        Grid.SetColumn(thickBox, 7); grid.Children.Add(thickBox);
 
-        // 7. Rộng (ẩn nếu gỗ footage)
-        Grid.SetColumn(widthBox, 7); grid.Children.Add(widthBox);
-        // 8. Dài (quy cách = mm; footage = ký hiệu inch — hai ô chồng nhau, toggle theo rule)
-        Grid.SetColumn(lengthBox, 8); grid.Children.Add(lengthBox);
-        Grid.SetColumn(lengthNoteBox, 8); grid.Children.Add(lengthNoteBox);
-        // 9. Footage (ẩn nếu gỗ quy cách)
-        Grid.SetColumn(footageBox, 9); grid.Children.Add(footageBox);
+        // 8. Rộng (ẩn nếu gỗ footage)
+        Grid.SetColumn(widthBox, 8); grid.Children.Add(widthBox);
+        // 9. Dài (quy cách = mm; footage = ký hiệu inch — hai ô chồng nhau, toggle theo rule)
+        Grid.SetColumn(lengthBox, 9); grid.Children.Add(lengthBox);
+        Grid.SetColumn(lengthNoteBox, 9); grid.Children.Add(lengthNoteBox);
+        // 10. Footage (ẩn nếu gỗ quy cách)
+        Grid.SetColumn(footageBox, 10); grid.Children.Add(footageBox);
 
-        // 10. Số lượng
+        // 11. Số lượng
         var qtyBox = Cell(lot.Quantity, s => { lot.Quantity = s; Update(); }, mono: true, center: true);
         qtyBox.Margin = new Thickness(6, 0, 6, 0);
-        Grid.SetColumn(qtyBox, 10); grid.Children.Add(qtyBox);
+        Grid.SetColumn(qtyBox, 11); grid.Children.Add(qtyBox);
 
-        // 11. Thể tích
-        Grid.SetColumn(cbmText, 11); grid.Children.Add(cbmText);
+        // 12. Thể tích
+        Grid.SetColumn(cbmText, 12); grid.Children.Add(cbmText);
 
-        // 12. Số thập phân làm tròn m³ riêng dòng (mặc định 5)
+        // 13. Số thập phân làm tròn m³ riêng dòng (mặc định 5)
         var decimalsBox = Cell(lot.VolumeDecimals.ToString(), s =>
         {
             lot.VolumeDecimals = Math.Clamp((int)D(s), 0, 15);
             Update();
         }, mono: true, center: true);
         decimalsBox.ToolTip = Lang.T("Receipts.Row.DecimalsTooltip");
-        Grid.SetColumn(decimalsBox, 12); grid.Children.Add(decimalsBox);
+        Grid.SetColumn(decimalsBox, 13); grid.Children.Add(decimalsBox);
 
-        // 13. Điều chỉnh tay +/- cộng vào m³ sau khi làm tròn
+        // 14. Điều chỉnh tay +/- cộng vào m³ sau khi làm tròn
         var adjustmentBox = Cell(lot.VolumeAdjustment == 0 ? "" : Fmt.Num(lot.VolumeAdjustment), s =>
         {
             lot.VolumeAdjustment = D(s);
@@ -539,16 +572,16 @@ public partial class ReceiptsView : UserControl, IModuleView
         }, mono: true);
         adjustmentBox.TextAlignment = TextAlignment.Right;
         adjustmentBox.ToolTip = Lang.T("Receipts.Row.AdjustmentTooltip");
-        Grid.SetColumn(adjustmentBox, 13); grid.Children.Add(adjustmentBox);
+        Grid.SetColumn(adjustmentBox, 14); grid.Children.Add(adjustmentBox);
 
-        // 14. Đơn giá  15-18. Tổng tiền gốc/VND, Tiền thuế, Tổng cộng
-        Grid.SetColumn(priceBox, 14); grid.Children.Add(priceBox);
-        Grid.SetColumn(priceHint, 14); grid.Children.Add(priceHint);
-        Grid.SetColumn(mismatchIcon, 14); grid.Children.Add(mismatchIcon);   // đè mép trái ô đơn giá
-        Grid.SetColumn(totalUsdText, 15); grid.Children.Add(totalUsdText);
-        Grid.SetColumn(totalVndText, 16); grid.Children.Add(totalVndText);
-        Grid.SetColumn(taxVndText, 17); grid.Children.Add(taxVndText);
-        Grid.SetColumn(grandTotalText, 18); grid.Children.Add(grandTotalText);
+        // 15. Đơn giá  16-19. Tổng tiền gốc/VND, Tiền thuế, Tổng cộng
+        Grid.SetColumn(priceBox, 15); grid.Children.Add(priceBox);
+        Grid.SetColumn(priceHint, 15); grid.Children.Add(priceHint);
+        Grid.SetColumn(mismatchIcon, 15); grid.Children.Add(mismatchIcon);   // đè mép trái ô đơn giá
+        Grid.SetColumn(totalUsdText, 16); grid.Children.Add(totalUsdText);
+        Grid.SetColumn(totalVndText, 17); grid.Children.Add(totalVndText);
+        Grid.SetColumn(taxVndText, 18); grid.Children.Add(taxVndText);
+        Grid.SetColumn(grandTotalText, 19); grid.Children.Add(grandTotalText);
 
         // Xóa
         var del = new Button
@@ -563,7 +596,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             _draftLots.Remove(lot);
             RebuildLotRows();
         };
-        Grid.SetColumn(del, 19); grid.Children.Add(del);
+        Grid.SetColumn(del, 20); grid.Children.Add(del);
 
         return new Border
         {
@@ -606,6 +639,19 @@ public partial class ReceiptsView : UserControl, IModuleView
             .ToList();
     }
 
+    /// <summary>Sinh chuỗi hint dải hợp lệ từ 2 mốc đã format: "a≤x≤b" (đoạn) / "a&lt;x&lt;b" (khoảng) /
+    /// "x≥a" / "x≤b" / "x&gt;a" / "x&lt;b" (nửa) / "a" (đơn lẻ min=max) / null (trống).
+    /// <paramref name="lowerOpen"/>/<paramref name="upperOpen"/> = cận tương ứng MỞ (dùng &lt;/&gt; thay ≤/≥).</summary>
+    private static string IntervalHint(string minStr, string maxStr, bool lowerOpen, bool upperOpen)
+    {
+        if (minStr == null && maxStr == null) return null;
+        if (minStr != null && maxStr != null)
+            return minStr == maxStr ? minStr
+                 : $"{minStr}{(lowerOpen ? "<" : "≤")}x{(upperOpen ? "<" : "≤")}{maxStr}";
+        if (minStr != null) return $"x{(lowerOpen ? ">" : "≥")}{minStr}";
+        return $"x{(upperOpen ? "<" : "≤")}{maxStr}";
+    }
+
     /// <summary>Chuẩn hóa danh sách gợi ý: bỏ rỗng, bỏ trùng (không phân biệt hoa thường), sắp xếp.</summary>
     private static List<string> DistinctSuggest(IEnumerable<string> values) =>
         values.Select(v => (v ?? "").Trim()).Where(v => v.Length > 0)
@@ -613,7 +659,7 @@ public partial class ReceiptsView : UserControl, IModuleView
               .OrderBy(v => v, StringComparer.CurrentCultureIgnoreCase).ToList();
 
     /// <summary>
-    /// Ô nhập kèm dropdown gợi ý (tối đa 3) + cho phép gõ để lọc; TỰ BUNG khi focus (kể cả chưa gõ).
+    /// Ô nhập kèm dropdown gợi ý (tối đa 10) + cho phép gõ để lọc; TỰ BUNG khi focus (kể cả chưa gõ).
     /// Trả về Grid bọc TextBox + Popup (Popup nổi, không ảnh hưởng layout ô).
     /// </summary>
     private FrameworkElement BuildSuggestCell(string initial, Action<string> onChange, Func<List<string>> suggest,
@@ -658,7 +704,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             var typed = (box.Text ?? "").Trim();
             var sugg = suggest()
                 .Where(o => typed.Length == 0 || o.IndexOf(typed, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Take(3).ToList();
+                .Take(10).ToList();
             // Không mở nếu không có gợi ý, hoặc gợi ý duy nhất trùng khít text đang gõ.
             if (sugg.Count == 0 || (sugg.Count == 1 && string.Equals(sugg[0], typed, StringComparison.OrdinalIgnoreCase)))
             {
@@ -739,12 +785,9 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
     {
-        // Đang mở sẵn ở chế độ thêm mới → bấm lần nữa thì đóng
-        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add")
-        {
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+        // Đã ở add mode → không làm gì (bỏ hành vi click lần 2 đóng form, gây mất dữ liệu chưa lưu không cảnh báo)
+        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add") return;
+        if (!ConfirmLeaveDirty()) return;   // đang sửa (có thay đổi chưa lưu) → xác nhận trước khi sang lập phiếu mới
         // Còn lại (đang ẩn, hoặc đang xem/sửa) → chuyển thẳng sang lập phiếu mới
         EnterAddMode();
         AddFormPanel.Visibility = Visibility.Visible;
@@ -797,6 +840,11 @@ public partial class ReceiptsView : UserControl, IModuleView
         AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
+    /// <summary>Đang MỞ form add/edit (dữ liệu chưa lưu) → hỏi xác nhận bỏ trước khi rời sang xem/sửa dòng khác (true = được rời).</summary>
+    private bool ConfirmLeaveDirty() =>
+        AddFormPanel.Visibility != Visibility.Visible || (_mode != "add" && _mode != "edit")
+        || ConfirmDiscard(Lang.T(_mode == "add" ? "Common.Confirm.DiscardAdd" : "Common.Confirm.DiscardEdit"));
+
     // ---------------- Chế độ add / view / edit ----------------
 
     /// <summary>Bật/tắt chỉ-đọc cho các ô ở phần header chứng từ.</summary>
@@ -846,6 +894,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         FormSaveBtn.Content = Lang.T("Common.Edit");
         FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
+        UiScroll.ToTop(AddFormPanel);   // luôn kéo lên đầu trang để thấy form xem (kể cả khi đang xem dòng khác)
     }
 
     /// <summary>Chuyển sang sửa (từ xem hoặc trực tiếp): mở khóa, nút thành "Cập nhật".</summary>
@@ -899,6 +948,7 @@ public partial class ReceiptsView : UserControl, IModuleView
             Thickness = isFootage && !string.IsNullOrWhiteSpace(l.ThicknessNote)
                 ? l.ThicknessNote : Fmt.Num(l.ThicknessMm),
             Origin = l.Origin ?? "",
+            Grade = l.Grade ?? "",
             Width = Fmt.Num(l.WidthMm),
             Length = Fmt.Num(l.LengthMm),
             LengthNote = l.LengthNote,
@@ -914,12 +964,16 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is RecRow r) EnterViewMode(r.Receipt);
+        if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterViewMode(r.Receipt);
     }
 
     private void EditRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is RecRow r) EnterEditMode(r.Receipt);
+        if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterEditMode(r.Receipt);
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)
@@ -1102,7 +1156,8 @@ public partial class ReceiptsView : UserControl, IModuleView
                 TaxPercent = (decimal)SelectedTaxPercent,
                 CostPriceVnd = d.CostPriceVnd,
                 TotalValueVnd = d.TotalValueVnd,
-                Origin = Blank2Null(d.Origin)
+                Origin = Blank2Null(d.Origin),
+                Grade = Blank2Null(d.Grade)
             });
         }
 

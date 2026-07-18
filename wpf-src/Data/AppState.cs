@@ -148,12 +148,47 @@ public static class AppState
         if (db.Suppliers.Any(x => x.Code.ToLower() == code.ToLower()))
             throw new InvalidOperationException(Lang.T("Suppliers.Warn.CodeExists", code));
 
+        supplier.Id = NextSupplierCode(db);   // Mã NCC = khoá chính, format N### (lấp chỗ trống)
         supplier.Code = code;
         supplier.Name = supplier.Name.Trim();
         supplier.TaxCode = supplier.TaxCode.Trim();
         db.Suppliers.Add(supplier);
         db.SaveChanges();
         Commit();
+    }
+
+    /// <summary>Số thứ tự trong mã NCC (N001 → 1); -1 nếu không đúng định dạng.</summary>
+    private static int SupplierCodeNum(string id) =>
+        !string.IsNullOrEmpty(id) && id.Length >= 2 && id[0] == 'N' && int.TryParse(id[1..], out var n) ? n : -1;
+
+    /// <summary>Mã NCC kế tiếp: số dương NHỎ NHẤT chưa dùng (lấp chỗ trống), định dạng N001, N002... — xem
+    /// yêu cầu "chạy lại từ 001 đến số mới nhất tìm chỗ trống, không thì mới nhất +1".</summary>
+    private static string NextSupplierCode(AppDbContext db)
+    {
+        var used = new HashSet<int>();
+        foreach (var id in db.Suppliers.Select(s => s.Id).ToList())
+        {
+            var n = SupplierCodeNum(id);
+            if (n > 0) used.Add(n);
+        }
+        var next = 1;
+        while (used.Contains(next)) next++;
+        return $"N{next:D3}";
+    }
+
+    /// <summary>Mã báo giá kế tiếp cho MỘT DÒNG giá của NCC: BG{abc}-{cde}, abc = số của NCC, cde = số dương
+    /// nhỏ nhất chưa dùng trong các mục giá hiện có của NCC đó.</summary>
+    private static string NextQuotationItemCode(string supplierId, IEnumerable<QuotationItem> existingItems)
+    {
+        var num = SupplierCodeNum(supplierId);
+        var abc = num > 0 ? num.ToString("D3") : "000";
+        var prefix = $"BG{abc}-";
+        var used = new HashSet<int>();
+        foreach (var it in existingItems)
+            if (it.Id != null && it.Id.StartsWith(prefix) && int.TryParse(it.Id[prefix.Length..], out var c)) used.Add(c);
+        var next = 1;
+        while (used.Contains(next)) next++;
+        return $"{prefix}{next:D3}";
     }
 
     /// <summary>Sửa nhà cung cấp. Chặn trùng Tên gọi tắt với NCC khác.</summary>
@@ -185,11 +220,13 @@ public static class AppState
         var s = db.Suppliers.Find(id);
         if (s == null) return;
 
-        if (db.WoodLots.Any(l => l.SupplierId == id)
-            || db.WoodQuotations.Any(q => q.SupplierId == id)
-            || db.WarehouseReceipts.Any(r => r.SupplierId == id))
+        // Chặn nếu còn kiện gỗ / phiếu nhập (dữ liệu tồn kho) — KHÔNG chặn vì báo giá.
+        if (db.WoodLots.Any(l => l.SupplierId == id) || db.WarehouseReceipts.Any(r => r.SupplierId == id))
             throw new InvalidOperationException(Lang.T("Suppliers.Warn.InUse", s.Name));
 
+        // Xóa NCC KÈM báo giá (+ mục giá cascade) của nó: tránh khi mã NCC bị tái dùng thì báo giá cũ
+        // "thừa kế" nhầm sang NCC mới (vì tham chiếu qua khoá chính = mã).
+        db.WoodQuotations.RemoveRange(db.WoodQuotations.Include(q => q.Items).Where(q => q.SupplierId == id).ToList());
         db.Suppliers.Remove(s);
         db.SaveChanges();
         Commit();
@@ -380,7 +417,7 @@ public static class AppState
         {
             q = new WoodQuotation
             {
-                Id = $"QT-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
+                Id = $"Q-{supplierId}",   // container nội bộ, 1/NCC (mã báo giá thật nằm ở TỪNG mục giá)
                 SupplierId = supplierId,
                 EffectiveDate = DateTime.Today,
                 Version = "",       // không dùng phiên bản nữa; "" đảm bảo unique (SupplierId,Version) = 1/NCC
@@ -396,11 +433,23 @@ public static class AppState
     {
         using var db = new AppDbContext();
         var q = GetOrCreate(db, supplierId);
-        item.Id = $"QI-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        item.Id = NextQuotationItemCode(supplierId, q.Items);   // Mã báo giá (từng dòng) = khoá chính, BG###-###
         item.QuotationId = q.Id;
         item.UpdatedAt = DateTime.Now;   // mốc tạo = lần chỉnh sửa đầu tiên
+        item.PriceAdjustReason = null;   // dòng mới chưa từng điều chỉnh giá
         q.Items.Add(item);
         q.EffectiveDate = DateTime.Today;
+        db.SaveChanges();
+        // Mốc giá khởi tạo (Reason rỗng) — để trang lịch sử luôn có dòng đầu.
+        db.QuotationPriceHistories.Add(new QuotationPriceHistory
+        {
+            Id = $"QPH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            QuotationItemId = item.Id,
+            ChangedAt = item.UpdatedAt.Value,
+            Price = item.Price,
+            PriceCurrency = item.PriceCurrency,
+            Reason = null
+        });
         db.SaveChanges();
         Commit();
     }
@@ -411,6 +460,9 @@ public static class AppState
         using var db = new AppDbContext();
         var existing = db.QuotationItems.Find(item.Id);
         if (existing == null) return;
+        // So sánh giá TRƯỚC khi ghi đè để phát hiện điều chỉnh giá → ghi lịch sử + lưu lý do.
+        var priceChanged = existing.Price != item.Price
+            || !string.Equals(existing.PriceCurrency ?? "USD", item.PriceCurrency ?? "USD", StringComparison.OrdinalIgnoreCase);
         existing.WoodType = item.WoodType;
         existing.WoodSubType = item.WoodSubType;
         existing.Grade = item.Grade;
@@ -430,13 +482,37 @@ public static class AppState
         existing.LengthOpen = item.LengthOpen;
         existing.Origin = item.Origin;
         existing.Specification = item.Specification;
+        existing.SigningDate = item.SigningDate;
         existing.Price = item.Price;
         existing.PriceCurrency = item.PriceCurrency;
         existing.UpdatedAt = DateTime.Now;   // ghi lại thời điểm chỉnh sửa gần nhất
+        if (priceChanged)
+        {
+            existing.PriceAdjustReason = string.IsNullOrWhiteSpace(item.PriceAdjustReason) ? null : item.PriceAdjustReason.Trim();
+            db.QuotationPriceHistories.Add(new QuotationPriceHistory
+            {
+                Id = $"QPH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+                QuotationItemId = existing.Id,
+                ChangedAt = existing.UpdatedAt.Value,
+                Price = existing.Price,
+                PriceCurrency = existing.PriceCurrency,
+                Reason = existing.PriceAdjustReason
+            });
+        }
         var q = db.WoodQuotations.Find(existing.QuotationId);
         if (q != null) q.EffectiveDate = DateTime.Today;
         db.SaveChanges();
         Commit();
+    }
+
+    /// <summary>Lịch sử thay đổi giá của một dòng báo giá, cũ → mới (chỉ đọc).</summary>
+    public static List<QuotationPriceHistory> GetPriceHistory(string itemId)
+    {
+        using var db = new AppDbContext();
+        return db.QuotationPriceHistories
+            .Where(h => h.QuotationItemId == itemId)
+            .OrderBy(h => h.ChangedAt)
+            .ToList();
     }
 
     /// <summary>Xóa một mục giá.</summary>

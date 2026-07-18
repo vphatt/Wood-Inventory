@@ -48,26 +48,37 @@ public static class Fmt
     public static double ParseNum(string s) =>
         double.TryParse(s, NumberStyles.Any, Vi, out var v) ? v : 0;
 
-    /// <summary>"20–30mm" / "≥150mm" / "≤2400mm" / "25mm" (min=max) / "-" (cả hai null, để trống = wildcard).</summary>
-    public static string Range(double? min, double? max, string unit = "mm")
+    /// <summary>
+    /// Ghép hiển thị 1 khoảng theo ĐÓNG/MỞ. minStr/maxStr đã format sẵn (null = bound đó không set):
+    /// Đoạn đóng "20–25" · nửa đoạn "≥20"/"≤25" · Khoảng mở "&gt;20–&lt;25" · nửa khoảng "&gt;20"/"&lt;25"
+    /// · điểm (min=max) "20" · trống "-".
+    /// </summary>
+    private static string IntervalText(string minStr, string maxStr, bool open, string unit)
     {
-        if (min == null && max == null) return "-";
-        if (min != null && max != null)
-            return min == max ? $"{Num(min.Value)}{unit}" : $"{Num(min.Value)}–{Num(max.Value)}{unit}";
-        return min != null ? $"≥{Num(min.Value)}{unit}" : $"≤{Num(max.Value)}{unit}";
+        if (minStr == null && maxStr == null) return "-";
+        if (minStr != null && maxStr != null)
+            return minStr == maxStr ? $"{minStr}{unit}"
+                 : open ? $">{minStr}–<{maxStr}{unit}" : $"{minStr}–{maxStr}{unit}";
+        if (minStr != null) return open ? $">{minStr}{unit}" : $"≥{minStr}{unit}";
+        return open ? $"<{maxStr}{unit}" : $"≤{maxStr}{unit}";
     }
+
+    /// <summary>"20–25mm" (Đoạn) / "&gt;20–&lt;25mm" (Khoảng mở) / "≥20mm"/"≤25mm" (nửa đoạn) /
+    /// "&gt;20mm"/"&lt;25mm" (nửa khoảng) / "25mm" (min=max, đơn lẻ) / "-" (để trống = wildcard).
+    /// <paramref name="open"/> = true là khoảng MỞ (loại 2 đầu mút).</summary>
+    public static string Range(double? min, double? max, bool open = false, string unit = "mm") =>
+        IntervalText(min.HasValue ? Num(min.Value) : null, max.HasValue ? Num(max.Value) : null, open, unit);
 
     /// <summary>
     /// Như <see cref="Range"/> nhưng hiển thị theo ký hiệu gốc (vd "4/4\"", "8/4\"") thay vì số mm —
     /// dùng cho độ dày gỗ nhóm Footage. Rơi về <see cref="Range"/> (số mm) nếu không có ký hiệu.
     /// </summary>
-    public static string RangeNote(string minNote, string maxNote, double? min, double? max)
+    public static string RangeNote(string minNote, string maxNote, double? min, double? max, bool open = false)
     {
-        if (string.IsNullOrWhiteSpace(minNote) && string.IsNullOrWhiteSpace(maxNote))
-            return Range(min, max);
-        if (!string.IsNullOrWhiteSpace(minNote) && !string.IsNullOrWhiteSpace(maxNote))
-            return minNote == maxNote ? minNote : $"{minNote}–{maxNote}";
-        return !string.IsNullOrWhiteSpace(minNote) ? $"≥{minNote}" : $"≤{maxNote}";
+        var mn = string.IsNullOrWhiteSpace(minNote) ? null : minNote;
+        var mx = string.IsNullOrWhiteSpace(maxNote) ? null : maxNote;
+        if (mn == null && mx == null) return Range(min, max, open);   // không có ký hiệu inch → số mm
+        return IntervalText(mn, mx, open, "");                        // ký hiệu inch, không thêm đơn vị
     }
 
     /// <summary>
@@ -90,9 +101,9 @@ public static class Fmt
 
     /// <summary>Như <see cref="Range"/> nhưng ưu tiên hiện danh sách giá trị rời rạc (vd "1.220/2.440/3.000mm")
     /// nếu <paramref name="valuesRaw"/> có dữ liệu; rơi về Range (min/max) nếu không.</summary>
-    public static string RangeOrList(string valuesRaw, double? min, double? max, string unit = "mm")
+    public static string RangeOrList(string valuesRaw, double? min, double? max, bool open = false, string unit = "mm")
     {
         var list = ParseValueList(valuesRaw);
-        return list.Count > 0 ? string.Join("/", list.Select(v => Num(v))) + unit : Range(min, max, unit);
+        return list.Count > 0 ? string.Join("/", list.Select(v => Num(v))) + unit : Range(min, max, open, unit);
     }
 }

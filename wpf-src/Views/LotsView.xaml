@@ -25,8 +25,9 @@
             <Grid>
                 <StackPanel Orientation="Horizontal">
                     <Grid Width="256">
-                        <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                        <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,30,6"
                                  Background="{StaticResource Slate50}" TextChanged="Filters_Changed"/>
+                        <Button Style="{StaticResource SearchClearBtn}" helpers:ClearBox.Target="{Binding ElementName=SearchBox}"/>
                         <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                    Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -79,6 +80,10 @@
                 <StackPanel Margin="0,0,16,12">
                     <TextBlock Text="{helpers:Loc ReceiptReport.Filter.SubType}" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="FilterSubType" Style="{StaticResource Select}" SelectionChanged="Filters_Changed"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,16,12">
+                    <TextBlock Text="{helpers:Loc Receipts.Column.Grade}" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="FGradeFilter" Style="{StaticResource Input}" TextChanged="Filters_Changed"/>
                 </StackPanel>
                 <StackPanel Margin="0,0,16,12">
                     <TextBlock Text="{helpers:Loc Receipts.Column.Thickness}" Style="{StaticResource FieldLabel}"/>
@@ -150,7 +155,7 @@
                                         <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                             Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -159,7 +164,7 @@
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Field.Supplier}" Binding="{Binding SupplierName}" Width="240" MinWidth="240">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -170,7 +175,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.Invoice}" Binding="{Binding InvoiceText}" Width="130" MinWidth="110">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -180,7 +185,7 @@
 
                                         <DataGridTextColumn x:Name="ColLotDate" Header="{helpers:Loc Receipts.Field.Date}" Binding="{Binding ImportDateText}" Width="136" MinWidth="126" SortMemberPath="ImportDate">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -191,7 +196,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.DeliveryNote}" Binding="{Binding DeliveryNoteText}" Width="140" MinWidth="130">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -202,7 +207,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.LotId}" Binding="{Binding Id}" Width="110" MinWidth="100">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontWeight" Value="Bold"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate900}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -212,7 +217,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.WoodType}" Binding="{Binding WoodTypeText}" Width="130" MinWidth="120">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -223,7 +228,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.SubType}" Binding="{Binding SubTypeText}" Width="120" MinWidth="110">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                     <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -231,9 +236,20 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
 
+                                        <!-- Chất lượng (Grade) — bên trái cột Dày -->
+                                        <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Grade}" Binding="{Binding GradeText}" Width="100" MinWidth="90">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                                    <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Thickness}" Binding="{Binding DayText}" Width="76" MinWidth="66" SortMemberPath="ThicknessMm">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -244,7 +260,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Width}" Binding="{Binding WidthText}" Width="76" MinWidth="66" SortMemberPath="WidthMm">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -255,7 +271,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Length}" Binding="{Binding LengthText}" Width="112" MinWidth="96" SortMemberPath="LengthMm">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -266,7 +282,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Footage}" Binding="{Binding FootageText}" Width="92" MinWidth="80" SortMemberPath="Footage">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -296,7 +312,7 @@
 
                                         <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.Vol}" Binding="{Binding VolText}" Width="120" MinWidth="110" SortMemberPath="RemainingCbm">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                                     <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Blue700}"/>

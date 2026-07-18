@@ -96,8 +96,9 @@
             <!-- ===== Thanh tìm kiếm ===== -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <Grid Width="360">
-                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,30,6"
                              Background="White" TextChanged="Filter_Changed"/>
+                    <Button Style="{StaticResource SearchClearBtn}" helpers:ClearBox.Target="{Binding ElementName=SearchBox}"/>
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -162,8 +163,19 @@
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.Code}" Binding="{Binding Code}" Width="100" MinWidth="90" SortMemberPath="Code">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                         </Style>
@@ -184,7 +196,7 @@
 
                                 <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.TaxCode}" Binding="{Binding TaxCode}" Width="180" MinWidth="140">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -194,7 +206,7 @@
 
                                 <DataGridTextColumn Header="{helpers:Loc Suppliers.Field.Address}" Binding="{Binding Address}" Width="240" MinWidth="240">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>

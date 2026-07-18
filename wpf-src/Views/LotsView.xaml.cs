@@ -113,6 +113,7 @@ public partial class LotsView : UserControl, IModuleView
         // Loại gỗ
         public string WoodTypeText => Lot.WoodType;
         public string SubTypeText => string.IsNullOrWhiteSpace(Lot.WoodSubType) ? "—" : Lot.WoodSubType;
+        public string GradeText => string.IsNullOrWhiteSpace(Lot.Grade) ? "—" : Lot.Grade;
 
         // Kích thước — gỗ footage: Dày/Dài dùng ký hiệu inch, Rộng vô nghĩa (—); gỗ quy cách: mm.
         public bool IsFootage => AppState.GetVolumeRule(Lot.WoodType) == VolumeRule.ByFootage;
@@ -193,6 +194,7 @@ public partial class LotsView : UserControl, IModuleView
             Contains(row.InvoiceText, FInvoiceFilter.Text) &&
             Contains(row.DeliveryNoteText, FDeliveryNoteFilter.Text) &&
             Contains(row.Id, FIdFilter.Text) &&
+            Contains(row.GradeText, FGradeFilter.Text) &&
             Contains(row.DayText, FDayFilter.Text) &&
             Contains(row.WidthText, FWidthFilter.Text) &&
             Contains(row.LengthText, FLengthFilter.Text) &&
@@ -339,6 +341,7 @@ public partial class LotsView : UserControl, IModuleView
     private bool AnyColumnFilterActive() =>
         !string.IsNullOrWhiteSpace(FInvoiceFilter.Text) || FImportDateFilter.SelectedDate != null ||
         !string.IsNullOrWhiteSpace(FDeliveryNoteFilter.Text) || !string.IsNullOrWhiteSpace(FIdFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FGradeFilter.Text) ||
         !string.IsNullOrWhiteSpace(FDayFilter.Text) || !string.IsNullOrWhiteSpace(FWidthFilter.Text) ||
         !string.IsNullOrWhiteSpace(FLengthFilter.Text) || !string.IsNullOrWhiteSpace(FFootageFilter.Text) ||
         !string.IsNullOrWhiteSpace(FQtyFilter.Text) || !string.IsNullOrWhiteSpace(FVolFilter.Text) ||
@@ -356,7 +359,7 @@ public partial class LotsView : UserControl, IModuleView
     private void BtnClearColumnFilters_Click(object sender, RoutedEventArgs e)
     {
         _loading = true;
-        foreach (var box in new[] { FInvoiceFilter, FDeliveryNoteFilter, FIdFilter,
+        foreach (var box in new[] { FInvoiceFilter, FDeliveryNoteFilter, FIdFilter, FGradeFilter,
             FDayFilter, FWidthFilter, FLengthFilter, FFootageFilter, FQtyFilter, FVolFilter })
             box.Text = "";
         FImportDateFilter.SelectedDate = null;

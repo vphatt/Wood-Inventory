@@ -413,6 +413,7 @@ public partial class IssuesView : UserControl, IModuleView
         FormSaveBtn.Content = Lang.T("Common.Edit");
         FormCancelBtn.Content = Lang.T("Common.Close");
         AddFormPanel.Visibility = Visibility.Visible;
+        UiScroll.ToTop(AddFormPanel);   // luôn kéo lên đầu trang để thấy form xem (kể cả khi đang xem dòng khác)
     }
 
     /// <summary>Chuyển sang sửa (từ xem hoặc trực tiếp): mở khóa, nút thành "Cập nhật".</summary>
@@ -453,12 +454,9 @@ public partial class IssuesView : UserControl, IModuleView
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
     {
-        // Đang mở sẵn ở chế độ thêm mới → bấm lần nữa thì đóng
-        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add")
-        {
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+        // Đã ở add mode → không làm gì (bỏ hành vi click lần 2 đóng form, gây mất dữ liệu chưa lưu không cảnh báo)
+        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add") return;
+        if (!ConfirmLeaveDirty()) return;   // đang sửa (có thay đổi chưa lưu) → xác nhận trước khi sang lập phiếu mới
         // Còn lại (đang ẩn, hoặc đang xem/sửa) → chuyển thẳng sang lập phiếu mới
         EnterAddMode();
         AddFormPanel.Visibility = Visibility.Visible;
@@ -486,6 +484,11 @@ public partial class IssuesView : UserControl, IModuleView
     private static bool ConfirmDiscard(string message) =>
         AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    /// <summary>Đang MỞ form add/edit (dữ liệu chưa lưu) → hỏi xác nhận bỏ trước khi rời sang xem/sửa dòng khác (true = được rời).</summary>
+    private bool ConfirmLeaveDirty() =>
+        AddFormPanel.Visibility != Visibility.Visible || (_mode != "add" && _mode != "edit")
+        || ConfirmDiscard(Lang.T(_mode == "add" ? "Common.Confirm.DiscardAdd" : "Common.Confirm.DiscardEdit"));
 
     private void BtnSaveIssue_Click(object sender, RoutedEventArgs e)
     {
@@ -546,12 +549,16 @@ public partial class IssuesView : UserControl, IModuleView
 
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is IssRow r) EnterViewMode(r.Issue);
+        if ((sender as FrameworkElement)?.DataContext is not IssRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterViewMode(r.Issue);
     }
 
     private void EditRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is IssRow r) EnterEditMode(r.Issue);
+        if ((sender as FrameworkElement)?.DataContext is not IssRow r) return;
+        if (!ConfirmLeaveDirty()) return;
+        EnterEditMode(r.Issue);
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)

@@ -5,26 +5,26 @@
              FontFamily="Segoe UI" FontSize="12">
     <UserControl.Resources>
         <!-- Ô văn bản trái (tên/chứng từ) -->
-        <Style x:Key="RCellL" TargetType="TextBlock">
+        <Style x:Key="RCellL" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
-        <Style x:Key="RCellName" TargetType="TextBlock">
+        <Style x:Key="RCellName" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
         <!-- Ô mono căn giữa -->
-        <Style x:Key="RCellC" TargetType="TextBlock">
+        <Style x:Key="RCellC" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <!-- Mã kiện / số phiếu — mono center đậm -->
-        <Style x:Key="RCellId" TargetType="TextBlock">
+        <Style x:Key="RCellId" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="{StaticResource Slate900}"/>
@@ -32,20 +32,20 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <!-- Ô mono căn phải -->
-        <Style x:Key="RCellR" TargetType="TextBlock">
+        <Style x:Key="RCellR" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
             <Setter Property="HorizontalAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-        <Style x:Key="RVol" TargetType="TextBlock">
+        <Style x:Key="RVol" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
             <Setter Property="HorizontalAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-        <Style x:Key="RMoney" TargetType="TextBlock">
+        <Style x:Key="RMoney" TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource Emerald600}"/>
@@ -78,8 +78,9 @@
             <!-- Thanh công cụ -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <Grid Width="300">
-                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,30,6"
                              Background="White" TextChanged="Filter_Changed"/>
+                    <Button Style="{StaticResource SearchClearBtn}" helpers:ClearBox.Target="{Binding ElementName=SearchBox}"/>
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -102,7 +103,7 @@
             <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
                     BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
                     Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
-                <UniformGrid Columns="6" Rows="4">
+                <UniformGrid Columns="6" Rows="5">
                     <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Receipts.Filter.Id}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FReceiptIdFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
@@ -149,6 +150,10 @@
                         <TextBox x:Name="FOriginFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="{helpers:Loc Receipts.Column.Grade}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FGradeFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Receipts.Column.Thickness}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FDayFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
@@ -182,19 +187,19 @@
                         <TextBox x:Name="FCurrencyFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
 
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc ReceiptReport.Filter.ExRate}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FExRateFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Tax}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FTaxFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Subtotal}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FSubtotalFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Vat}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FVatFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
@@ -233,7 +238,7 @@
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="46" MinWidth="46" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -251,6 +256,7 @@
                                 <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.WoodType}" Binding="{Binding WoodTypeText}" Width="120" MinWidth="120" ElementStyle="{StaticResource RCellName}"/>
                                 <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.SubType}" Binding="{Binding SubTypeText}" Width="120" MinWidth="120" ElementStyle="{StaticResource RCellL}"/>
                                 <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Origin}" Binding="{Binding OriginText}" Width="90" MinWidth="90" ElementStyle="{StaticResource RCellC}"/>
+                                <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Grade}" Binding="{Binding GradeText}" Width="90" MinWidth="90" ElementStyle="{StaticResource RCellC}"/>
                                 <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Thickness}" Binding="{Binding DayText}" Width="76" MinWidth="76" ElementStyle="{StaticResource RCellC}"/>
                                 <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Width}" Binding="{Binding WidthText}" Width="76" MinWidth="76" ElementStyle="{StaticResource RCellC}"/>
                                 <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Length}" Binding="{Binding LengthText}" Width="110" MinWidth="110" ElementStyle="{StaticResource RCellC}"/>

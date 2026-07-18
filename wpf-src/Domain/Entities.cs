@@ -87,7 +87,23 @@ public class QuotationItem
     public string Specification { get; set; }  // ghi chú tự do, không dùng để khớp giá
     public decimal Price { get; set; }
     public string PriceCurrency { get; set; } = "USD";  // "USD" | "VND" — VND thì nhập kho không nhân tỷ giá
+    public string PriceAdjustReason { get; set; }  // Lý do điều chỉnh giá của LẦN thay đổi gần nhất (null = chưa từng điều chỉnh)
+    public DateTime? SigningDate { get; set; }   // Ngày ký báo giá (tùy chọn)
     public DateTime? UpdatedAt { get; set; }    // thời điểm chỉnh sửa gần nhất (ban đầu = lúc tạo dòng)
+}
+
+/// <summary>
+/// Một lần ghi nhận đơn giá của một dòng báo giá — tạo khi thêm mới (giá khởi tạo) và mỗi lần
+/// điều chỉnh giá. Chỉ đọc (không CRUD), phục vụ trang "Lịch sử thay đổi giá".
+/// </summary>
+public class QuotationPriceHistory
+{
+    public string Id { get; set; }
+    public string QuotationItemId { get; set; }
+    public DateTime ChangedAt { get; set; }
+    public decimal Price { get; set; }
+    public string PriceCurrency { get; set; } = "USD";
+    public string Reason { get; set; }   // null/rỗng = mốc giá khởi tạo (không phải điều chỉnh)
 }
 
 /// <summary>Bảng báo giá gỗ của nhà cung cấp (quản lý theo phiên bản).</summary>

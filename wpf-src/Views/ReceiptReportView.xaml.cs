@@ -33,6 +33,7 @@ public partial class ReceiptReportView : UserControl
         public string WoodTypeText => Lot.WoodType;
         public string SubTypeText => string.IsNullOrWhiteSpace(Lot.WoodSubType) ? "—" : Lot.WoodSubType;
         public string OriginText => string.IsNullOrWhiteSpace(Lot.Origin) ? "—" : Lot.Origin;
+        public string GradeText => string.IsNullOrWhiteSpace(Lot.Grade) ? "—" : Lot.Grade;
 
         public bool IsFootage => AppState.GetVolumeRule(Lot.WoodType) == VolumeRule.ByFootage;
         public string DayText => IsFootage
@@ -138,7 +139,8 @@ public partial class ReceiptReportView : UserControl
             && Contains(r.ForestListText, FForestListFilter.Text) && Contains(r.PackingListText, FPackingListFilter.Text)
             && Contains(r.Id, FIdFilter.Text) && Contains(r.DeliveryNoteText, FDeliveryNoteFilter.Text)
             && Contains(r.WoodTypeText, FWoodTypeFilter.Text) && Contains(r.SubTypeText, FSubTypeFilter.Text)
-            && Contains(r.OriginText, FOriginFilter.Text) && Contains(r.DayText, FDayFilter.Text)
+            && Contains(r.OriginText, FOriginFilter.Text) && Contains(r.GradeText, FGradeFilter.Text)
+            && Contains(r.DayText, FDayFilter.Text)
             && Contains(r.WidthText, FWidthFilter.Text) && Contains(r.LengthText, FLengthFilter.Text)
             && Contains(r.FootageText, FFootageFilter.Text) && Contains(r.QtyText, FQtyFilter.Text)
             && Contains(r.VolText, FVolFilter.Text) && Contains(r.PriceText, FPriceFilter.Text)
@@ -166,7 +168,8 @@ public partial class ReceiptReportView : UserControl
         !string.IsNullOrWhiteSpace(FForestListFilter.Text) || !string.IsNullOrWhiteSpace(FPackingListFilter.Text) ||
         !string.IsNullOrWhiteSpace(FIdFilter.Text) || !string.IsNullOrWhiteSpace(FDeliveryNoteFilter.Text) ||
         !string.IsNullOrWhiteSpace(FWoodTypeFilter.Text) || !string.IsNullOrWhiteSpace(FSubTypeFilter.Text) ||
-        !string.IsNullOrWhiteSpace(FOriginFilter.Text) || !string.IsNullOrWhiteSpace(FDayFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FOriginFilter.Text) || !string.IsNullOrWhiteSpace(FGradeFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FDayFilter.Text) ||
         !string.IsNullOrWhiteSpace(FWidthFilter.Text) || !string.IsNullOrWhiteSpace(FLengthFilter.Text) ||
         !string.IsNullOrWhiteSpace(FFootageFilter.Text) || !string.IsNullOrWhiteSpace(FQtyFilter.Text) ||
         !string.IsNullOrWhiteSpace(FVolFilter.Text) || !string.IsNullOrWhiteSpace(FPriceFilter.Text) ||
@@ -189,7 +192,7 @@ public partial class ReceiptReportView : UserControl
         foreach (var box in new[]
                  {
                      FReceiptIdFilter, FInvoiceFilter, FForestListFilter, FPackingListFilter, FIdFilter,
-                     FDeliveryNoteFilter, FWoodTypeFilter, FSubTypeFilter, FOriginFilter, FDayFilter,
+                     FDeliveryNoteFilter, FWoodTypeFilter, FSubTypeFilter, FOriginFilter, FGradeFilter, FDayFilter,
                      FWidthFilter, FLengthFilter, FFootageFilter, FQtyFilter, FVolFilter, FPriceFilter,
                      FCurrencyFilter, FExRateFilter, FTaxFilter, FSubtotalFilter, FVatFilter, FTotalFilter
                  })

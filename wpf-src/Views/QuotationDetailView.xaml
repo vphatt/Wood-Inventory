@@ -89,7 +89,8 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
+    <Grid>
+    <ScrollViewer x:Name="RootScroll" VerticalScrollBarVisibility="Auto" Background="{StaticResource Slate50}">
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + quay lại + nút thêm -->
@@ -134,6 +135,37 @@
                     <TextBlock Text="{helpers:Loc Quotations.Hint}"
                                FontSize="11" Foreground="{StaticResource Slate500}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
+                    <!-- Dòng 1: Loại gỗ · Phân loại con · Xuất xứ · Chất lượng (4 field chia đều) -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.WoodType}" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.SubType}" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="FWoodSubType" Style="{StaticResource Select}"/>
+                            <TextBlock x:Name="WSubType" Style="{StaticResource FieldWarn}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.Origin}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FOrigin" Style="{StaticResource Input}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="6" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.Grade}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FGrade" Style="{StaticResource Input}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Dòng 2: Dày · Rộng · Dài; Dòng 3: Đơn giá · Ghi chú -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -149,20 +181,6 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.WoodType}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox x:Name="FWoodType" Style="{StaticResource Select}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.SubType}" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox x:Name="FWoodSubType" Style="{StaticResource Select}"/>
-                            <TextBlock x:Name="WSubType" Style="{StaticResource FieldWarn}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
-                            <TextBlock Text="{helpers:Loc Quotations.Field.Origin}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FOrigin" Style="{StaticResource Input}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -199,7 +217,7 @@
                             </Grid>
                             <TextBlock x:Name="WThickRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -235,7 +253,7 @@
                             </Grid>
                             <TextBlock x:Name="WWidthRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
+                        <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -272,7 +290,7 @@
                             <TextBlock x:Name="WLengthRange" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top">
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="{helpers:Loc Quotations.Field.Price}" Style="{StaticResource FieldLabel}"/>
                             <Border x:Name="PriceInputBorder" BorderBrush="{StaticResource Slate200}" BorderThickness="1"
                                     CornerRadius="8" Background="White" Height="40">
@@ -286,7 +304,8 @@
                                              GotFocus="PriceInput_GotFocus" LostFocus="PriceInput_LostFocus"/>
                                     <Border Grid.Column="1" Width="1" Margin="0,8" Background="{StaticResource Slate200}"/>
                                     <ComboBox x:Name="FPriceCurrency" Grid.Column="1" Width="80" Margin="1,0,0,0"
-                                              Style="{StaticResource MoneyGroupCombo}" SelectedIndex="0">
+                                              Style="{StaticResource MoneyGroupCombo}" SelectedIndex="0"
+                                              SelectionChanged="PriceCurrency_Changed">
                                         <ComboBoxItem Content="USD" Tag="USD"/>
                                         <ComboBoxItem Content="VND" Tag="VND"/>
                                     </ComboBox>
@@ -294,14 +313,30 @@
                             </Border>
                             <TextBlock x:Name="WPrice" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
+                        <!-- Ngày ký báo giá — bên phải Đơn giá -->
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14" VerticalAlignment="Top">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.SigningDate}" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker x:Name="FSigningDate" Style="{StaticResource DatePickerField}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,0,14" VerticalAlignment="Top">
                             <TextBlock Text="{helpers:Loc Quotations.Field.Spec}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FSpec" Style="{StaticResource Input}"/>
+                        </StackPanel>
+                        <!-- Lý do điều chỉnh giá (dòng 4, dưới Đơn giá) — chỉ hiện khi đang SỬA và đơn giá thay đổi (bắt buộc nhập) -->
+                        <StackPanel x:Name="PriceReasonPanel" Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Visibility="Collapsed">
+                            <TextBlock Text="{helpers:Loc Quotations.Field.PriceReason}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FPriceReason" Style="{StaticResource Input}"
+                                     Tag="{Binding ElementName=WPriceReason}" TextChanged="Field_Changed"/>
+                            <TextBlock x:Name="WPriceReason" Style="{StaticResource FieldWarn}"/>
                         </StackPanel>
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="{helpers:Loc Common.Cancel}" Click="BtnCancelAdd_Click"/>
+                        <!-- Thứ tự: Đóng · Sao chép tạo mới (chỉ view mode, nền xanh lá) · Lưu/Cập nhật -->
+                        <Button x:Name="FormCancelBtn" Style="{StaticResource BtnGhost}" Content="{helpers:Loc Common.Cancel}"
+                                Click="BtnCancelAdd_Click"/>
+                        <Button x:Name="FormCopyBtn" Style="{StaticResource BtnCopy}" Content="{helpers:Loc Quotations.CopyNewButton}"
+                                Margin="8,0,0,0" Click="BtnCopyNew_Click" Visibility="Collapsed"/>
                         <Button x:Name="FormSaveBtn" Style="{StaticResource BtnPrimary}" Content="{helpers:Loc Quotations.SaveButton}"
                                 Margin="8,0,0,0" Click="BtnSave_Click"/>
                     </StackPanel>
@@ -311,8 +346,9 @@
             <!-- ===== Thanh tìm kiếm + lọc ===== -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <Grid Width="300">
-                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,10,6"
+                    <TextBox x:Name="SearchBox" Style="{StaticResource Input}" Padding="30,6,30,6"
                              Background="White" TextChanged="Filter_Changed"/>
+                    <Button Style="{StaticResource SearchClearBtn}" helpers:ClearBox.Target="{Binding ElementName=SearchBox}"/>
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                Foreground="{StaticResource Slate400}" Margin="11,0,0,0"
                                VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -335,10 +371,18 @@
             <Border x:Name="ColumnFilterPanel" Background="{StaticResource Slate50}"
                     BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8"
                     Padding="24,16" Margin="0,0,0,16" Visibility="Collapsed">
-                <UniformGrid Columns="5" Rows="2">
+                <UniformGrid Columns="5" Rows="3">
                     <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Quotations.Filter.WoodType}" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                        <ComboBox x:Name="FilterWoodType" Style="{StaticResource Select}" SelectionChanged="FilterWoodType_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="{helpers:Loc Quotations.Field.SubType}" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="FSubTypeColFilter" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="{helpers:Loc Quotations.Column.Grade}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FGradeFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Quotations.Filter.Thickness}" Style="{StaticResource FieldLabel}"/>
@@ -356,17 +400,21 @@
                         <TextBlock Text="{helpers:Loc Receipts.Column.Origin}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FOriginFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Quotations.Filter.Spec}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FSpecFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc Quotations.Filter.Price}" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="FPriceFilter" Style="{StaticResource Input}" FontFamily="{StaticResource FontMono}" TextChanged="Filter_Changed"/>
                     </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,16,12">
                         <TextBlock Text="{helpers:Loc ReceiptReport.Filter.Currency}" Style="{StaticResource FieldLabel}"/>
                         <ComboBox x:Name="FilterCurrency" Style="{StaticResource Select}" SelectionChanged="Filter_Changed"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,12">
+                        <TextBlock Text="{helpers:Loc Quotations.Column.PriceReason}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FPriceReasonFilter" Style="{StaticResource Input}" TextChanged="Filter_Changed"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,16,0">
                         <TextBlock Text="{helpers:Loc Quotations.Filter.Updated}" Style="{StaticResource FieldLabel}"/>
@@ -400,8 +448,19 @@
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Column.QuoteCode}" Binding="{Binding Code}" Width="120" MinWidth="110" SortMemberPath="Code">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                         </Style>
@@ -409,7 +468,7 @@
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.WoodType}" Binding="{Binding WoodTypeDisplay}" Width="200" MinWidth="200" SortMemberPath="WoodTypeDisplay">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -417,42 +476,64 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
-                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Thickness}" Binding="{Binding ThicknessText}" Width="190" MinWidth="190" SortMemberPath="ThicknessMin">
+                                <!-- Chất lượng (Grade) — bên trái cột Dày -->
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Column.Grade}" Binding="{Binding GradeText}" Width="120" MinWidth="110" SortMemberPath="Grade">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Cột kích thước: nội dung dài (danh sách Nhiều) cắt bằng "..." + ToolTip hover hiện đầy đủ,
+                                     KHÔNG wrap để không làm dòng cao lên (cột Thao Tác tách riêng sẽ lệch hàng). -->
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Thickness}" Binding="{Binding ThicknessText}" Width="190" MinWidth="190" SortMemberPath="ThicknessMin">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding ThicknessText}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Width}" Binding="{Binding WidthText}" Width="190" MinWidth="190" SortMemberPath="WidthMin">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
-                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="TextAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding WidthText}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Length}" Binding="{Binding LengthText}" Width="190" MinWidth="190" SortMemberPath="LengthMin">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
-                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="TextAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding LengthText}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
                                 <DataGridTextColumn Header="{helpers:Loc Receipts.Column.Origin}" Binding="{Binding OriginText}" Width="120" MinWidth="110">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate700}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -462,17 +543,18 @@
 
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Spec}" Binding="{Binding Specification}" Width="160" MinWidth="160">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding Specification}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Column.Price}" Binding="{Binding PriceText}" Width="150" MinWidth="130" SortMemberPath="Price">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Foreground" Value="{StaticResource Blue700}"/>
@@ -484,7 +566,7 @@
 
                                 <DataGridTextColumn Header="{helpers:Loc ReceiptReport.Filter.Currency}" Binding="{Binding PriceCurrency}" Width="90" MinWidth="90" SortMemberPath="PriceCurrency">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -493,9 +575,31 @@
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
 
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Field.SigningDate}" Binding="{Binding SigningDateText}" Width="130" MinWidth="120" SortMemberPath="SigningDate">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="{helpers:Loc Quotations.Column.PriceReason}" Binding="{Binding PriceReasonText}" Width="180" MinWidth="160">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding PriceReasonText}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
                                 <DataGridTextColumn Header="{helpers:Loc Quotations.Filter.Updated}" Binding="{Binding UpdatedAtText}" Width="180" MinWidth="170" SortMemberPath="Updated">
                                     <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
                                             <Setter Property="FontSize" Value="11"/>
                                             <Setter Property="Foreground" Value="{StaticResource Slate500}"/>
@@ -514,13 +618,17 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="120" MinWidth="120"
+                                <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="160" MinWidth="160"
                                                         CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Common.Tooltip.View}" Click="ViewRow_Click">
                                                     <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Quotations.Tooltip.History}"
+                                                        Margin="8,0,0,0" Click="HistoryRow_Click">
+                                                    <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                                 </Button>
                                                 <Button Style="{StaticResource BtnIconDanger}" ToolTip="{helpers:Loc Quotations.Tooltip.Delete}"
                                                         Margin="8,0,0,0" Click="DeleteRow_Click">
@@ -542,4 +650,7 @@
 
         </StackPanel>
     </ScrollViewer>
+        <!-- Trang con: Lịch sử thay đổi giá (drill-down trong cùng view) -->
+        <ContentControl x:Name="DetailHost" Visibility="Collapsed"/>
+    </Grid>
 </UserControl>

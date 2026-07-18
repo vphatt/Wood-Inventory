@@ -16,6 +16,7 @@ public partial class QuotationDetailView : UserControl
     public sealed class ItemRow
     {
         public QuotationItem Item { get; }
+        public string Code => Item.Id;   // Mã báo giá của DÒNG (khoá chính, BG###-###)
         public string WoodType => Item.WoodType;
         public string SubType => Item.WoodSubType;
         public string WoodTypeDisplay => string.IsNullOrWhiteSpace(Item.WoodSubType)
@@ -24,10 +25,10 @@ public partial class QuotationDetailView : UserControl
         public string Grade => Item.Grade;
         public string GradeText => string.IsNullOrWhiteSpace(Item.Grade) ? "-" : Item.Grade;
         public string ThicknessText => AppState.GetVolumeRule(Item.WoodType) == VolumeRule.ByFootage
-            ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax)
-            : Fmt.RangeOrList(Item.ThicknessValues, Item.ThicknessMin, Item.ThicknessMax);
-        public string WidthText => Fmt.RangeOrList(Item.WidthValues, Item.WidthMin, Item.WidthMax);
-        public string LengthText => Fmt.RangeOrList(Item.LengthValues, Item.LengthMin, Item.LengthMax);
+            ? Fmt.RangeNote(Item.ThicknessMinNote, Item.ThicknessMaxNote, Item.ThicknessMin, Item.ThicknessMax, Item.ThicknessOpen)
+            : Fmt.RangeOrList(Item.ThicknessValues, Item.ThicknessMin, Item.ThicknessMax, Item.ThicknessOpen);
+        public string WidthText => Fmt.RangeOrList(Item.WidthValues, Item.WidthMin, Item.WidthMax, Item.WidthOpen);
+        public string LengthText => Fmt.RangeOrList(Item.LengthValues, Item.LengthMin, Item.LengthMax, Item.LengthOpen);
         // Khóa sắp xếp cho cột kích thước (số thật, không theo chuỗi range hiển thị)
         public double? ThicknessMin => Item.ThicknessMin;
         public double? WidthMin => Item.WidthMin;
@@ -38,6 +39,9 @@ public partial class QuotationDetailView : UserControl
         public decimal Price => Item.Price;
         public string PriceCurrency => Item.PriceCurrency;
         public string PriceText => Fmt.Money(Item.Price, Item.PriceCurrency);
+        public string PriceReasonText => string.IsNullOrWhiteSpace(Item.PriceAdjustReason) ? "—" : Item.PriceAdjustReason;
+        public DateTime? SigningDate => Item.SigningDate;
+        public string SigningDateText => Item.SigningDate.HasValue ? Item.SigningDate.Value.ToString("yyyy/MM/dd") : "—";
         public DateTime? Updated => Item.UpdatedAt;
         public string UpdatedAtText => Item.UpdatedAt.HasValue
             ? Item.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")
@@ -55,8 +59,12 @@ public partial class QuotationDetailView : UserControl
     private readonly Action _back;
     private string _editingId;
     private string _mode = "add";   // add | view | edit
+    private decimal _origPrice;     // giá gốc lúc mở form (để phát hiện điều chỉnh giá khi sửa)
+    private string _origCurrency;
     private readonly List<ItemRow> _rows = new();
     private ICollectionView _view;
+    private bool _reloadingCombos;   // chặn SelectionChanged của FWoodType khi đang nạp lại combo (giữ lựa chọn cũ)
+    private bool _buildingFilters;   // chặn SelectionChanged của FilterWoodType khi RefreshView đang dựng lại bộ lọc
 
     public QuotationDetailView(Supplier supplier, Action back)
     {
@@ -76,11 +84,30 @@ public partial class QuotationDetailView : UserControl
             FWoodType.Items.Add(new ComboBoxItem { Content = name, Tag = name });
         FWoodType.SelectionChanged += (_, _) =>
         {
+            if (_reloadingCombos) return;   // đang nạp lại danh mục (Làm mới) → không reset con/độ dày
             PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
             SyncThicknessForWoodType();
         };
         FWoodSubType.SelectionChanged += (_, _) => WSubType.Visibility = Visibility.Collapsed;
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
+    }
+
+    /// <summary>Nạp lại combo Loại gỗ + Phân loại con từ AppState (danh mục có thể vừa được thêm/sửa ở tab Phân Loại Gỗ)
+    /// nhưng GIỮ NGUYÊN loại/con user đang chọn (nếu còn tồn tại). Các ô text khác RefreshView không đụng tới nên tự giữ.
+    /// Dùng khi bấm "Làm mới" lúc form Thêm/Sửa/Xem đang mở.</summary>
+    private void RepopulateWoodCombosPreserving()
+    {
+        var curType = (FWoodType.SelectedItem as ComboBoxItem)?.Tag as string;
+        var curSub = (FWoodSubType.SelectedItem as ComboBoxItem)?.Tag as string;
+        _reloadingCombos = true;
+        FWoodType.Items.Clear();
+        foreach (var name in AppState.CategoryNames)
+            FWoodType.Items.Add(new ComboBoxItem { Content = name, Tag = name });
+        SelectByTag(FWoodType, curType ?? "");
+        _reloadingCombos = false;
+        // Nạp lại con theo loại đang chọn + giữ con đang chọn; cập nhật lại nhãn/chip độ dày theo loại.
+        PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "", curSub);
+        SyncThicknessForWoodType();
     }
 
     /// <summary>Đổ danh sách phân loại con theo loại gỗ cha (nối tầng), chọn sẵn <paramref name="selectSub"/>.</summary>
@@ -95,20 +122,25 @@ public partial class QuotationDetailView : UserControl
 
     public void RefreshView()
     {
+        var quotation = AppState.FindQuotation(_supplier.Id);
         TitleName.Text = Lang.T("Quotations.TitleName", _supplier.Name);
-        Subtitle.Text = Lang.T("Quotations.Subtitle", _supplier.Code, string.IsNullOrWhiteSpace(_supplier.TaxCode) ? "—" : _supplier.TaxCode);
+        Subtitle.Text = Lang.T("Quotations.Subtitle", _supplier.Code,
+            string.IsNullOrWhiteSpace(_supplier.TaxCode) ? "—" : _supplier.TaxCode, _supplier.Id);
 
-        var items = AppState.FindQuotation(_supplier.Id)?.Items ?? new List<QuotationItem>();
+        var items = quotation?.Items ?? new List<QuotationItem>();
         _rows.Clear();
         foreach (var it in items) _rows.Add(new ItemRow(it));
 
-        // Bộ lọc loại gỗ
+        // Bộ lọc loại gỗ (cha) — dựng lại; combo phân loại con bên dưới sẽ đổ theo cha đang chọn
         var currentType = (FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        _buildingFilters = true;
         FilterWoodType.Items.Clear();
         FilterWoodType.Items.Add(new ComboBoxItem { Content = Lang.T("Quotations.Filter.AllTypes"), Tag = "ALL" });
         foreach (var t in items.Select(i => i.WoodType).Distinct())
             FilterWoodType.Items.Add(new ComboBoxItem { Content = t, Tag = t });
         SelectByTag(FilterWoodType, currentType);
+        PopulateSubFilterCombo(currentType);   // đổ phân loại con theo cha (giữ lựa chọn cũ nếu còn)
+        _buildingFilters = false;
 
         // Bộ lọc đơn vị tiền tệ
         if (FilterCurrency.Items.Count == 0)
@@ -123,11 +155,17 @@ public partial class QuotationDetailView : UserControl
         {
             _view = CollectionViewSource.GetDefaultView(_rows);
             _view.Filter = FilterPredicate;
+            // Mặc định xếp theo Mã báo giá tăng dần (BG001-001, BG001-002... — cde 3 chữ số nên sort chuỗi đúng thứ tự).
+            _view.SortDescriptions.Add(new SortDescription("Code", ListSortDirection.Ascending));
             ItemGrid.ItemsSource = _view;
             ActionGrid.ItemsSource = _view;   // cột thao tác tách riêng, cùng nguồn dữ liệu
         }
         _view.Refresh();
         UpdateCountAndEmpty();
+        // Form Thêm/Sửa/Xem đang mở → nạp lại combo Loại gỗ/Phân loại con (danh mục có thể vừa đổi ở tab khác),
+        // giữ nguyên lựa chọn + text user đang nhập dở. KHÔNG chạy khi form đóng (tránh đụng lúc khởi tạo).
+        if (AddFormPanel.Visibility == Visibility.Visible)
+            RepopulateWoodCombosPreserving();
         ApplyAllDims();   // hint đặt bằng Lang.T (không phải {Loc}) → phải áp lại khi đổi ngôn ngữ
     }
 
@@ -147,6 +185,7 @@ public partial class QuotationDetailView : UserControl
         var term = (SearchBox.Text ?? "").Trim().ToLowerInvariant();
         var matchSearch = term.Length == 0
             || (r.WoodType ?? "").ToLowerInvariant().Contains(term)
+            || (r.SubType ?? "").ToLowerInvariant().Contains(term)
             || (r.Grade ?? "").ToLowerInvariant().Contains(term)
             || (r.Origin ?? "").ToLowerInvariant().Contains(term)
             || (r.Specification ?? "").ToLowerInvariant().Contains(term);
@@ -155,13 +194,18 @@ public partial class QuotationDetailView : UserControl
         var currency = (FilterCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
         if (currency != "ALL" && !string.Equals(r.PriceCurrency, currency, StringComparison.OrdinalIgnoreCase)) return false;
 
+        var subType = (FSubTypeColFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        if (subType != "ALL" && (r.SubType ?? "") != subType) return false;
+
         bool Contains(string cellText, string filterBox) =>
             string.IsNullOrWhiteSpace(filterBox) ||
             (cellText ?? "").ToLowerInvariant().Contains(filterBox.Trim().ToLowerInvariant());
 
-        return Contains(r.ThicknessText, FThicknessFilter.Text) && Contains(r.WidthText, FWidthColFilter.Text)
+        return Contains(r.GradeText, FGradeFilter.Text)
+            && Contains(r.ThicknessText, FThicknessFilter.Text) && Contains(r.WidthText, FWidthColFilter.Text)
             && Contains(r.LengthText, FLengthColFilter.Text) && Contains(r.OriginText, FOriginFilter.Text)
             && Contains(r.Specification, FSpecFilter.Text) && Contains(r.PriceText, FPriceFilter.Text)
+            && Contains(r.PriceReasonText, FPriceReasonFilter.Text)
             && Contains(r.UpdatedAtText, FUpdatedFilter.Text);
     }
 
@@ -172,6 +216,30 @@ public partial class QuotationDetailView : UserControl
         BtnClearColumnFilters.Visibility = AnyColumnFilterActive() ? Visibility.Visible : Visibility.Collapsed;
         _view.Refresh();
         UpdateCountAndEmpty();
+    }
+
+    /// <summary>Đổi lọc Loại gỗ (cha) → nạp lại combo Phân loại con theo cha đó rồi lọc lại.</summary>
+    private void FilterWoodType_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_buildingFilters) return;   // đang dựng lại trong RefreshView — đừng đụng
+        PopulateSubFilterCombo((FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL");
+        Filter_Changed(sender, e);
+    }
+
+    /// <summary>Đổ danh sách Phân loại con của lọc theo cha đang chọn (ALL = gộp mọi con đang có trong báo giá).
+    /// Giữ lựa chọn cũ nếu con đó vẫn còn, không thì về "Tất cả".</summary>
+    private void PopulateSubFilterCombo(string parentWoodType)
+    {
+        var cur = (FSubTypeColFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL";
+        FSubTypeColFilter.Items.Clear();
+        FSubTypeColFilter.Items.Add(new ComboBoxItem { Content = Lang.T("Quotations.Filter.AllSubTypes"), Tag = "ALL" });
+        IEnumerable<string> subs = parentWoodType == "ALL"
+            ? (AppState.FindQuotation(_supplier.Id)?.Items ?? new List<QuotationItem>())
+                .Select(i => i.WoodSubType).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct()
+            : AppState.SubNamesOf(parentWoodType);
+        foreach (var s in subs)
+            FSubTypeColFilter.Items.Add(new ComboBoxItem { Content = s, Tag = s });
+        SelectByTag(FSubTypeColFilter, cur);   // SelectByTag tự về index 0 (Tất cả) nếu con cũ không còn
     }
 
     private void UpdateCountAndEmpty()
@@ -186,9 +254,12 @@ public partial class QuotationDetailView : UserControl
     private bool AnyColumnFilterActive() =>
         ((FilterWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
         ((FilterCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        ((FSubTypeColFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "ALL") != "ALL" ||
+        !string.IsNullOrWhiteSpace(FGradeFilter.Text) ||
         !string.IsNullOrWhiteSpace(FThicknessFilter.Text) || !string.IsNullOrWhiteSpace(FWidthColFilter.Text) ||
         !string.IsNullOrWhiteSpace(FLengthColFilter.Text) || !string.IsNullOrWhiteSpace(FOriginFilter.Text) ||
         !string.IsNullOrWhiteSpace(FSpecFilter.Text) || !string.IsNullOrWhiteSpace(FPriceFilter.Text) ||
+        !string.IsNullOrWhiteSpace(FPriceReasonFilter.Text) ||
         !string.IsNullOrWhiteSpace(FUpdatedFilter.Text);
 
     private void BtnToggleColumnFilters_Click(object sender, RoutedEventArgs e)
@@ -202,12 +273,15 @@ public partial class QuotationDetailView : UserControl
     {
         FilterWoodType.SelectedIndex = 0;
         FilterCurrency.SelectedIndex = 0;
+        FSubTypeColFilter.SelectedIndex = 0;
+        FGradeFilter.Text = "";
         FThicknessFilter.Text = "";
         FWidthColFilter.Text = "";
         FLengthColFilter.Text = "";
         FOriginFilter.Text = "";
         FSpecFilter.Text = "";
         FPriceFilter.Text = "";
+        FPriceReasonFilter.Text = "";
         FUpdatedFilter.Text = "";
         BtnClearColumnFilters.Visibility = Visibility.Collapsed;
         _view.Refresh();
@@ -220,7 +294,7 @@ public partial class QuotationDetailView : UserControl
 
     private void ClearWarnings() =>
         WThickRange.Visibility = WWidthRange.Visibility = WLengthRange.Visibility
-            = WPrice.Visibility = WSubType.Visibility = Visibility.Collapsed;
+            = WPrice.Visibility = WSubType.Visibility = WPriceReason.Visibility = Visibility.Collapsed;
 
     private void Field_Changed(object sender, TextChangedEventArgs e)
     {
@@ -229,6 +303,31 @@ public partial class QuotationDetailView : UserControl
         if (sender == FThickMin || sender == FThickMax) ApplyThicknessVisibility();
         else if (sender == FWidthMin || sender == FWidthMax) ApplyWidthVisibility();
         else if (sender == FLengthMin || sender == FLengthMax) ApplyLengthVisibility();
+        else if (sender == FPrice) UpdatePriceReasonVisibility();
+    }
+
+    private void PriceCurrency_Changed(object sender, SelectionChangedEventArgs e) => UpdatePriceReasonVisibility();
+
+    /// <summary>Đơn giá/đơn vị hiện tại khác giá gốc lúc mở form? (chỉ có nghĩa khi đang SỬA)</summary>
+    private bool PriceChangedFromOriginal()
+    {
+        var curCurrency = (FPriceCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "USD";
+        return (decimal)D(FPrice.Text) != _origPrice
+            || !string.Equals(curCurrency, _origCurrency ?? "USD", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Hiện field "Lý do điều chỉnh giá" khi đang SỬA và giá đã đổi; ẩn + xóa khi không.</summary>
+    private void UpdatePriceReasonVisibility()
+    {
+        // FPriceReason chỉ tồn tại sau InitializeComponent; guard cho các lần gọi sớm.
+        if (PriceReasonPanel == null) return;
+        var show = _mode == "edit" && PriceChangedFromOriginal();
+        PriceReasonPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show)
+        {
+            FPriceReason.Text = "";
+            WPriceReason.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>Đọc chip đang chọn của 1 bộ 4 radio Đơn lẻ/Đoạn/Khoảng/Nhiều — mặc định Đơn lẻ nếu chưa chip nào chọn.</summary>
@@ -367,7 +466,10 @@ public partial class QuotationDetailView : UserControl
             return true;
         }
         if (mode == DimMode.Single) return ValidateRange(minText, minText, warn, label, out min, out max);
-        return ValidateRange(minText, maxText, warn, label, out min, out max);
+        // Đoạn/Khoảng: bỏ trống ô "Từ" mà đã nhập ô "Đến" → mặc định Từ = 0 (matcher luôn tính min=0 là >0).
+        if (!ValidateRange(minText, maxText, warn, label, out min, out max)) return false;
+        if (min == null && max != null) min = 0;
+        return true;
     }
 
     /// <summary>
@@ -412,14 +514,14 @@ public partial class QuotationDetailView : UserControl
 
     private void SetReadOnly(bool ro)
     {
-        FOrigin.IsReadOnly = FSpec.IsReadOnly = FPrice.IsReadOnly = ro;
+        FOrigin.IsReadOnly = FSpec.IsReadOnly = FGrade.IsReadOnly = FPrice.IsReadOnly = ro;
         FThickMin.IsReadOnly = FThickMax.IsReadOnly = FWidthMin.IsReadOnly = FWidthMax.IsReadOnly = FLengthMin.IsReadOnly = FLengthMax.IsReadOnly = ro;
         var bg = ro ? (Brush)FindResource("Slate50") : Brushes.White;
-        FOrigin.Background = FSpec.Background = bg;
+        FOrigin.Background = FSpec.Background = FGrade.Background = bg;
         FThickMin.Background = FThickMax.Background = FWidthMin.Background = FWidthMax.Background = FLengthMin.Background = FLengthMax.Background = bg;
         PriceInputBorder.Background = bg;
         FPriceCurrency.IsEnabled = !ro;
-        FWoodType.IsEnabled = FWoodSubType.IsEnabled = !ro;
+        FWoodType.IsEnabled = FWoodSubType.IsEnabled = FSigningDate.IsEnabled = !ro;
         // Chip Đơn lẻ/Đoạn/Khoảng/Nhiều không được đổi khi đang ở view mode (chỉ đọc).
         FThickModeSingle.IsEnabled = FThickModeClosed.IsEnabled = FThickModeOpen.IsEnabled = FThickModeMulti.IsEnabled = !ro;
         FWidthModeSingle.IsEnabled = FWidthModeClosed.IsEnabled = FWidthModeOpen.IsEnabled = FWidthModeMulti.IsEnabled = !ro;
@@ -442,11 +544,15 @@ public partial class QuotationDetailView : UserControl
         FormTitle.Text = Lang.T("Quotations.Form.AddTitle");
         FormSaveBtn.Content = Lang.T("Quotations.SaveButton");
         FormCancelBtn.Content = Lang.T("Common.Cancel");
+        FormCopyBtn.Visibility = Visibility.Collapsed;   // chỉ hiện ở chế độ xem
         if (FWoodType.Items.Count > 0) FWoodType.SelectedIndex = 0;
         PopulateSubCombo((FWoodType.SelectedItem as ComboBoxItem)?.Tag as string ?? "");
-        FOrigin.Text = FSpec.Text = FPrice.Text = "";
+        FOrigin.Text = FSpec.Text = FGrade.Text = FPrice.Text = FPriceReason.Text = "";
         FThickMin.Text = FThickMax.Text = FWidthMin.Text = FWidthMax.Text = FLengthMin.Text = FLengthMax.Text = "";
+        FSigningDate.SelectedDate = null;
         FPriceCurrency.SelectedIndex = 0;   // mặc định USD
+        _origPrice = 0m; _origCurrency = "USD";
+        PriceReasonPanel.Visibility = Visibility.Collapsed;   // thêm mới = giá mới, không phải điều chỉnh
         SetMode(FThickModeSingle, FThickModeClosed, FThickModeOpen, FThickModeMulti, DimMode.Single);
         SetMode(FWidthModeSingle, FWidthModeClosed, FWidthModeOpen, FWidthModeMulti, DimMode.Single);
         SetMode(FLengthModeSingle, FLengthModeClosed, FLengthModeOpen, FLengthModeMulti, DimMode.Single);
@@ -468,6 +574,7 @@ public partial class QuotationDetailView : UserControl
         SelectByTag(FWoodType, it.WoodType);
         PopulateSubCombo(it.WoodType, it.WoodSubType);
         FOrigin.Text = it.Origin;
+        FGrade.Text = it.Grade;
         FThickMin.Text = footage ? (it.ThicknessMinNote ?? NumOrBlank(it.ThicknessMin))
             : (!string.IsNullOrWhiteSpace(it.ThicknessValues) ? it.ThicknessValues : NumOrBlank(it.ThicknessMin));
         FThickMax.Text = footage ? (it.ThicknessMaxNote ?? NumOrBlank(it.ThicknessMax))
@@ -478,6 +585,9 @@ public partial class QuotationDetailView : UserControl
         FLengthMax.Text = !string.IsNullOrWhiteSpace(it.LengthValues) ? "" : NumOrBlank(it.LengthMax);
         FPrice.Text = Fmt.Num((double)it.Price);
         FPriceCurrency.SelectedIndex = string.Equals(it.PriceCurrency, "VND", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        _origPrice = it.Price;                          // mốc giá gốc để so khi sửa
+        _origCurrency = it.PriceCurrency ?? "USD";
+        FSigningDate.SelectedDate = it.SigningDate;
         FSpec.Text = it.Specification;
         SyncThicknessForWoodType();
 
@@ -496,10 +606,13 @@ public partial class QuotationDetailView : UserControl
         ClearWarnings();
         FillForm(it);
         SetReadOnly(true);
+        PriceReasonPanel.Visibility = Visibility.Collapsed;   // xem: không có khái niệm điều chỉnh
         FormTitle.Text = Lang.T("Quotations.Form.ViewTitle", it.WoodType, new ItemRow(it).ThicknessText);
         FormSaveBtn.Content = Lang.T("Common.Edit");
         FormCancelBtn.Content = Lang.T("Common.Close");
+        FormCopyBtn.Visibility = Visibility.Visible;   // chỉ hiện ở chế độ xem
         AddFormPanel.Visibility = Visibility.Visible;
+        UiScroll.ToTop(AddFormPanel);   // luôn kéo lên đầu trang để thấy form xem (kể cả khi đang xem dòng khác)
     }
 
     private void EnterEditMode()
@@ -510,16 +623,26 @@ public partial class QuotationDetailView : UserControl
         FormTitle.Text = Lang.T("Quotations.Form.EditTitle");
         FormSaveBtn.Content = Lang.T("Common.Update");
         FormCancelBtn.Content = Lang.T("Common.CancelEdit");
+        FormCopyBtn.Visibility = Visibility.Collapsed;
+        UpdatePriceReasonVisibility();   // vào sửa: chưa đổi giá → field lý do ẩn
         FWoodSubType.Focus();
+    }
+
+    /// <summary>"Sao chép tạo mới": chép toàn bộ thông tin dòng đang XEM sang một dòng THÊM MỚI (Id mới khi Lưu).</summary>
+    private void BtnCopyNew_Click(object sender, RoutedEventArgs e)
+    {
+        var src = AppState.FindQuotation(_supplier.Id)?.Items.FirstOrDefault(i => i.Id == _editingId);
+        if (src == null) return;
+        EnterAddMode();     // reset về add mode (mở khóa, _editingId=null, tiêu đề/nút "Thêm")
+        FillForm(src);      // điền lại toàn bộ dữ liệu nguồn (FillForm KHÔNG đụng _mode/_editingId)
+        ClearWarnings();
     }
 
     private void BtnToggleAdd_Click(object sender, RoutedEventArgs e)
     {
-        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add")
-        {
-            AddFormPanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+        // Đã ở add mode → không làm gì (bỏ hành vi click lần 2 đóng form, gây mất dữ liệu chưa lưu không cảnh báo)
+        if (AddFormPanel.Visibility == Visibility.Visible && _mode == "add") return;
+        if (!ConfirmLeaveDirty()) return;   // đang sửa (có thay đổi chưa lưu) → xác nhận trước khi sang thêm mới
         EnterAddMode();
         AddFormPanel.Visibility = Visibility.Visible;
     }
@@ -546,6 +669,11 @@ public partial class QuotationDetailView : UserControl
     private static bool ConfirmDiscard(string message) =>
         AppDialog.Show(message, Lang.T("Common.ConfirmDiscardTitle"),
             MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    /// <summary>Đang MỞ form add/edit (dữ liệu chưa lưu) → hỏi xác nhận bỏ trước khi rời sang xem/sửa dòng khác (true = được rời).</summary>
+    private bool ConfirmLeaveDirty() =>
+        AddFormPanel.Visibility != Visibility.Visible || (_mode != "add" && _mode != "edit")
+        || ConfirmDiscard(Lang.T(_mode == "add" ? "Common.Confirm.DiscardAdd" : "Common.Confirm.DiscardEdit"));
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
@@ -574,6 +702,10 @@ public partial class QuotationDetailView : UserControl
         if (!ValidateDimension(widthMode, FWidthMin.Text, FWidthMax.Text, WWidthRange, Lang.T("Quotations.Label.Width"), out var widthMin, out var widthMax, out var widthValues)) ok = false;
         if (!ValidateDimension(lengthMode, FLengthMin.Text, FLengthMax.Text, WLengthRange, Lang.T("Quotations.Label.Length"), out var lengthMin, out var lengthMax, out var lengthValues)) ok = false;
         if (D(FPrice.Text) <= 0) { ShowWarn(WPrice, Lang.T("Quotations.Warn.PriceRequired")); ok = false; }
+        // Đang sửa mà đơn giá thay đổi → bắt buộc nhập lý do điều chỉnh.
+        var priceAdjust = _mode == "edit" && PriceChangedFromOriginal();
+        if (priceAdjust && string.IsNullOrWhiteSpace(FPriceReason.Text))
+        { ShowWarn(WPriceReason, Lang.T("Quotations.Warn.PriceReasonRequired")); ok = false; }
         if (!ok) return;
 
         // Cờ khoảng MỞ (a;b) chỉ bật khi chip = Khoảng; Đơn lẻ/Đoạn/Nhiều đều là đóng.
@@ -583,7 +715,7 @@ public partial class QuotationDetailView : UserControl
             Id = _editingId,
             WoodType = woodType,
             WoodSubType = NullIfBlank((FWoodSubType.SelectedItem as ComboBoxItem)?.Tag as string),
-            Grade = null,
+            Grade = NullIfBlank(FGrade.Text),
             ThicknessMin = thickMin,
             ThicknessMax = thickMax,
             ThicknessMinNote = thickMinNote,
@@ -600,8 +732,10 @@ public partial class QuotationDetailView : UserControl
             LengthOpen = lengthMode == DimMode.Open,
             Origin = NullIfBlank(FOrigin.Text),
             Specification = NullIfBlank(FSpec.Text),
+            SigningDate = FSigningDate.SelectedDate,
             Price = (decimal)D(FPrice.Text),
-            PriceCurrency = (FPriceCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "USD"
+            PriceCurrency = (FPriceCurrency.SelectedItem as ComboBoxItem)?.Tag as string ?? "USD",
+            PriceAdjustReason = priceAdjust ? FPriceReason.Text.Trim() : null
         };
 
         try
@@ -630,7 +764,25 @@ public partial class QuotationDetailView : UserControl
 
     private void ViewRow_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is ItemRow r) EnterViewMode(r.Item);
+        if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
+        if (!ConfirmLeaveDirty()) return;   // đang add/edit → hỏi bỏ thay đổi trước khi sang xem
+        EnterViewMode(r.Item);
+    }
+
+    /// <summary>Mở trang "Lịch sử thay đổi giá" của dòng (drill-down trong cùng view).</summary>
+    private void HistoryRow_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not ItemRow r) return;
+        DetailHost.Content = new PriceHistoryView(r.Item, CloseHistory);
+        RootScroll.Visibility = Visibility.Collapsed;
+        DetailHost.Visibility = Visibility.Visible;
+    }
+
+    private void CloseHistory()
+    {
+        DetailHost.Content = null;
+        DetailHost.Visibility = Visibility.Collapsed;
+        RootScroll.Visibility = Visibility.Visible;
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)

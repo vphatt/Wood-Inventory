@@ -21,8 +21,10 @@ public static class DbSeeder
         SeedWoodSubCategories(context);
         EnsureSupplierColumns(context);
         EnsureQuotationItemColumns(context);
+        EnsureQuotationPriceHistoryTable(context);
         EnsureWoodLotColumns(context);
         MergeQuotationsPerSupplier(context);
+        MigrateSupplierAndQuotationCodes(context);
         EnsureAppSettingsTable(context);
         SeedAppSettings(context);
 
@@ -32,9 +34,9 @@ public static class DbSeeder
         // 1. Nhà cung cấp
         var suppliers = new List<Supplier>
         {
-            new() { Id = "SUP-001", Code = "NAH", Name = "North American Hardwoods Inc.", TaxCode = "US-5540192", Phone = "+1-555-0192", Address = "102 Dunlap St, Memphis, TN, USA", BankAccount = "0011-2233-4455" },
-            new() { Id = "SUP-002", Code = "HPL", Name = "Công ty Cổ phần Lâm nghiệp Hòa Phát", TaxCode = "2400398211", Phone = "024-3982-1144", Address = "KCN Phùng Chi Lăng, Lạng Sơn, Việt Nam", BankAccount = "1902-8899-0011" },
-            new() { Id = "SUP-003", Code = "GTH", Name = "Gia Thanh Wood Trading Corp", TaxCode = "0312844998", Phone = "028-3844-9988", Address = "45 Đường số 2, P. Thảo Điền, TP. Thủ Đức, TP.HCM", BankAccount = "0601-3344-5566" }
+            new() { Id = "N001", Code = "NAH", Name = "North American Hardwoods Inc.", TaxCode = "US-5540192", Phone = "+1-555-0192", Address = "102 Dunlap St, Memphis, TN, USA", BankAccount = "0011-2233-4455" },
+            new() { Id = "N002", Code = "HPL", Name = "Công ty Cổ phần Lâm nghiệp Hòa Phát", TaxCode = "2400398211", Phone = "024-3982-1144", Address = "KCN Phùng Chi Lăng, Lạng Sơn, Việt Nam", BankAccount = "1902-8899-0011" },
+            new() { Id = "N003", Code = "GTH", Name = "Gia Thanh Wood Trading Corp", TaxCode = "0312844998", Phone = "028-3844-9988", Address = "45 Đường số 2, P. Thảo Điền, TP. Thủ Đức, TP.HCM", BankAccount = "0601-3344-5566" }
         };
         context.Suppliers.AddRange(suppliers);
         context.SaveChanges();
@@ -44,30 +46,30 @@ public static class DbSeeder
         {
             new()
             {
-                Id = "QT-001", SupplierId = "SUP-001", EffectiveDate = DateTime.Parse("2026-05-15"),
+                Id = "Q-N001", SupplierId = "N001", EffectiveDate = DateTime.Parse("2026-05-15"),
                 Version = "", IsActive = true,
                 Items =
                 {
                     // Gỗ Dương: chỉ cần Grade + Thickness là biết giá — không giới hạn Rộng/Dài/Xuất xứ.
-                    new QuotationItem { Id = "QI-101", WoodType = "Gỗ Dương", ThicknessMin = 25, ThicknessMax = 25, Grade = "FAS", Price = 680, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "BG001-001", WoodType = "Gỗ Dương", ThicknessMin = 25, ThicknessMax = 25, Grade = "FAS", Price = 680, PriceCurrency = "USD" },
                     // Gỗ Sồi: đủ Dày (giá trị đơn) + Rộng từ 150mm trở lên (range mở, không giới hạn trên).
-                    new QuotationItem { Id = "QI-102", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 150, Grade = "FAS", Price = 1150, PriceCurrency = "USD" },
-                    new QuotationItem { Id = "QI-103", WoodType = "Gỗ Sồi", ThicknessMin = 38, ThicknessMax = 38, WidthMin = 150, Grade = "FAS", Price = 1250, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "BG001-002", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 150, Grade = "FAS", Price = 1150, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "BG001-003", WoodType = "Gỗ Sồi", ThicknessMin = 38, ThicknessMax = 38, WidthMin = 150, Grade = "FAS", Price = 1250, PriceCurrency = "USD" },
                     // Gỗ Tần Bì: cần thêm Xuất xứ để phân biệt giá.
-                    new QuotationItem { Id = "QI-104", WoodType = "Gỗ Tần Bì", ThicknessMin = 32, ThicknessMax = 32, WidthMin = 120, Grade = "1C", Origin = "Mỹ", Price = 850, PriceCurrency = "USD" }
+                    new QuotationItem { Id = "BG001-004", WoodType = "Gỗ Tần Bì", ThicknessMin = 32, ThicknessMax = 32, WidthMin = 120, Grade = "1C", Origin = "Mỹ", Price = 850, PriceCurrency = "USD" }
                 }
             },
             new()
             {
-                Id = "QT-002", SupplierId = "SUP-002", EffectiveDate = DateTime.Parse("2026-01-15"),
+                Id = "Q-N002", SupplierId = "N002", EffectiveDate = DateTime.Parse("2026-01-15"),
                 Version = "", IsActive = true,
                 Items =
                 {
-                    new QuotationItem { Id = "QI-201", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 120, Grade = "AB", Price = 1000, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "BG002-001", WoodType = "Gỗ Sồi", ThicknessMin = 26, ThicknessMax = 26, WidthMin = 120, Grade = "AB", Price = 1000, PriceCurrency = "USD" },
                     // Gỗ Thông: chỉ cần độ dày — không set Grade/Rộng/Dài/Xuất xứ.
-                    new QuotationItem { Id = "QI-202", WoodType = "Gỗ Thông", ThicknessMin = 20, ThicknessMax = 20, Price = 420, PriceCurrency = "USD" },
+                    new QuotationItem { Id = "BG002-002", WoodType = "Gỗ Thông", ThicknessMin = 20, ThicknessMax = 20, Price = 420, PriceCurrency = "USD" },
                     // Gỗ Cao Su: báo giá theo VND (NCC nội địa) — minh hoạ đơn vị tiền tệ khác USD trong báo giá.
-                    new QuotationItem { Id = "QI-203", WoodType = "Gỗ Cao Su", ThicknessMin = 18, ThicknessMax = 18, Grade = "AA", Specification = "Standard Joint", Price = 9_600_000, PriceCurrency = "VND" }
+                    new QuotationItem { Id = "BG002-003", WoodType = "Gỗ Cao Su", ThicknessMin = 18, ThicknessMax = 18, Grade = "AA", Specification = "Standard Joint", Price = 9_600_000, PriceCurrency = "VND" }
                 }
             }
         };
@@ -86,9 +88,9 @@ public static class DbSeeder
 
         // 4. Phiếu nhập
         context.WarehouseReceipts.AddRange(
-            new WarehouseReceipt { Id = "REC-26001", SupplierId = "SUP-001", Date = DateTime.Parse("2026-05-20"), Invoice = "INV-7721A", PackingList = "PL-7721A", Status = "completed" },
-            new WarehouseReceipt { Id = "REC-26002", SupplierId = "SUP-002", Date = DateTime.Parse("2026-06-02"), Invoice = "INV-HP-9901", PackingList = "PL-HP-9901", Status = "completed" },
-            new WarehouseReceipt { Id = "REC-26003", SupplierId = "SUP-003", Date = DateTime.Parse("2026-06-10"), Invoice = "INV-GT-550", PackingList = "PL-GT-550", Status = "completed" });
+            new WarehouseReceipt { Id = "REC-26001", SupplierId = "N001", Date = DateTime.Parse("2026-05-20"), Invoice = "INV-7721A", PackingList = "PL-7721A", Status = "completed" },
+            new WarehouseReceipt { Id = "REC-26002", SupplierId = "N002", Date = DateTime.Parse("2026-06-02"), Invoice = "INV-HP-9901", PackingList = "PL-HP-9901", Status = "completed" },
+            new WarehouseReceipt { Id = "REC-26003", SupplierId = "N003", Date = DateTime.Parse("2026-06-10"), Invoice = "INV-GT-550", PackingList = "PL-GT-550", Status = "completed" });
         context.SaveChanges();
 
         // 5. Kiện gỗ
@@ -103,7 +105,7 @@ public static class DbSeeder
 
         var lot2 = Configure(new WoodLot
         {
-            Id = "LOT-2601B", SupplierId = "SUP-001", ImportDate = DateTime.Parse("2026-05-20"),
+            Id = "LOT-2601B", SupplierId = "N001", ImportDate = DateTime.Parse("2026-05-20"),
             ReceiptId = "REC-26001", Invoice = "INV-7721A", PackingList = "PL-7721A",
             WoodType = "Gỗ Sồi", WoodName = "Gỗ Sồi Mỹ FAS 26mm (Red Oak)",
             ThicknessMm = 26, WidthMm = 150, LengthMm = 2400,
@@ -112,7 +114,7 @@ public static class DbSeeder
         });
         var lot3 = Configure(new WoodLot
         {
-            Id = "LOT-2602A", SupplierId = "SUP-002", ImportDate = DateTime.Parse("2026-06-02"),
+            Id = "LOT-2602A", SupplierId = "N002", ImportDate = DateTime.Parse("2026-06-02"),
             ReceiptId = "REC-26002", Invoice = "INV-HP-9901", PackingList = "PL-HP-9901",
             WoodType = "Gỗ Sồi", WoodName = "Gỗ Sồi AB 26mm",
             ThicknessMm = 26, WidthMm = 120, LengthMm = 2000,
@@ -123,7 +125,7 @@ public static class DbSeeder
         context.WoodLots.AddRange(
             Configure(new WoodLot
             {
-                Id = "LOT-2601A", SupplierId = "SUP-001", ImportDate = DateTime.Parse("2026-05-20"),
+                Id = "LOT-2601A", SupplierId = "N001", ImportDate = DateTime.Parse("2026-05-20"),
                 ReceiptId = "REC-26001", Invoice = "INV-7721A", PackingList = "PL-7721A",
                 WoodType = "Gỗ Dương", WoodName = "Gỗ Dương FAS 25mm (Poplar)",
                 ThicknessMm = 25, WidthMm = 0, LengthMm = 0, LengthNote = "96\"108\"120\"",
@@ -133,7 +135,7 @@ public static class DbSeeder
             lot2, lot3,
             Configure(new WoodLot
             {
-                Id = "LOT-2603A", SupplierId = "SUP-003", ImportDate = DateTime.Parse("2026-06-10"),
+                Id = "LOT-2603A", SupplierId = "N003", ImportDate = DateTime.Parse("2026-06-10"),
                 ReceiptId = "REC-26003", Invoice = "INV-GT-550", PackingList = "PL-GT-550",
                 WoodType = "Gỗ Tràm", WoodName = "Gỗ Tràm ghép thanh 18mm",
                 ThicknessMm = 18, WidthMm = 1220, LengthMm = 2440,
@@ -313,6 +315,107 @@ public static class DbSeeder
         context.SaveChanges();
     }
 
+    /// <summary>Chuẩn hoá khoá chính cho DB đã tồn tại: NCC → N###; container báo giá (WoodQuotation) → Q-{mãNCC};
+    /// TỪNG mục giá (QuotationItem) → BG{abc}-{cde} (abc = số NCC, cde chạy 001 theo mục giá của NCC). Cập nhật MỌI
+    /// FK (WoodLots/WarehouseReceipts/WoodQuotations.SupplierId, QuotationItems.QuotationId, QuotationPriceHistories.QuotationItemId).
+    /// Idempotent (chỉ đổi bản ghi chưa đúng định dạng). Tắt FK trong lúc đổi PK (an toàn vì đổi PK + FK cùng lúc).</summary>
+    private static void MigrateSupplierAndQuotationCodes(AppDbContext context)
+    {
+        var conn = context.Database.GetDbConnection();
+        var openedHere = conn.State != System.Data.ConnectionState.Open;
+        if (openedHere) conn.Open();
+        try
+        {
+            void Exec(string sql) { using var c = conn.CreateCommand(); c.CommandText = sql; c.ExecuteNonQuery(); }
+            void Remap(string sql, string oldVal, string newVal)   // SET col=@n WHERE col=@o
+            {
+                using var c = conn.CreateCommand();
+                c.CommandText = sql;
+                var pn = c.CreateParameter(); pn.ParameterName = "@n"; pn.Value = newVal; c.Parameters.Add(pn);
+                var po = c.CreateParameter(); po.ParameterName = "@o"; po.Value = oldVal; c.Parameters.Add(po);
+                c.ExecuteNonQuery();
+            }
+            List<(string, string)> Read2(string sql)
+            {
+                var list = new List<(string, string)>();
+                using var c = conn.CreateCommand(); c.CommandText = sql;
+                using var r = c.ExecuteReader();
+                while (r.Read()) list.Add((r.GetString(0), r.IsDBNull(1) ? "" : r.GetString(1)));
+                return list;
+            }
+            static bool IsSupCode(string id) => id.Length >= 2 && id[0] == 'N' && int.TryParse(id[1..], out _);
+            static bool IsContainerCode(string id) => id.StartsWith("Q-");
+            static bool IsItemCode(string id) => id.StartsWith("BG");
+            static int SupNum(string sup) => IsSupCode(sup) && int.TryParse(sup[1..], out var n) ? n : 0;
+
+            var supIds = new List<string>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT \"Id\" FROM \"Suppliers\";";
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) supIds.Add(r.GetString(0));
+            }
+            var quotes = Read2("SELECT \"Id\", \"SupplierId\" FROM \"WoodQuotations\";");
+            var itemsPre = Read2("SELECT \"Id\", \"QuotationId\" FROM \"QuotationItems\";");
+
+            var supToMigrate = supIds.Where(id => !IsSupCode(id)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            var needWork = supToMigrate.Count > 0
+                || quotes.Any(q => !IsContainerCode(q.Item1))
+                || itemsPre.Any(i => !IsItemCode(i.Item1));
+            if (!needWork) return;   // đã chuẩn hoá rồi
+
+            Exec("PRAGMA foreign_keys=OFF;");
+
+            // 1) NCC → N### (giữ số của mã N### đã đúng, gán số dương nhỏ nhất chưa dùng cho phần còn lại).
+            var usedNums = new HashSet<int>();
+            foreach (var id in supIds) if (IsSupCode(id) && int.TryParse(id[1..], out var n)) usedNums.Add(n);
+            int NextNum() { var k = 1; while (usedNums.Contains(k)) k++; usedNums.Add(k); return k; }
+            foreach (var oldId in supToMigrate)
+            {
+                var newId = $"N{NextNum():D3}";
+                Remap("UPDATE \"Suppliers\" SET \"Id\"=@n WHERE \"Id\"=@o", oldId, newId);
+                Remap("UPDATE \"WoodLots\" SET \"SupplierId\"=@n WHERE \"SupplierId\"=@o", oldId, newId);
+                Remap("UPDATE \"WarehouseReceipts\" SET \"SupplierId\"=@n WHERE \"SupplierId\"=@o", oldId, newId);
+                Remap("UPDATE \"WoodQuotations\" SET \"SupplierId\"=@n WHERE \"SupplierId\"=@o", oldId, newId);
+            }
+
+            // 2) Container báo giá → Q-{mãNCC} (đọc lại SupplierId đã đổi).
+            foreach (var (oldQId, sup) in Read2("SELECT \"Id\", \"SupplierId\" FROM \"WoodQuotations\";"))
+            {
+                var newQId = $"Q-{sup}";
+                if (oldQId == newQId) continue;
+                Remap("UPDATE \"WoodQuotations\" SET \"Id\"=@n WHERE \"Id\"=@o", oldQId, newQId);
+                Remap("UPDATE \"QuotationItems\" SET \"QuotationId\"=@n WHERE \"QuotationId\"=@o", oldQId, newQId);
+            }
+
+            // 3) TỪNG mục giá → BG{abc}-{cde}. Map QuotationId(container) → SupplierId để biết abc; cde chạy 001 mỗi NCC.
+            var quoToSup = Read2("SELECT \"Id\", \"SupplierId\" FROM \"WoodQuotations\";")
+                .ToDictionary(x => x.Item1, x => x.Item2);
+            var items = Read2("SELECT \"Id\", \"QuotationId\" FROM \"QuotationItems\" ORDER BY \"QuotationId\", \"Id\";");
+            var usedCde = new Dictionary<string, HashSet<int>>();   // supplierId -> cde đã dùng (từ mục đã đúng BG)
+            foreach (var (id, quo) in items)
+            {
+                var sup = quoToSup.TryGetValue(quo, out var s) ? s : "";
+                var prefix = $"BG{(SupNum(sup) > 0 ? SupNum(sup).ToString("D3") : "000")}-";
+                if (id.StartsWith(prefix) && int.TryParse(id[prefix.Length..], out var c))
+                    (usedCde.TryGetValue(sup, out var set) ? set : usedCde[sup] = new HashSet<int>()).Add(c);
+            }
+            foreach (var (oldId, quo) in items.Where(i => !IsItemCode(i.Item1)))
+            {
+                var sup = quoToSup.TryGetValue(quo, out var s) ? s : "";
+                var abc = SupNum(sup) > 0 ? SupNum(sup).ToString("D3") : "000";
+                var set = usedCde.TryGetValue(sup, out var ex) ? ex : usedCde[sup] = new HashSet<int>();
+                var cde = 1; while (set.Contains(cde)) cde++; set.Add(cde);
+                var newId = $"BG{abc}-{cde:D3}";
+                Remap("UPDATE \"QuotationItems\" SET \"Id\"=@n WHERE \"Id\"=@o", oldId, newId);
+                Remap("UPDATE \"QuotationPriceHistories\" SET \"QuotationItemId\"=@n WHERE \"QuotationItemId\"=@o", oldId, newId);
+            }
+
+            Exec("PRAGMA foreign_keys=ON;");
+        }
+        finally { if (openedHere) conn.Close(); }
+    }
+
     /// <summary>Thêm cột TaxCode/BankAccount vào bảng Suppliers cũ nếu thiếu (SQLite không có ADD COLUMN IF NOT EXISTS).</summary>
     private static void EnsureSupplierColumns(AppDbContext context)
     {
@@ -429,6 +532,43 @@ public static class DbSeeder
         }
         context.Database.ExecuteSqlRaw(
             """UPDATE "QuotationItems" SET "PriceCurrency" = 'USD' WHERE "PriceCurrency" IS NULL;""");
+        // Lý do điều chỉnh giá của lần thay đổi gần nhất (hiện ở cột danh sách báo giá; null = chưa điều chỉnh).
+        if (!existing.Contains("PriceAdjustReason"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "PriceAdjustReason" TEXT;""");
+        // Ngày ký báo giá (tùy chọn).
+        if (!existing.Contains("SigningDate"))
+            context.Database.ExecuteSqlRaw("""ALTER TABLE "QuotationItems" ADD COLUMN "SigningDate" TEXT;""");
+    }
+
+    /// <summary>Tạo bảng lịch sử thay đổi giá (DB cũ EnsureCreated không tự thêm) + backfill mốc giá khởi tạo
+    /// cho các dòng báo giá đã tồn tại (để trang lịch sử luôn có ít nhất 1 dòng).</summary>
+    private static void EnsureQuotationPriceHistoryTable(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS "QuotationPriceHistories" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_QuotationPriceHistories" PRIMARY KEY,
+                "QuotationItemId" TEXT NOT NULL,
+                "ChangedAt" TEXT NOT NULL,
+                "Price" TEXT NOT NULL,
+                "PriceCurrency" TEXT,
+                "Reason" TEXT,
+                CONSTRAINT "FK_QuotationPriceHistories_QuotationItems_QuotationItemId"
+                    FOREIGN KEY ("QuotationItemId") REFERENCES "QuotationItems" ("Id") ON DELETE CASCADE
+            );
+            """);
+        context.Database.ExecuteSqlRaw(
+            """CREATE INDEX IF NOT EXISTS "IX_QuotationPriceHistories_QuotationItemId" ON "QuotationPriceHistories" ("QuotationItemId");""");
+        // Backfill: mỗi dòng báo giá chưa có lịch sử → tạo 1 mốc "giá khởi tạo" (Reason rỗng) theo giá hiện tại.
+        context.Database.ExecuteSqlRaw(
+            """
+            INSERT INTO "QuotationPriceHistories" ("Id", "QuotationItemId", "ChangedAt", "Price", "PriceCurrency", "Reason")
+            SELECT lower(hex(randomblob(16))), qi."Id",
+                   COALESCE(qi."UpdatedAt", datetime('now','localtime')),
+                   COALESCE(qi."Price", '0'), COALESCE(qi."PriceCurrency", 'USD'), ''
+            FROM "QuotationItems" qi
+            WHERE NOT EXISTS (SELECT 1 FROM "QuotationPriceHistories" h WHERE h."QuotationItemId" = qi."Id");
+            """);
     }
 
     /// <summary>Thêm cột LengthNote vào bảng WoodLots cũ nếu thiếu (SQLite không có ADD COLUMN IF NOT EXISTS).</summary>
