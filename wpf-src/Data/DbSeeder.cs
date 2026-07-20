@@ -94,9 +94,10 @@ public static class DbSeeder
         context.SaveChanges();
 
         // 5. Kiện gỗ
-        static WoodLot Configure(WoodLot lot)
+        WoodLot Configure(WoodLot lot)
         {
-            lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, lot.ThicknessMm, lot.WidthMm, lot.LengthMm, lot.OriginalQuantity, lot.Footage);
+            var rule = context.WoodCategories.FirstOrDefault(c => c.Name == lot.WoodType)?.VolumeRule ?? VolumeRule.BySpecification;
+            lot.Cbm = WoodVolumeCalculator.CalculateVolume(rule, lot.ThicknessMm, lot.WidthMm, lot.LengthMm, lot.OriginalQuantity, lot.Footage);
             lot.RemainingCbm = lot.Cbm;
             lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.Price, lot.ExchangeRate, lot.TaxPercent);
             lot.TotalValueVnd = WoodVolumeCalculator.CalculateTotalValue(lot.CostPriceVnd, lot.Cbm);

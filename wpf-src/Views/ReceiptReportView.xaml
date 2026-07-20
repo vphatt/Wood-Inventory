@@ -58,17 +58,17 @@
         <StackPanel Margin="24">
 
             <!-- Quay lại + tiêu đề -->
-            <StackPanel Margin="0,0,0,20">
+            <StackPanel Margin="0,0,0,12">
                 <Button Style="{StaticResource BtnLink}" Click="BtnBack_Click" HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,1,4,0"/>
                         <TextBlock Text="{helpers:Loc Common.BackLink}"/>
                     </StackPanel>
                 </Button>
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                    <TextBlock Text="{helpers:Loc ReceiptReport.Title}" FontSize="17" FontWeight="Bold"
+                    <TextBlock Text="{helpers:Loc ReceiptReport.Title}" FontSize="15" FontWeight="Bold"
                                Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="{helpers:Loc ReceiptReport.Subtitle}"
@@ -233,10 +233,10 @@
                     </Border>
 
                     <Grid>
-                        <DataGrid x:Name="ReportGrid" Style="{StaticResource DataTable}" RowHeight="46">
+                        <DataGrid x:Name="ReportGrid" Style="{StaticResource DataTable}" RowHeight="40" MinRowHeight="40" MaxHeight="700">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="46" MinWidth="46" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
-                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>

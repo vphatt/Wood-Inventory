@@ -7,12 +7,12 @@
         <StackPanel Margin="24" MaxWidth="1100" HorizontalAlignment="Left">
 
             <!-- Tiêu đề + nút Hủy/Lưu -->
-            <Grid Margin="0,0,0,20">
+            <Grid Margin="0,0,0,12">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{helpers:Loc Settings.Title}" FontSize="17" FontWeight="Bold"
+                        <TextBlock Text="{helpers:Loc Settings.Title}" FontSize="15" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>

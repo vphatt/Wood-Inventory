@@ -180,7 +180,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         // Đơn giá LUÔN lấy con số đang có trong ô: giá báo giá chỉ được TỰ ĐIỀN vào ô (xem Update() trong BuildLotRow),
         // sau đó user có quyền sửa đè — lệch so với báo giá thì hiện icon ≠ và cảnh báo lúc lưu.
         lot.EffectivePrice = (decimal)D(lot.ManualPriceText);
-        lot.Cbm = WoodVolumeCalculator.CalculateVolume(lot.WoodType, thickness, D(lot.Width),
+        lot.Cbm = WoodVolumeCalculator.CalculateVolume(AppState.GetVolumeRule(lot.WoodType), thickness, D(lot.Width),
             D(lot.Length), (int)D(lot.Quantity), D(lot.Footage), lot.VolumeDecimals, lot.VolumeAdjustment);
         lot.CostPriceVnd = WoodVolumeCalculator.CalculateCostPricePerM3(lot.EffectivePrice,
             (decimal)SelectedExchangeRate, (decimal)SelectedTaxPercent);

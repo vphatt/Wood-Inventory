@@ -36,20 +36,18 @@ public static class WoodVolumeCalculator
     }
 
     /// <summary>
-    /// Tính thể tích m³ theo chủng loại gỗ.
-    ///  - Gỗ Dương (Poplar):  m³ = (Footage / 1000) * 2.36
-    ///  - Loại khác:          m³ = Dài * Rộng * Dày * Số lượng / 1.000.000.000
-    /// Làm tròn theo <paramref name="decimals"/> (mặc định 5 số lẻ, khai báo riêng theo từng kiện gỗ vì
-    /// mỗi phiếu giao hàng của NCC có thể làm tròn khác nhau), rồi cộng thêm <paramref name="adjustment"/>
-    /// (điều chỉnh tay +/- một lượng nhỏ, áp dụng SAU khi làm tròn để không bị phép Round nuốt mất).
+    /// Tính thể tích m³ theo QUY TẮC của loại gỗ (<see cref="VolumeRule"/>), KHÔNG đoán theo tên:
+    ///  - <see cref="VolumeRule.ByFootage"/>:       m³ = (Footage / 1000) * 2.36
+    ///  - <see cref="VolumeRule.BySpecification"/>: m³ = Dài * Rộng * Dày * Số lượng / 1.000.000.000
+    /// Caller lấy rule qua <c>AppState.GetVolumeRule(woodType)</c> (đọc đúng cột VolumeRule của danh mục),
+    /// nên MỌI loại gỗ đặt ByFootage (không chỉ Gỗ Dương) đều áp đúng công thức footage.
+    /// Làm tròn theo <paramref name="decimals"/> (mặc định 5 số lẻ), rồi cộng <paramref name="adjustment"/>
+    /// (điều chỉnh tay +/- áp dụng SAU khi làm tròn để không bị phép Round nuốt mất).
     /// </summary>
-    public static double CalculateVolume(string woodType, double thicknessMm, double widthMm,
+    public static double CalculateVolume(VolumeRule rule, double thicknessMm, double widthMm,
         double lengthMm, int quantity, double footage, int decimals = 5, double adjustment = 0)
     {
-        var normalized = (woodType ?? "").Trim().ToLowerInvariant();
-        var isPoplar = normalized.Contains("dương") || normalized.Contains("duong") || normalized.Contains("poplar");
-
-        var raw = isPoplar
+        var raw = rule == VolumeRule.ByFootage
             ? (footage / 1000.0) * 2.36
             : (lengthMm * widthMm * thicknessMm * quantity) / 1_000_000_000.0;
 

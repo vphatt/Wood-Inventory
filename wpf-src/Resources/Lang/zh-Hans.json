@@ -117,6 +117,7 @@
   "Suppliers.Field.Phone": "电话号码",
   "Suppliers.Field.BankAccount": "银行账号",
   "Suppliers.Column.Code": "供应商编号",
+  "Suppliers.Column.ShortName": "简称",
   "Suppliers.Column.Name": "供应商名称",
   "Suppliers.Column.TaxCode": "税号",
   "Suppliers.SaveButton": "保存供应商",

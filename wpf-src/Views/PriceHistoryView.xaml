@@ -14,9 +14,9 @@
                 </StackPanel>
             </Button>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
-                <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                            Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                <TextBlock Text="{helpers:Loc Quotations.PriceHistory.Title}" FontSize="17" FontWeight="Bold"
+                <TextBlock Text="{helpers:Loc Quotations.PriceHistory.Title}" FontSize="15" FontWeight="Bold"
                            Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
             </StackPanel>
             <TextBlock x:Name="Subtitle" FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,0,0,16"/>
@@ -45,7 +45,7 @@
                     <DataGrid x:Name="HistoryGrid" Style="{StaticResource DataTable}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="60" MinWidth="60" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
-                                                Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                                Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                         <Setter Property="Foreground" Value="{StaticResource Slate400}"/>

@@ -117,6 +117,7 @@
   "Suppliers.Field.Phone": "SỐ ĐIỆN THOẠI",
   "Suppliers.Field.BankAccount": "SỐ TÀI KHOẢN",
   "Suppliers.Column.Code": "MÃ NCC",
+  "Suppliers.Column.ShortName": "TÊN GỌI TẮT",
   "Suppliers.Column.Name": "TÊN NHÀ CUNG CẤP",
   "Suppliers.Column.TaxCode": "MÃ SỐ THUẾ",
   "Suppliers.SaveButton": "Lưu nhà cung cấp",

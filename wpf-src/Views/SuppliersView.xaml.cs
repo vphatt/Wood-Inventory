@@ -16,6 +16,7 @@ public partial class SuppliersView : UserControl, IModuleView
     {
         public Supplier Supplier { get; }
         public string Code => Supplier.Id;   // Mã NCC (khoá chính, N###)
+        public string ShortName => Supplier.Code;   // Tên gọi tắt (vd "YUAN CHANG")
         public string Name => Supplier.Name;
         public string CodeLabel => Lang.T("Suppliers.CodeLabel", Supplier.Code);
         public string TaxCode => string.IsNullOrWhiteSpace(Supplier.TaxCode) ? "—" : Supplier.TaxCode;
@@ -39,7 +40,7 @@ public partial class SuppliersView : UserControl, IModuleView
     {
         InitializeComponent();
         RefreshView();
-        Helpers.GridLayoutStore.Attach(Grid, "suppliers");
+        Helpers.GridLayoutStore.Attach(Grid, "suppliers-v2");   // v2: đổi cấu trúc cột (thêm Tên gọi tắt) → dùng lại thứ tự XAML, bỏ layout cũ
         Helpers.GridPairSync.Link(Grid, ActionGrid);
     }
 

@@ -94,7 +94,7 @@
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + quay lại + nút thêm -->
-            <Grid Margin="0,0,0,20">
+            <Grid Margin="0,0,0,12">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource BtnLink}" Click="BtnBack_Click" VerticalAlignment="Center">
@@ -104,10 +104,10 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TitleName" Text="Báo giá" FontSize="17" FontWeight="Bold"
+                        <TextBlock x:Name="TitleName" Text="Báo giá" FontSize="15" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                     <TextBlock x:Name="Subtitle" FontSize="12" Foreground="{StaticResource Slate500}" Margin="0,3,0,0"/>
@@ -446,7 +446,7 @@
                                   ScrollViewer.VerticalScrollBarVisibility="Hidden">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
-                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>

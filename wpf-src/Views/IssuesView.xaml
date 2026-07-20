@@ -7,12 +7,12 @@
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + nút -->
-            <Grid Margin="0,0,0,20">
+            <Grid Margin="0,0,0,12">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="↗" FontSize="16" FontWeight="Bold"
+                        <TextBlock Text="↗" FontSize="14" FontWeight="Bold"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{helpers:Loc Issues.Title}" FontSize="17" FontWeight="Bold"
+                        <TextBlock Text="{helpers:Loc Issues.Title}" FontSize="15" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -217,7 +217,7 @@
                               ScrollViewer.VerticalScrollBarVisibility="Hidden">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
-                                                Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                                Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                         <Setter Property="Foreground" Value="{StaticResource Slate400}"/>

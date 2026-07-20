@@ -134,11 +134,20 @@ public static class GridPairSync
         };
     }
 
+    // index đến từ row.GetIndex() lúc MouseEnter/Leave — khi ảo hóa recycle container, index có thể đã stale/ngoài
+    // range (âm hoặc ≥ số dòng), lúc đó ContainerFromIndex NÉM IndexOutOfRange (không trả null) → phải chặn range
+    // TRƯỚC + try/catch phòng hờ, nếu không sẽ crash "Index was outside the bounds of the array" khi rê chuột lúc cuộn.
     private static void SetHover(DataGrid grid, int index, bool value)
     {
-        if (grid.ItemContainerGenerator.ContainerFromIndex(index) is DataGridRow r1) RowHover.SetIsHovered(r1, value);
-        if (grid.GetValue(PartnerProperty) is DataGrid partner &&
-            partner.ItemContainerGenerator.ContainerFromIndex(index) is DataGridRow r2)
-            RowHover.SetIsHovered(r2, value);
+        try
+        {
+            if (index >= 0 && index < grid.Items.Count
+                && grid.ItemContainerGenerator.ContainerFromIndex(index) is DataGridRow r1)
+                RowHover.SetIsHovered(r1, value);
+            if (grid.GetValue(PartnerProperty) is DataGrid partner && index >= 0 && index < partner.Items.Count
+                && partner.ItemContainerGenerator.ContainerFromIndex(index) is DataGridRow r2)
+                RowHover.SetIsHovered(r2, value);
+        }
+        catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException) { }
     }
 }

@@ -8,12 +8,12 @@
         <StackPanel Margin="24">
 
             <!-- Tiêu đề + nút -->
-            <Grid Margin="0,0,0,20">
+            <Grid Margin="0,0,0,12">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    Foreground="{StaticResource Blue500}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{helpers:Loc Suppliers.Title}" FontSize="17" FontWeight="Bold"
+                        <TextBlock Text="{helpers:Loc Suppliers.Title}" FontSize="15" FontWeight="Bold"
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -157,11 +157,11 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="46" CanUserSortColumns="True"
+                        <DataGrid x:Name="Grid" Grid.Column="0" Style="{StaticResource DataTable}" RowHeight="40" CanUserSortColumns="True"
                                   ScrollViewer.VerticalScrollBarVisibility="Hidden">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="50" MinWidth="50" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
-                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=AlternationIndex, Converter={StaticResource RowNumberConverter}}">
+                                                    Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
                                             <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
@@ -181,18 +181,24 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="{helpers:Loc Suppliers.Column.Name}" SortMemberPath="Name" Width="300" MinWidth="300">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource Slate800}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding CodeLabel}" FontSize="10"
-                                                           Foreground="{StaticResource Slate400}" Margin="0,2,0,0"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.Name}" Binding="{Binding Name}" Width="280" MinWidth="280" SortMemberPath="Name">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Slate800}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.ShortName}" Binding="{Binding ShortName}" Width="150" MinWidth="130" SortMemberPath="ShortName">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">
+                                            <Setter Property="Foreground" Value="{StaticResource Slate600}"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
                                 <DataGridTextColumn Header="{helpers:Loc Suppliers.Column.TaxCode}" Binding="{Binding TaxCode}" Width="180" MinWidth="140">
                                     <DataGridTextColumn.ElementStyle>
@@ -217,8 +223,8 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn _view. RowHeight=46 khớp grid data cho thẳng hàng -->
-                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="46"
+                        <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn _view. RowHeight=40 khớp grid data cho thẳng hàng -->
+                        <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="40"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
