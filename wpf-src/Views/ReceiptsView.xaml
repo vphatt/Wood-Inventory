@@ -45,8 +45,8 @@
                                    Foreground="{StaticResource Slate800}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Thông tin chứng từ -->
-                    <Grid Margin="0,0,0,20">
+                    <!-- Thông tin chứng từ — dòng 1: NCC / Ngày / Hóa đơn -->
+                    <Grid Margin="0,0,0,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="16"/>
@@ -54,35 +54,45 @@
                             <ColumnDefinition Width="16"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition/>
-                            <RowDefinition Height="14"/>
-                            <RowDefinition/>
-                            <RowDefinition Height="14"/>
-                            <RowDefinition/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Grid.Column="0">
+                        <StackPanel Grid.Column="0">
                             <TextBlock Text="{helpers:Loc Receipts.Field.Supplier}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FSupplier" Style="{StaticResource Select}" SelectionChanged="FSupplier_Changed"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2">
+                        <StackPanel Grid.Column="2">
                             <TextBlock Text="{helpers:Loc Receipts.Field.Date}" Style="{StaticResource FieldLabel}"/>
                             <DatePicker x:Name="FDate" Style="{StaticResource DatePickerField}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="4">
+                        <StackPanel Grid.Column="4">
                             <TextBlock Text="{helpers:Loc Receipts.Field.Invoice}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FInvoice" Style="{StaticResource Input}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="0">
+                    </Grid>
+
+                    <!-- Thông tin chứng từ — dòng 2: Packing List / Bảng kê lâm sản / Đơn vị tiền tệ & tỷ giá / Thuế -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
                             <TextBlock Text="{helpers:Loc Receipts.Field.PackingList}" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="FPackingList" Style="{StaticResource Input}"/>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="2">
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{helpers:Loc Receipts.Field.ForestList}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="FForestList" Style="{StaticResource Input}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
                             <TextBlock Text="{helpers:Loc Receipts.Field.CurrencyRate}" Style="{StaticResource FieldLabel}"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
-                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <ComboBox x:Name="FCurrency" Grid.Column="0" Style="{StaticResource Select}" SelectionChanged="FCurrency_Changed">
@@ -93,13 +103,9 @@
                                          FontFamily="{StaticResource FontMono}" TextChanged="FRate_Changed"/>
                             </Grid>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="4">
+                        <StackPanel Grid.Column="6">
                             <TextBlock Text="{helpers:Loc Receipts.Field.Tax}" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="FTaxPercent" Style="{StaticResource Select}" SelectionChanged="FRate_Changed"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="4" Grid.Column="0">
-                            <TextBlock Text="{helpers:Loc Receipts.Field.ForestList}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox x:Name="FForestList" Style="{StaticResource Input}"/>
                         </StackPanel>
                     </Grid>
 
@@ -116,10 +122,17 @@
 
                     <!-- Bảng khai báo kiện -->
                     <Border BorderBrush="{StaticResource Slate200}" BorderThickness="1" CornerRadius="8">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel MinWidth="2065">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- Header: cuộn ngang đồng bộ với body, ẩn thanh cuộn riêng -->
+                            <ScrollViewer x:Name="LotHeaderScroll" Grid.Row="0"
+                                          HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
                                 <Border Background="{StaticResource Slate50}" BorderBrush="{StaticResource Slate200}"
-                                        BorderThickness="0,0,0,1" CornerRadius="8,8,0,0">
+                                        BorderThickness="0,0,0,1" CornerRadius="8,8,0,0"
+                                        HorizontalAlignment="Left" MinWidth="2065">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="45"/>
@@ -167,9 +180,16 @@
                                         <TextBlock Grid.Column="20" Text="{helpers:Loc Receipts.Column.Delete}" Style="{StaticResource THead}" Margin="0,9" HorizontalAlignment="Center"/>
                                     </Grid>
                                 </Border>
-                                <ItemsControl x:Name="LotRowsPanel"/>
-                            </StackPanel>
-                        </ScrollViewer>
+                            </ScrollViewer>
+                            <!-- Body: thanh cuộn DỌC ghim mép phải viewport (luôn hiện) + thanh cuộn ngang dưới, đồng bộ ngang với header -->
+                            <ScrollViewer x:Name="LotBodyScroll" Grid.Row="1"
+                                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                          ScrollChanged="LotBodyScroll_ScrollChanged">
+                                <StackPanel HorizontalAlignment="Left" MinWidth="2065">
+                                    <ItemsControl x:Name="LotRowsPanel"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
                     </Border>
 
                     <!-- Tổng + nút -->
@@ -393,20 +413,16 @@
                     <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn -->
                     <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
                               BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Visible"
                               ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="130" MinWidth="130"
+                            <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="100" MinWidth="100"
                                                     CanUserSort="False" CanUserReorder="False" CanUserResize="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Common.Tooltip.View}" Click="ViewRow_Click">
                                                 <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
-                                            </Button>
-                                            <Button Style="{StaticResource BtnIcon}" ToolTip="{helpers:Loc Common.Tooltip.Edit}"
-                                                    Margin="8,0,0,0" Click="EditRow_Click">
-                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
                                             </Button>
                                             <Button Style="{StaticResource BtnIconDanger}" ToolTip="{helpers:Loc Receipts.Tooltip.Delete}"
                                                     Margin="8,0,0,0" Click="DeleteRow_Click">

@@ -202,6 +202,30 @@ public partial class ReceiptsView : UserControl, IModuleView
             LotRowsPanel.Items.Add(_mode == "view" ? BuildLotRowReadOnly(lot, i + 1) : BuildLotRow(lot, i + 1));
         }
         UpdateTotals();
+        ApplyLotScrollLimit();
+    }
+
+    /// <summary>Giới hạn chiều cao vùng cuộn danh sách kiện: xem = 16 dòng, thêm/sửa = 10 dòng (đo chiều cao dòng
+    /// thực tế sau khi layout để ra đúng số dòng bất kể DPI/cỡ chữ; nhiều hơn thì cuộn dọc nội bộ).</summary>
+    private void ApplyLotScrollLimit()
+    {
+        var limit = _mode == "view" ? 16 : 10;
+        LotBodyScroll.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            double perRow = 0;
+            if (LotRowsPanel.Items.Count > 0
+                && LotRowsPanel.ItemContainerGenerator.ContainerFromIndex(0) is FrameworkElement fe && fe.ActualHeight > 0)
+                perRow = fe.ActualHeight;
+            if (perRow <= 0) perRow = _mode == "view" ? 29 : 45;   // fallback nếu chưa realize
+            LotBodyScroll.MaxHeight = perRow * limit + 12;          // +12 chừa thanh cuộn ngang dưới đáy body
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    // Body cuộn ngang -> kéo header cuộn ngang theo (căn cột khớp). Header không có thanh cuộn riêng nên không dội ngược.
+    private void LotBodyScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.HorizontalChange != 0)
+            LotHeaderScroll.ScrollToHorizontalOffset(LotBodyScroll.HorizontalOffset);
     }
 
     /// <summary>Chế độ xem: danh sách kiện hiển thị thuần bảng đọc (TextBlock), không phải field form.</summary>
@@ -243,7 +267,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         Cell(lot.Origin, 5, HorizontalAlignment.Center);
         Cell(lot.Grade, 6, HorizontalAlignment.Center);
         Cell(lot.Thickness, 7, HorizontalAlignment.Center);
-        Cell(isFootage ? "-" : lot.Width, 8, HorizontalAlignment.Center);
+        Cell(lot.Width, 8, HorizontalAlignment.Center);   // Rộng hiện ở mọi loại (footage nhập được, để trống → "-")
         Cell(isFootage ? lot.LengthNote : lot.Length, 9, HorizontalAlignment.Center);
         Cell(isFootage ? lot.Footage : "-", 10, HorizontalAlignment.Center);
         Cell(lot.Quantity, 11, HorizontalAlignment.Center);
@@ -467,11 +491,12 @@ public partial class ReceiptsView : UserControl, IModuleView
         var footageBox = Cell(lot.Footage, s => { lot.Footage = s; Update(); }, mono: true, center: true);
         footageBox.Margin = new Thickness(6, 0, 6, 0);
 
-        // Quy cách → ẩn Footage (hiện Rộng); Footage → ẩn Rộng (hiện Footage). Cột Dài: quy cách=mm, footage=inch.
+        // Quy cách → ẩn Footage. Footage → hiện Footage. Cột Rộng LUÔN cho nhập (kể cả footage, không bắt buộc).
+        // Cột Dài: quy cách=mm, footage=inch.
         void ApplyRuleVisibility()
         {
             var footage = AppState.GetVolumeRule(lot.WoodType) == VolumeRule.ByFootage;
-            widthBox.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
+            widthBox.Visibility = Visibility.Visible;   // Rộng cho nhập ở mọi loại — footage không dùng để tính m³, chỉ lưu mô tả
             footageBox.Visibility = footage ? Visibility.Visible : Visibility.Collapsed;
             lengthBox.Visibility = footage ? Visibility.Collapsed : Visibility.Visible;
             lengthNoteBox.Visibility = footage ? Visibility.Visible : Visibility.Collapsed;
@@ -949,7 +974,7 @@ public partial class ReceiptsView : UserControl, IModuleView
                 ? l.ThicknessNote : Fmt.Num(l.ThicknessMm),
             Origin = l.Origin ?? "",
             Grade = l.Grade ?? "",
-            Width = Fmt.Num(l.WidthMm),
+            Width = l.WidthMm > 0 ? Fmt.Num(l.WidthMm) : "",   // để trống nếu chưa nhập (gỗ footage có thể bỏ rộng)
             Length = Fmt.Num(l.LengthMm),
             LengthNote = l.LengthNote,
             Footage = Fmt.Num(l.Footage),
@@ -967,13 +992,6 @@ public partial class ReceiptsView : UserControl, IModuleView
         if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
         if (!ConfirmLeaveDirty()) return;
         EnterViewMode(r.Receipt);
-    }
-
-    private void EditRow_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is not RecRow r) return;
-        if (!ConfirmLeaveDirty()) return;
-        EnterEditMode(r.Receipt);
     }
 
     private void DeleteRow_Click(object sender, RoutedEventArgs e)

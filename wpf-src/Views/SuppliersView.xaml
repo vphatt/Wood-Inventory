@@ -226,7 +226,7 @@
                         <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn _view. RowHeight=40 khớp grid data cho thẳng hàng -->
                         <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}" RowHeight="40"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Visible"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="290" MinWidth="290"

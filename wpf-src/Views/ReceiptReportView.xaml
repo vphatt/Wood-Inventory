@@ -235,7 +235,7 @@
                     <Grid>
                         <DataGrid x:Name="ReportGrid" Style="{StaticResource DataTable}" RowHeight="40" MinRowHeight="40" MaxHeight="700">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="46" MinWidth="46" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
+                                <DataGridTextColumn Header="{helpers:Loc Common.Column.Stt}" Width="60" MinWidth="60" IsReadOnly="True" CanUserReorder="False" CanUserSort="False"
                                                     Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(helpers:RowNumbering.Number)}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellText}">

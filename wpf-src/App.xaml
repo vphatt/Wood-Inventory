@@ -966,6 +966,10 @@
                 <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
                 <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
                 <Setter Property="EnableRowVirtualization" Value="True"/>
+                <!-- Cuộn theo PIXEL (mượt, cho phép hiện nửa dòng ở mép trên/dưới) thay vì theo DÒNG (mặc định
+                     "Item" — mỗi nấc nhảy trọn 1 dòng nên cảm giác khựng). VẪN giữ ảo hóa (khác hẳn với tắt
+                     CanContentScroll=False = mất ảo hóa, dựng hết N dòng → đơ khi dữ liệu lớn). -->
+                <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
                 <Setter Property="helpers:RowNumbering.Enabled" Value="True"/>
                 <!-- Visible (không phải Auto) — thanh cuộn ngang luôn hiện trên viewport để người dùng biết
                      bảng còn cột tràn ngoài tầm nhìn, kể cả khi chưa cuộn/hover tới. -->

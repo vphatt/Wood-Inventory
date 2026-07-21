@@ -615,7 +615,7 @@
                         <!-- Cột thao tác tách riêng: bind cùng nguồn _view, cuộn dọc đồng bộ theo ItemGrid qua GridPairSync -->
                         <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Visible"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="160" MinWidth="160"

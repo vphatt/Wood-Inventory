@@ -128,7 +128,7 @@
                         <!-- Cột thao tác tách riêng, ghim phải, cùng nguồn -->
                         <DataGrid x:Name="ActionGrid" Grid.Column="1" Style="{StaticResource DataTable}"
                                   BorderThickness="1,0,0,0" BorderBrush="{StaticResource Slate200}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Visible"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="{helpers:Loc Common.Column.Actions}" Width="150" MinWidth="150"
