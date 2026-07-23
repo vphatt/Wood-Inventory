@@ -100,12 +100,24 @@ public partial class ReceiptsView : UserControl, IModuleView
     /// </summary>
     private void FCurrency_Changed(object sender, SelectionChangedEventArgs e)
     {
-        var vnd = SelectedCurrency == "VND";
-        FExchangeRate.IsReadOnly = vnd;
-        FExchangeRate.Background = vnd ? (Brush)FindResource("Slate50") : Brushes.White;
-        FExchangeRate.Text = vnd ? "1" : Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
+        ApplyCurrencyLock();
+        FExchangeRate.Text = SelectedCurrency == "VND" ? "1" : Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
         if (!IsLoaded) return;
         foreach (var update in _rowUpdaters.ToList()) update();
+    }
+
+    /// <summary>
+    /// Khoá cặp Đơn vị tiền tệ / Tỷ giá: chế độ XEM khoá cả hai (chỉ đọc, không thao tác được);
+    /// còn lại chỉ khoá Tỷ giá khi đơn vị là VND (tỷ giá luôn = 1). Gọi lại mỗi khi đổi chế độ hoặc đổi đơn vị.
+    /// </summary>
+    private void ApplyCurrencyLock()
+    {
+        var gray = (Brush)FindResource("Slate50");
+        FCurrency.IsEnabled = !ReadOnly;
+        FCurrency.Background = ReadOnly ? gray : Brushes.White;   // style "Select" không có trigger IsEnabled
+        var rateLocked = ReadOnly || SelectedCurrency == "VND";
+        FExchangeRate.IsReadOnly = rateLocked;
+        FExchangeRate.Background = rateLocked ? gray : Brushes.White;
     }
 
     private void ResetDraft()
@@ -141,7 +153,12 @@ public partial class ReceiptsView : UserControl, IModuleView
         // qua _rowUpdaters (giữ nguyên control, không mất focus). Đang view: rows là TextBlock tĩnh nên rebuild
         // thẳng cho đơn giản (không có gì để mất).
         if (_mode == "view") RebuildLotRows();
-        else foreach (var update in _rowUpdaters.ToList()) update();
+        else
+        {
+            // Báo giá NCC có thể vừa đổi ở tab khác → nạp lại dropdown loại gỗ/phân loại con trước khi tính lại giá.
+            foreach (var rebuild in _rowSupplierRebuilders.ToList()) rebuild();
+            foreach (var update in _rowUpdaters.ToList()) update();
+        }
     }
 
     private static double D(string s) => Fmt.ParseNum(s);
@@ -196,6 +213,10 @@ public partial class ReceiptsView : UserControl, IModuleView
     {
         LotRowsPanel.Items.Clear();
         _rowUpdaters.Clear();
+        _rowSupplierRebuilders.Clear();
+        _rowNavs.Clear();
+        _rowHighlighters.Clear();
+        if (_selectedLot != null && !_draftLots.Contains(_selectedLot)) _selectedLot = null;   // dòng đã bị xóa
         for (var i = 0; i < _draftLots.Count; i++)
         {
             var lot = _draftLots[i];
@@ -284,13 +305,15 @@ public partial class ReceiptsView : UserControl, IModuleView
             weight: FontWeights.SemiBold, color: (Brush)FindResource("Emerald600"), margin: new Thickness(6, 0, 12, 0));
         // Cột 20 (Xóa): để trống — chế độ xem không cho xóa.
 
-        return new Border
+        var row = new Border
         {
             BorderBrush = (Brush)FindResource("Slate100"),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Background = Brushes.White,
             Child = grid
         };
+        WireRowHighlight(row, lot);
+        return row;
     }
 
     private FrameworkElement BuildLotRow(DraftLot lot, int stt)
@@ -483,8 +506,8 @@ public partial class ReceiptsView : UserControl, IModuleView
             : new[] { i.LengthMin.HasValue || i.LengthMax.HasValue ? RangeHint(i.LengthMin, i.LengthMax, i.LengthOpen) : null });
 
         // Các ô kích thước (tạo trước để ẩn/hiện theo nguyên tắc tính m³) — Rộng/Dài có dropdown gợi ý.
-        var widthBox = BuildSuggestCell(lot.Width, s => { lot.Width = s; Update(); }, WidthSuggest, center: true);
-        var lengthBox = BuildSuggestCell(lot.Length, s => { lot.Length = s; Update(); }, LengthSuggest, center: true);
+        var widthBox = BuildSuggestCell(lot.Width, s => { lot.Width = s; Update(); }, WidthSuggest, out var widthTb, center: true);
+        var lengthBox = BuildSuggestCell(lot.Length, s => { lot.Length = s; Update(); }, LengthSuggest, out var lengthTb, center: true);
         var lengthNoteBox = Cell(lot.LengthNote ?? "", s => { lot.LengthNote = s; }, mono: true, center: true);
         lengthNoteBox.Margin = new Thickness(6, 0, 6, 0);
         lengthNoteBox.ToolTip = Lang.T("Receipts.LengthNoteTooltip");
@@ -518,50 +541,65 @@ public partial class ReceiptsView : UserControl, IModuleView
             IsEnabled = !ReadOnly
         };
 
-        void RebuildSub()
+        // Dropdown CHỈ liệt kê loại gỗ / phân loại con mà NCC đang chọn CÓ trong báo giá (xem WoodTypeChoices,
+        // SubTypeChoices) — khỏi phải lội qua toàn bộ danh mục. Giá trị đang khai mà không còn trong danh sách
+        // (đổi NCC, hoặc sửa phiếu cũ) vẫn được giữ lại làm 1 mục, không tự xoá dữ liệu người dùng.
+        var syncingCombo = false;   // đang nạp lại Items → bỏ qua SelectionChanged do chính việc nạp gây ra
+
+        void FillCombo(ComboBox combo, string placeholderKey, IEnumerable<string> choices, string current)
         {
-            subCombo.Items.Clear();
-            subCombo.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.SubTypePlaceholder"), Tag = "" });
-            foreach (var s in AppState.SubNamesOf(lot.WoodType))
-                subCombo.Items.Add(new ComboBoxItem { Content = s, Tag = s, IsSelected = s == lot.WoodSubType });
-            if (subCombo.SelectedIndex < 0) subCombo.SelectedIndex = 0;
+            syncingCombo = true;
+            combo.Items.Clear();
+            combo.Items.Add(new ComboBoxItem { Content = Lang.T(placeholderKey), Tag = "" });
+            var list = choices.ToList();
+            if (!string.IsNullOrWhiteSpace(current)
+                && !list.Contains(current, StringComparer.OrdinalIgnoreCase)) list.Add(current);
+            foreach (var v in list)
+                combo.Items.Add(new ComboBoxItem { Content = v, Tag = v, IsSelected = v == current });
+            if (combo.SelectedIndex < 0) combo.SelectedIndex = 0;
+            syncingCombo = false;
         }
+
+        void RebuildSub() => FillCombo(subCombo, "Receipts.SubTypePlaceholder", SubTypeChoices(lot.WoodType), lot.WoodSubType);
+        void RebuildType() => FillCombo(typeCombo, "Receipts.WoodTypePlaceholder", WoodTypeChoices(), lot.WoodType);
+
         subCombo.SelectionChanged += (_, _) =>
         {
+            if (syncingCombo) return;
             var v = (subCombo.SelectedItem as ComboBoxItem)?.Tag as string;
             lot.WoodSubType = string.IsNullOrEmpty(v) ? null : v;
             Update();   // đổi phân loại con có thể đổi giá báo giá khớp được
         };
-
-        typeCombo.Items.Add(new ComboBoxItem { Content = Lang.T("Receipts.WoodTypePlaceholder"), Tag = "", IsSelected = string.IsNullOrEmpty(lot.WoodType) });
-        foreach (var t in AppState.CategoryNames)
-            typeCombo.Items.Add(new ComboBoxItem { Content = t, Tag = t, IsSelected = t == lot.WoodType });
-        if (typeCombo.SelectedIndex < 0) typeCombo.SelectedIndex = 0;
         typeCombo.SelectionChanged += (_, _) =>
         {
+            if (syncingCombo) return;
             lot.WoodType = (typeCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
             lot.WoodSubType = null;      // đổi loại cha → reset phân loại con
             RebuildSub();
             ApplyRuleVisibility();
             Update();
         };
+
+        RebuildType();
         RebuildSub();
         ApplyRuleVisibility();
+        // Đổi NCC ở header → nạp lại 2 dropdown theo báo giá của NCC mới (giữ nguyên giá trị đang khai).
+        _rowSupplierRebuilders.Add(() => { RebuildType(); RebuildSub(); ApplyRuleVisibility(); });
 
         Grid.SetColumn(typeCombo, 3); grid.Children.Add(typeCombo);
         Grid.SetColumn(subCombo, 4); grid.Children.Add(subCombo);
 
         // 5. Xuất xứ — ô nhập kèm dropdown gợi ý (tối đa 3) theo xuất xứ trong báo giá NCC khớp loại/phân loại con
-        var originCell = BuildSuggestCell(lot.Origin, s => { lot.Origin = s; Update(); }, OriginSuggest, center: true);
+        var originCell = BuildSuggestCell(lot.Origin, s => { lot.Origin = s; Update(); }, OriginSuggest, out var originTb, center: true);
         Grid.SetColumn(originCell, 5); grid.Children.Add(originCell);
 
         // 6. Chất lượng (Grade) — ô nhập kèm dropdown gợi ý theo grade trong báo giá NCC khớp
-        var gradeCell = BuildSuggestCell(lot.Grade, s => { lot.Grade = s; Update(); }, GradeSuggest, center: true);
+        var gradeCell = BuildSuggestCell(lot.Grade, s => { lot.Grade = s; Update(); }, GradeSuggest, out var gradeTb, center: true);
         Grid.SetColumn(gradeCell, 6); grid.Children.Add(gradeCell);
 
         // 7. Dày (gỗ footage chấp nhận ký hiệu inch: 1", 4/4", 5/4"...) — có dropdown gợi ý theo báo giá
-        var thickBox = BuildSuggestCell(lot.Thickness, s => { lot.Thickness = s; Update(); }, ThickSuggest, center: true,
-            tooltip: Lang.T("Receipts.ThicknessTooltip"));
+        var thickBox = BuildSuggestCell(lot.Thickness, s => { lot.Thickness = s; Update(); }, ThickSuggest, out var thickTb,
+            center: true, tooltip: Lang.T("Receipts.ThicknessTooltip"));
         Grid.SetColumn(thickBox, 7); grid.Children.Add(thickBox);
 
         // 8. Rộng (ẩn nếu gỗ footage)
@@ -623,16 +661,192 @@ public partial class ReceiptsView : UserControl, IModuleView
         };
         Grid.SetColumn(del, 20); grid.Children.Add(del);
 
-        return new Border
+        // Điều hướng bàn phím: 4 mũi tên chuyển ô, Ctrl+D chép ô cùng cột dòng trên. Bảng này dựng tay (không phải
+        // DataGrid) nên phải tự khai bản đồ cột → ô nhập. Cột 9 có 2 ô (Dài mm / Dài inch), chỉ 1 cái hiện theo loại gỗ.
+        var nav = new RowNav();
+        nav.Add(1, idBox); nav.Add(2, deliveryNoteBox);
+        nav.Add(3, typeCombo); nav.Add(4, subCombo);
+        nav.Add(5, originTb); nav.Add(6, gradeTb); nav.Add(7, thickTb); nav.Add(8, widthTb);
+        nav.Add(9, lengthTb); nav.Add(9, lengthNoteBox); nav.Add(10, footageBox);
+        nav.Add(11, qtyBox); nav.Add(13, decimalsBox); nav.Add(14, adjustmentBox); nav.Add(15, priceBox);
+        AttachRowNav(nav, stt - 1);
+
+        var row = new Border
         {
             BorderBrush = (Brush)FindResource("Slate100"),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Background = Brushes.White,
             Child = grid
         };
+        WireRowHighlight(row, lot);
+        return row;
     }
 
     private readonly List<Action> _rowUpdaters = new();
+
+    /// <summary>Nạp lại dropdown Loại gỗ/Phân loại con của từng dòng khi đổi NCC (danh sách phụ thuộc báo giá NCC).</summary>
+    private readonly List<Action> _rowSupplierRebuilders = new();
+
+    // ---------------- Hover + chọn dòng cho bảng kiện (dựng tay nên không có sẵn như DataGrid) ----------------
+
+    private DraftLot _selectedLot;                       // dòng kiện đang được chọn (tô nền xanh mờ)
+    private readonly List<Action> _rowHighlighters = new();   // cập nhật nền của từng dòng
+
+    /// <summary>
+    /// Nối hover + chọn dòng cho 1 dòng kiện, dùng đúng 2 màu của DataGrid (hover Slate50, chọn RowSelected)
+    /// để nhìn giống mọi bảng khác. Chọn được cả bằng chuột lẫn khi focus bàn phím rơi vào dòng (mũi tên, Tab).
+    /// </summary>
+    private void WireRowHighlight(Border row, DraftLot lot)
+    {
+        void Apply() => row.Background = _selectedLot == lot
+            ? (Brush)FindResource("RowSelected")
+            : row.IsMouseOver ? (Brush)FindResource("Slate50") : Brushes.White;
+
+        _rowHighlighters.Add(Apply);
+        row.MouseEnter += (_, _) => Apply();
+        row.MouseLeave += (_, _) => Apply();
+        row.PreviewMouseLeftButtonDown += (_, _) => SelectLotRow(lot);
+        row.IsKeyboardFocusWithinChanged += (_, e) => { if (e.NewValue is true) SelectLotRow(lot); };
+        Apply();
+    }
+
+    private void SelectLotRow(DraftLot lot)
+    {
+        if (ReferenceEquals(_selectedLot, lot)) return;
+        _selectedLot = lot;
+        foreach (var apply in _rowHighlighters.ToList()) apply();
+    }
+
+    // ---------------- Điều hướng bàn phím trong bảng khai kiện ----------------
+    // Bảng kiện dựng tay nên không có sẵn phím kiểu DataGrid → tự nối: 4 mũi tên chuyển ô, Ctrl+D chép ô cùng cột dòng trên.
+
+    /// <summary>Bản đồ cột → các ô nhập của MỘT dòng kiện (1 cột có thể có 2 ô chồng nhau, chỉ 1 cái hiện).</summary>
+    private sealed class RowNav
+    {
+        private const int MaxColumn = 20;
+        public readonly Dictionary<int, List<FrameworkElement>> Cells = new();
+
+        public void Add(int col, FrameworkElement cell)
+        {
+            if (!Cells.TryGetValue(col, out var list)) Cells[col] = list = new List<FrameworkElement>();
+            list.Add(cell);
+        }
+
+        /// <summary>Ô đang HIỆN + nhập được của cột (null nếu cột không có ô nhập, hoặc ô đang ẩn theo nguyên tắc tính m³).</summary>
+        public FrameworkElement Focusable(int col) =>
+            col >= 0 && col <= MaxColumn && Cells.TryGetValue(col, out var list)
+                ? list.FirstOrDefault(c => c.IsVisible && c.IsEnabled && c is not TextBox { IsReadOnly: true })
+                : null;
+
+        public static int LastColumn => MaxColumn;
+    }
+
+    private readonly List<RowNav> _rowNavs = new();
+
+    /// <summary>Đang chuyển ô bằng mũi tên → chặn dropdown gợi ý tự bung (xem Refresh trong BuildSuggestCell).</summary>
+    private bool _navFocusing;
+
+    private void AttachRowNav(RowNav nav, int rowIndex)
+    {
+        while (_rowNavs.Count <= rowIndex) _rowNavs.Add(null);
+        _rowNavs[rowIndex] = nav;
+        foreach (var (col, list) in nav.Cells)
+            foreach (var cell in list)
+            {
+                var c = col;
+                var fe = cell;
+                fe.PreviewKeyDown += (_, e) => LotCell_KeyDown(fe, rowIndex, c, e);
+            }
+    }
+
+    private void LotCell_KeyDown(FrameworkElement cell, int row, int col, KeyEventArgs e)
+    {
+        if (e.Key == Key.D && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            e.Handled = FillDownFromAbove(row, col);
+            return;
+        }
+
+        int dRow = 0, dCol = 0;
+        switch (e.Key)
+        {
+            case Key.Up: dRow = -1; break;
+            case Key.Down: dRow = 1; break;
+            case Key.Left: dCol = -1; break;
+            case Key.Right: dCol = 1; break;
+            default: return;
+        }
+        if (!CanLeaveCell(cell, dCol)) return;
+        e.Handled = dRow != 0 ? FocusCell(row + dRow, col, caretAtEnd: true) : MoveHorizontal(row, col, dCol);
+    }
+
+    /// <summary>
+    /// Mũi tên chỉ được "nhả" ra khỏi ô khi không cướp thao tác gốc: TextBox chỉ nhả sang trái/phải khi con trỏ
+    /// đã ở đầu/cuối text và không bôi đen (còn lại vẫn di chuyển con trỏ như thường); ComboBox chỉ nhả khi
+    /// dropdown ĐANG ĐÓNG (đang mở thì mũi tên là chọn item).
+    /// </summary>
+    private static bool CanLeaveCell(FrameworkElement cell, int dCol) => cell switch
+    {
+        ComboBox cb => !cb.IsDropDownOpen,
+        TextBox tb when dCol < 0 => tb.SelectionLength == 0 && tb.CaretIndex == 0,
+        TextBox tb when dCol > 0 => tb.SelectionLength == 0 && tb.CaretIndex == (tb.Text ?? "").Length,
+        _ => true
+    };
+
+    /// <summary>Sang trái/phải: bỏ qua các cột không có ô nhập (STT, thể tích, tiền, nút xóa) và ô đang ẩn.</summary>
+    private bool MoveHorizontal(int row, int col, int step)
+    {
+        if (row < 0 || row >= _rowNavs.Count || _rowNavs[row] == null) return false;
+        for (var c = col + step; c >= 0 && c <= RowNav.LastColumn; c += step)
+            if (_rowNavs[row].Focusable(c) != null)
+                return FocusCell(row, c, caretAtEnd: step < 0);
+        return false;
+    }
+
+    /// <summary>Đưa focus tới ô (dòng, cột); đi sang TRÁI/lên/xuống thì đặt con trỏ cuối text, sang PHẢI thì đầu text.</summary>
+    private bool FocusCell(int row, int col, bool caretAtEnd)
+    {
+        if (row < 0 || row >= _rowNavs.Count || _rowNavs[row] == null) return false;
+        var target = _rowNavs[row].Focusable(col);
+        if (target == null) return false;
+
+        _navFocusing = true;
+        target.Focus();
+        if (target is TextBox tb)
+        {
+            tb.SelectionLength = 0;
+            tb.CaretIndex = caretAtEnd ? (tb.Text ?? "").Length : 0;
+        }
+        target.BringIntoView();
+        // Nhả cờ SAU khi dropdown gợi ý đã kịp kiểm tra (Refresh chạy ở mức Input, cao hơn Background).
+        Dispatcher.BeginInvoke(new Action(() => _navFocusing = false),
+            System.Windows.Threading.DispatcherPriority.Background);
+        return true;
+    }
+
+    /// <summary>Ctrl+D: chép nội dung ô cùng cột ở dòng NGAY TRÊN xuống ô hiện tại (kiểu fill-down của Excel).</summary>
+    private bool FillDownFromAbove(int row, int col)
+    {
+        if (row <= 0 || row >= _rowNavs.Count) return false;
+        var src = _rowNavs[row - 1]?.Focusable(col);
+        var dst = _rowNavs[row]?.Focusable(col);
+        if (src == null || dst == null) return false;
+
+        switch (src, dst)
+        {
+            case (TextBox from, TextBox to):
+                to.Text = from.Text;              // TextChanged tự cập nhật DraftLot + tính lại dòng
+                to.CaretIndex = (to.Text ?? "").Length;
+                return true;
+            case (ComboBox from, ComboBox to):
+                var tag = (from.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+                foreach (ComboBoxItem it in to.Items)
+                    if ((it.Tag as string ?? "") == tag) { to.SelectedItem = it; return true; }
+                return false;
+            default:
+                return false;
+        }
+    }
 
     private TextBox Cell(string initial, Action<string> onChange, bool mono = false, bool center = false, bool bold = false)
     {
@@ -646,8 +860,45 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (ReadOnly) box.Background = (Brush)FindResource("Slate50");
         if (center) box.TextAlignment = TextAlignment.Center;
         if (bold) box.FontWeight = FontWeights.SemiBold;
-        box.TextChanged += (_, _) => onChange(box.Text);
+        // UpdateSupplierLock: ô như Mã kiện/Phiếu giao hàng không đi qua Update() nên phải tự báo "đã khai kiện".
+        box.TextChanged += (_, _) => { onChange(box.Text); UpdateSupplierLock(); };
         return box;
+    }
+
+    /// <summary>Toàn bộ dòng giá trong báo giá của NCC đang chọn (rỗng nếu chưa chọn NCC / NCC chưa có báo giá).</summary>
+    private List<QuotationItem> SupplierQuotationItems()
+    {
+        var supId = SelectedSupplierId;
+        if (string.IsNullOrEmpty(supId)) return new();
+        return AppState.FindQuotation(supId)?.Items?.ToList() ?? new();
+    }
+
+    /// <summary>
+    /// Loại gỗ (cha) cho dropdown khai kiện: CHỈ những loại NCC đang chọn có trong báo giá, giữ thứ tự của danh mục.
+    /// Chưa chọn NCC / NCC chưa có báo giá nào → trả TOÀN BỘ danh mục (không thì không khai nổi kiện).
+    /// </summary>
+    private List<string> WoodTypeChoices()
+    {
+        var quoted = SupplierQuotationItems()
+            .Select(i => i.WoodType).Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (quoted.Count == 0) return AppState.CategoryNames.ToList();
+        return AppState.CategoryNames.Where(c => quoted.Contains(c, StringComparer.OrdinalIgnoreCase)).ToList();
+    }
+
+    /// <summary>
+    /// Phân loại con cho dropdown khai kiện: CHỈ những con NCC có báo giá dưới loại cha đó.
+    /// Báo giá chỉ khai ở cấp cha (con để trống) → trả đủ con của danh mục, vì ở Nhập Kho con là BẮT BUỘC khi cha có con.
+    /// </summary>
+    private List<string> SubTypeChoices(string woodType)
+    {
+        if (string.IsNullOrWhiteSpace(woodType)) return new();
+        var all = AppState.SubNamesOf(woodType).ToList();
+        var quoted = SupplierQuotationItems()
+            .Where(i => string.Equals(i.WoodType, woodType, StringComparison.OrdinalIgnoreCase))
+            .Select(i => i.WoodSubType).Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        return quoted.Count == 0 ? all : all.Where(s => quoted.Contains(s, StringComparer.OrdinalIgnoreCase)).ToList();
     }
 
     /// <summary>Các dòng giá của NCC khớp loại gỗ cha + phân loại con của kiện (dòng cấp cha — sub trống — cũng tính).</summary>
@@ -677,6 +928,12 @@ public partial class ReceiptsView : UserControl, IModuleView
         return $"x{(upperOpen ? "<" : "≤")}{maxStr}";
     }
 
+    /// <summary>Số gợi ý hiện mặc định; dư ra thì gói phần còn lại sau dòng "…".</summary>
+    private const int SuggestPageSize = 5;
+
+    /// <summary>Dòng cuối "xem thêm" trong danh sách gợi ý — bấm vào để bung hết, KHÔNG phải một giá trị chọn được.</summary>
+    private const string SuggestMoreMarker = "…";
+
     /// <summary>Chuẩn hóa danh sách gợi ý: bỏ rỗng, bỏ trùng (không phân biệt hoa thường), sắp xếp.</summary>
     private static List<string> DistinctSuggest(IEnumerable<string> values) =>
         values.Select(v => (v ?? "").Trim()).Where(v => v.Length > 0)
@@ -685,10 +942,11 @@ public partial class ReceiptsView : UserControl, IModuleView
 
     /// <summary>
     /// Ô nhập kèm dropdown gợi ý (tối đa 10) + cho phép gõ để lọc; TỰ BUNG khi focus (kể cả chưa gõ).
-    /// Trả về Grid bọc TextBox + Popup (Popup nổi, không ảnh hưởng layout ô).
+    /// Trả về Grid bọc TextBox + Popup (Popup nổi, không ảnh hưởng layout ô); <paramref name="cellBox"/> trả ra
+    /// chính TextBox bên trong để nối phím điều hướng (xem RowNav).
     /// </summary>
     private FrameworkElement BuildSuggestCell(string initial, Action<string> onChange, Func<List<string>> suggest,
-        bool center = false, string tooltip = null)
+        out TextBox cellBox, bool center = false, string tooltip = null)
     {
         var box = new TextBox
         {
@@ -702,7 +960,16 @@ public partial class ReceiptsView : UserControl, IModuleView
         if (tooltip != null) box.ToolTip = tooltip;
         if (ReadOnly) box.Background = (Brush)FindResource("Slate50");
 
-        var list = new ListBox { BorderThickness = new Thickness(0), MaxHeight = 132, FontSize = 12 };
+        var list = new ListBox { BorderThickness = new Thickness(0), MaxHeight = 220, FontSize = 12 };
+        // Dòng "…" (xem thêm) hiện khác hẳn giá trị thật: chữ xám, căn giữa, để user biết đây là nút mở rộng.
+        var moreStyle = new Style(typeof(ListBoxItem), (Style)TryFindResource(typeof(ListBoxItem)));
+        var moreTrigger = new DataTrigger { Binding = new Binding("."), Value = SuggestMoreMarker };
+        moreTrigger.Setters.Add(new Setter(ForegroundProperty, (Brush)FindResource("Slate400")));
+        moreTrigger.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
+        moreTrigger.Setters.Add(new Setter(FontWeightProperty, FontWeights.Bold));
+        moreTrigger.Setters.Add(new Setter(ToolTipProperty, Lang.T("Receipts.Suggest.ShowAll")));
+        moreStyle.Triggers.Add(moreTrigger);
+        list.ItemContainerStyle = moreStyle;
         var popup = new Popup
         {
             PlacementTarget = box,
@@ -722,26 +989,45 @@ public partial class ReceiptsView : UserControl, IModuleView
         };
 
         var suppress = false;
+        var fullList = new List<string>();   // danh sách gợi ý ĐẦY ĐỦ của lần lọc gần nhất (để bung khi bấm "…")
 
         void Refresh()
         {
-            if (ReadOnly) { popup.IsOpen = false; return; }
+            // Đang nhảy ô bằng mũi tên → KHÔNG tự bung gợi ý (bung liên tục mỗi lần lướt qua ô rất nhiễu);
+            // muốn xem gợi ý thì gõ tiếp hoặc bấm Alt.
+            if (ReadOnly || _navFocusing) { popup.IsOpen = false; return; }
             var typed = (box.Text ?? "").Trim();
             var sugg = suggest()
                 .Where(o => typed.Length == 0 || o.IndexOf(typed, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Take(10).ToList();
+                .ToList();
             // Không mở nếu không có gợi ý, hoặc gợi ý duy nhất trùng khít text đang gõ.
             if (sugg.Count == 0 || (sugg.Count == 1 && string.Equals(sugg[0], typed, StringComparison.OrdinalIgnoreCase)))
             {
                 popup.IsOpen = false;
                 return;
             }
-            list.ItemsSource = sugg;
+            // Mặc định chỉ 5 dòng; dư ra thì dòng cuối là "…" — bấm/Enter vào nó để xem TOÀN BỘ (xem Pick).
+            fullList = sugg;
+            var items = new List<string>(sugg);
+            if (items.Count > SuggestPageSize)
+            {
+                items = items.Take(SuggestPageSize).ToList();
+                items.Add(SuggestMoreMarker);
+            }
+            list.ItemsSource = items;
             popup.IsOpen = box.IsKeyboardFocused || box.IsKeyboardFocusWithin;
         }
 
         void Pick(string s)
         {
+            // Bấm "…" = xem hết phần còn lại, KHÔNG phải chọn giá trị → gán THẲNG danh sách đầy đủ, giữ popup mở.
+            // Cố ý KHÔNG gọi lại Refresh (nó sẽ cắt về 5 dòng ngay) và KHÔNG đụng focus (đang ở list hay ở ô đều được).
+            if (s == SuggestMoreMarker)
+            {
+                list.ItemsSource = new List<string>(fullList);
+                popup.IsOpen = true;
+                return;
+            }
             suppress = true;
             box.Text = s;
             box.CaretIndex = s.Length;
@@ -753,17 +1039,41 @@ public partial class ReceiptsView : UserControl, IModuleView
         // Bung khi focus: defer qua Dispatcher để không bị chính cú click focus đóng popup ngay (StaysOpen=false).
         box.GotKeyboardFocus += (_, _) =>
             box.Dispatcher.BeginInvoke(new Action(Refresh), System.Windows.Threading.DispatcherPriority.Input);
-        box.TextChanged += (_, _) => { onChange(box.Text); if (!suppress) Refresh(); };
+        box.TextChanged += (_, _) => { onChange(box.Text); UpdateSupplierLock(); if (!suppress) Refresh(); };
         box.LostKeyboardFocus += (_, _) => { if (!list.IsKeyboardFocusWithin) popup.IsOpen = false; };
-        box.PreviewKeyDown += (_, e) =>
+        // Bung danh sách gợi ý + nhảy vào item đầu (mũi tên trơn đã dành cho chuyển ô — xem LotCell_KeyDown).
+        void OpenSuggest()
         {
-            if (e.Key == Key.Down && popup.IsOpen && list.Items.Count > 0)
+            if (!popup.IsOpen) Refresh();
+            if (!popup.IsOpen || list.Items.Count == 0) return;
+            box.Dispatcher.BeginInvoke(new Action(() =>
             {
                 list.SelectedIndex = 0;
                 (list.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem)?.Focus();
+            }), System.Windows.Threading.DispatcherPriority.Input);
+        }
+
+        // Bấm Alt MỘT MÌNH (nhấn rồi nhả, không kèm phím khác) = bung gợi ý. Alt trong app không dùng cho việc gì
+        // khác (không có menu, không có access key `_` trong bản dịch) nên không giẫm chân ai. Alt+↓ vẫn nhận.
+        var altAlone = false;
+        box.PreviewKeyDown += (_, e) =>
+        {
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            altAlone = key is Key.LeftAlt or Key.RightAlt;   // phím khác (kể cả Alt+X) → không còn là Alt đơn
+            if (key == Key.Down && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
+            {
+                OpenSuggest();
                 e.Handled = true;
             }
-            else if (e.Key == Key.Escape && popup.IsOpen) { popup.IsOpen = false; e.Handled = true; }
+            else if (key == Key.Escape && popup.IsOpen) { popup.IsOpen = false; e.Handled = true; }
+        };
+        box.PreviewKeyUp += (_, e) =>
+        {
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (!altAlone || key is not (Key.LeftAlt or Key.RightAlt)) return;
+            altAlone = false;
+            OpenSuggest();
+            e.Handled = true;   // chặn luôn chế độ "menu/gạch chân access key" mặc định của Alt
         };
         list.PreviewMouseLeftButtonUp += (_, e) =>
         {
@@ -779,19 +1089,23 @@ public partial class ReceiptsView : UserControl, IModuleView
         var host = new Grid();
         host.Children.Add(box);
         host.Children.Add(popup);
+        cellBox = box;
         return host;
     }
 
     private void UpdateTotals()
     {
+        UpdateSupplierLock();   // khai/xoá kiện làm đổi quyền đổi NCC
         foreach (var lot in _draftLots) Recalculate(lot);
-        TotalCbm.Text = $"{Fmt.M3(_draftLots.Sum(l => l.Cbm))} m³";
+        TotalCbm.Text = $"{Fmt.M3Total(_draftLots.Sum(l => l.Cbm))} m³";
         TotalValue.Text = Fmt.Vnd(_draftLots.Sum(l => l.TotalValueVnd));
     }
 
     private void FSupplier_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
+        // Đổi NCC → danh sách loại gỗ/phân loại con trong dropdown đổi theo báo giá của NCC mới, rồi mới tính lại giá.
+        foreach (var rebuild in _rowSupplierRebuilders.ToList()) rebuild();
         foreach (var update in _rowUpdaters.ToList()) update();
     }
 
@@ -881,8 +1195,35 @@ public partial class ReceiptsView : UserControl, IModuleView
             box.Background = ro ? (Brush)FindResource("Slate50") : Brushes.White;
         }
         FDate.IsEnabled = !ro;
-        FSupplier.IsEnabled = !ro;
         FTaxPercent.IsEnabled = !ro;
+        ApplyCurrencyLock();    // Đơn vị tiền tệ + Tỷ giá: xem thì khoá cả hai, sửa thì theo luật VND
+        UpdateSupplierLock();   // NCC có luật khoá riêng, chặt hơn cờ chỉ-đọc chung
+    }
+
+    /// <summary>Một dòng kiện coi như CHƯA khai nếu mọi ô còn trống (đúng trạng thái dòng nháp mặc định).</summary>
+    private static bool IsBlankLot(DraftLot l) =>
+        string.IsNullOrWhiteSpace(l.Id) && string.IsNullOrWhiteSpace(l.DeliveryNote)
+        && string.IsNullOrWhiteSpace(l.WoodType) && string.IsNullOrWhiteSpace(l.WoodSubType)
+        && string.IsNullOrWhiteSpace(l.Thickness) && string.IsNullOrWhiteSpace(l.Origin)
+        && string.IsNullOrWhiteSpace(l.Grade) && string.IsNullOrWhiteSpace(l.Width)
+        && string.IsNullOrWhiteSpace(l.Length) && string.IsNullOrWhiteSpace(l.LengthNote)
+        && string.IsNullOrWhiteSpace(l.Footage) && string.IsNullOrWhiteSpace(l.Quantity)
+        && string.IsNullOrWhiteSpace(l.ManualPriceText) && l.VolumeAdjustment == 0;
+
+    /// <summary>
+    /// Khoá combo NCC khi không được đổi nữa: chế độ SỬA (và xem) khoá HOÀN TOÀN — kiện của phiếu đã gắn NCC cũ;
+    /// chế độ THÊM khoá ngay khi đã khai ít nhất 1 kiện — đổi NCC giữa chừng làm giá khớp + danh sách loại gỗ/phân
+    /// loại con trong dropdown lệch hết với thứ vừa nhập. Muốn đổi NCC thì xoá hết dòng kiện đã khai.
+    /// </summary>
+    private void UpdateSupplierLock()
+    {
+        var locked = _mode != "add" || _draftLots.Any(l => !IsBlankLot(l));
+        FSupplier.IsEnabled = !locked;
+        // Style "Select" không có trigger IsEnabled → tự tô nền xám cho thấy đang khoá (giống ô Tỷ giá khi chọn VND).
+        FSupplier.Background = locked ? (Brush)FindResource("Slate50") : Brushes.White;
+        ToolTipService.SetShowOnDisabled(FSupplier, true);   // control bị disable vẫn phải hiện được lý do
+        FSupplier.ToolTip = !locked || _mode == "view" ? null
+            : Lang.T(_mode == "edit" ? "Receipts.SupplierLocked.Edit" : "Receipts.SupplierLocked.Add");
     }
 
     private void EnterAddMode()
@@ -897,9 +1238,7 @@ public partial class ReceiptsView : UserControl, IModuleView
         FInvoice.Text = "";
         FPackingList.Text = "";
         FForestList.Text = "";
-        FCurrency.SelectedIndex = 0;   // mặc định USD
-        FExchangeRate.IsReadOnly = false;
-        FExchangeRate.Background = Brushes.White;
+        FCurrency.SelectedIndex = 0;   // mặc định USD (khoá/mở tỷ giá do ApplyCurrencyLock lo)
         FExchangeRate.Text = Fmt.Num((double)AppState.Settings.DefaultExchangeRate);
         SelectTaxPercent(AppState.Settings.DefaultTaxPercent);
         FDate.SelectedDate = DateTime.Today;

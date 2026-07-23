@@ -22,6 +22,9 @@
             <SolidColorBrush x:Key="Slate950" Color="#020617"/>
 
             <SolidColorBrush x:Key="Blue50"  Color="#EFF6FF"/>
+            <!-- Nền dòng ĐANG CHỌN của bảng (xanh mờ, phủ lên nền trắng) — dùng chung cho DataGrid lẫn
+                 bảng dựng tay (danh mục kiện gỗ trong phiếu nhập) để hover/select nhìn giống nhau mọi nơi. -->
+            <SolidColorBrush x:Key="RowSelected" Color="#3B82F6" Opacity="0.1"/>
             <SolidColorBrush x:Key="Blue100" Color="#DBEAFE"/>
             <SolidColorBrush x:Key="Blue200" Color="#BFDBFE"/>
             <SolidColorBrush x:Key="Blue300" Color="#93C5FD"/>
@@ -915,7 +918,7 @@
                         <Setter Property="Background" Value="{StaticResource Slate50}"/>
                     </Trigger>
                     <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#1A3B82F6"/>
+                        <Setter Property="Background" Value="{StaticResource RowSelected}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>

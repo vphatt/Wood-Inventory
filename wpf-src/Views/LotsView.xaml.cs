@@ -209,7 +209,7 @@ public partial class LotsView : UserControl, IModuleView
     {
         var rows = _view.Cast<LotRow>().ToList();
         TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Lot.Quantity))} {Lang.T("Common.Unit.Bar")}";
-        TotalVol.Text = $"{Fmt.M3(rows.Sum(r => r.Lot.RemainingCbm))} m³";
+        TotalVol.Text = $"{Fmt.M3Total(rows.Sum(r => r.Lot.RemainingCbm))} m³";
         TotalVal.Text = Fmt.Vnd(rows.Sum(r => r.Lot.TotalValueVnd));
         EmptyRow.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }

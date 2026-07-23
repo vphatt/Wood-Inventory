@@ -207,7 +207,7 @@ public partial class ReceiptReportView : UserControl
         var rows = _view.Cast<Row>().ToList();
         TotalLots.Text = Lang.T("Receipts.RecRow.LotCountText", Fmt.N0((double)rows.Count));
         TotalQty.Text = $"{Fmt.N0((double)rows.Sum(r => r.Qty))} {Lang.T("Common.Unit.Bar")}";
-        TotalVol.Text = $"{Fmt.M3(rows.Sum(r => r.CbmV))} m³";
+        TotalVol.Text = $"{Fmt.M3Total(rows.Sum(r => r.CbmV))} m³";
         TotalVal.Text = Fmt.Vnd(rows.Sum(r => r.SubtotalV + r.VatV));
         EmptyRow.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }

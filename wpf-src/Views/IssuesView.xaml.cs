@@ -347,7 +347,7 @@ public partial class IssuesView : UserControl, IModuleView
 
     private void UpdateTotalsAndErrors()
     {
-        TotalCbm.Text = $"{Fmt.M3(_draftItems.Sum(i => i.Cbm))} m³";
+        TotalCbm.Text = $"{Fmt.M3Total(_draftItems.Sum(i => i.Cbm))} m³";
         TotalValue.Text = Fmt.Vnd(_draftItems.Sum(i => i.TotalValueVnd));
 
         ErrorList.Children.Clear();

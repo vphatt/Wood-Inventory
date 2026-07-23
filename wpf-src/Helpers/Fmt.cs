@@ -17,6 +17,15 @@ public static class Fmt
     /// <summary>M³ với số chữ số thập phân tùy chỉnh (mỗi kiện gỗ có thể làm tròn khác nhau).</summary>
     public static string M3(double value, int decimals) => value.ToString("N" + Math.Max(0, decimals), Vi);
 
+    /// <summary>
+    /// TỔNG m³ (footer bảng, KPI tồn kho): luôn 5 số lẻ — cộng nhiều kiện nên cần đủ độ chính xác,
+    /// không dùng N4 như M3() của từng dòng. Mọi chỗ hiển thị tổng khối lượng phải đi qua đây.
+    /// </summary>
+    public static string M3Total(double value) => M3(value, TotalDecimals);
+
+    /// <summary>Số chữ số thập phân dùng cho mọi TỔNG m³ trong app.</summary>
+    public const int TotalDecimals = 5;
+
     /// <summary>"21,433" (3 số lẻ)</summary>
     public static string M3Short(double value) => value.ToString("N3", Vi);
 

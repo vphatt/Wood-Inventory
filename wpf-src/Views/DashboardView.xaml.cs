@@ -37,7 +37,7 @@ public partial class DashboardView : UserControl, IModuleView
         var totalValuation = lots.Sum(l => l.TotalValueVnd);
         var lowStockLots = lots.Where(l => l.Quantity <= 30 && l.Quantity > 0).ToList();
 
-        KpiVolume.Text = Fmt.M3(totalVolume);
+        KpiVolume.Text = Fmt.M3Total(totalVolume);
         KpiValue.Text = Fmt.Vnd(totalValuation);
         KpiLots.Text = lots.Count.ToString();
         KpiLowStock.Text = lowStockLots.Count.ToString();
